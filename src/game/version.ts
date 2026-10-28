@@ -2,4 +2,4 @@ import pkg from '../../package.json'
 
 /** Versão atual do jogo (vem do package.json). Veja ROADMAP.md. */
 export const VERSION: string = pkg.version
-export const VERSION_NAME = 'Itens e inventário'
+export const VERSION_NAME = 'Extrator e contrato'

@@ -5,9 +5,10 @@ Projeto pessoal, **sem fins comerciais**, feito por diversão.
 
 Você é um investigador contratado pelo **C.R.O.S** (Centro de Recuperação de Objetos Sobrenaturais) para entrar em locais assombrados e trazer **relíquias**.
 Dá para roubar objetos da casa para vender, mas o inventário só tem 3 espaços e o que é grande vai nas mãos.
-Tudo vai para o **extrator mágico**, que leva tudo de uma vez quando a meta de relíquias é cumprida. Depois é voltar vivo para o carro.
+Tudo vai para o **extrator mágico** (sala roxa): largue os itens lá dentro e, quando a meta de relíquias for cumprida, ele leva tudo de uma vez.
+Aí as luzes apagam e é voltar vivo para o carro para receber o pagamento.
 
-Versão atual: **0.3.0 — Itens e inventário** · próximas etapas em [`ROADMAP.md`](./ROADMAP.md)
+Versão atual: **0.4.0 — Extrator e contrato** · próximas etapas em [`ROADMAP.md`](./ROADMAP.md)
 
 ## Rodando
 

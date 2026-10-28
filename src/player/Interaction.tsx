@@ -5,7 +5,7 @@ import * as THREE from 'three'
 import { AIM_GROUPS } from '../game/physics'
 import { getInteractable, type Hint, type Interactable } from '../game/systems/interactables'
 import { useItemStore } from '../items/itemStore'
-import { useGameStore } from '../game/stores/gameStore'
+import { isPaused, useGameStore } from '../game/stores/gameStore'
 import { PLAYER } from './config'
 import { usePlayerStore } from './playerStore'
 import { debugApi } from '../game/debug'
@@ -38,7 +38,7 @@ export function Interaction() {
     const player = usePlayerStore.getState()
     let found: Interactable | null = null
     let aim: ReturnType<typeof debugApi.aim> = null
-    if (game.cameraMode === 'player' && game.phase !== 'gameover' && player.locked) {
+    if (game.cameraMode === 'player' && !isPaused(game.phase) && player.locked) {
       camera.getWorldDirection(dir)
       const hit = world.castRay(new rapier.Ray(camera.position, dir), PLAYER.interactRange, true, undefined, AIM_GROUPS)
       if (hit) found = getInteractable(hit.collider.handle) ?? null

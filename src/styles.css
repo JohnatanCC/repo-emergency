@@ -123,6 +123,61 @@ canvas.retro {
   color: #8a7a5a;
 }
 
+/* Aviso no topo (extrator / apagão) */
+.hud-banner {
+  position: absolute;
+  left: 50%;
+  top: 70px;
+  transform: translateX(-50%);
+  font-size: 30px;
+  letter-spacing: 3px;
+  white-space: nowrap;
+}
+.hud-banner.charging {
+  color: #b99aff;
+}
+.hud-banner.blackout {
+  color: #a8433a;
+}
+
+/* Tela de pagamento */
+.hud-results {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 380px;
+  padding: 16px 20px;
+  background: rgba(10, 8, 6, 0.88);
+  border: 1px solid #5a4a30;
+  font-size: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.hud-results h2 {
+  font-weight: normal;
+  font-size: 30px;
+  letter-spacing: 2px;
+  color: #e8d7a8;
+  margin-bottom: 6px;
+}
+.hud-results .row {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+}
+.hud-results .total {
+  border-top: 1px solid #3a3020;
+  padding-top: 4px;
+  color: #9fd17a;
+}
+.hud-results small {
+  margin-top: 8px;
+  color: #8a7a5a;
+  font-size: 18px;
+}
+
 .hud-crosshair {
   position: absolute;
   left: 50%;

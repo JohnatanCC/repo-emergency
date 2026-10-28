@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.4.0 — Extrator e contrato · 2026-10-28
+
+### Adicionado
+- Extrator mágico (`src/world/Extractor.tsx`): conta o que está largado na sala roxa; com relíquias inteiras suficientes para a meta, carrega 5 s (luz pulsando) e leva tudo de uma vez. Tirar uma relíquia cancela a carga.
+- Apagão depois da extração e volta ao carro (`src/world/LevelFlow.tsx`), que leva à tela de pagamento.
+- Tela de resultado: relíquias pagas pelo C.R.O.S + saque vendido, saldo acumulado; `Enter` começa o próximo contrato (itens sorteados de novo, portas fechadas, vidas cheias).
+- Painel do carro com tela retrô (`src/world/CarPanel.tsx`): meta, o que já está no extrator e saldo.
+- HUD: contagem do extrator, aviso de carga e de apagão.
+- `src/game/config.ts` (números da extração) e `src/player/playerPos.ts` (posição do jogador para os sistemas).
+
+### Alterado
+- O investigador fica parado nas telas de resultado e de fim de jogo.
+- A luz roxa do extrator saiu de `RoomLights` e passou para o `Extractor`.
+
 ## 0.3.0 — Itens e inventário · 2026-10-28
 
 ### Adicionado

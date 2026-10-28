@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { VERSION, VERSION_NAME } from '../game/version'
-import { useGameStore, type DebugFlags } from '../game/stores/gameStore'
+import { isPaused, payout, useGameStore, type DebugFlags } from '../game/stores/gameStore'
+import { EXTRACTION } from '../game/config'
 import { SOUNDS, playSound } from '../game/audio/sounds'
 import type { LevelData } from '../game/data/types'
 import { usePlayerStore } from '../player/playerStore'
 import { PLAYER } from '../player/config'
-import { isBroken, useItemStore, type ItemInstance } from '../items/itemStore'
+import { isBroken, isCarried, useItemStore, type ItemInstance } from '../items/itemStore'
 
 const TOGGLES: { key: string; flag: keyof DebugFlags; label: string }[] = [
   { key: 'g', flag: 'gizmos', label: 'Marcadores' },
@@ -34,6 +35,72 @@ function EnemyTimer({ delay }: { delay: number }) {
   if (start === null) return <> · entidades: 1ª porta fechada</>
   const left = Math.ceil(delay - (performance.now() - start) / 1000)
   return <> · entidades {left > 0 ? `em ${left}s` : 'ativas'}</>
+}
+
+/** Quantas relíquias já estão no extrator. */
+function ExtractorCount({ quota }: { quota: number }) {
+  const relics = useGameStore((s) => s.extractor.inside.relics)
+  const status = useGameStore((s) => s.extractor.status)
+  if (status === 'done') return <> · extração feita</>
+  return (
+    <>
+      {' '}
+      · extrator {relics}/{quota}
+    </>
+  )
+}
+
+/** Aviso no topo: extrator carregando / apagão. */
+function Banner() {
+  const status = useGameStore((s) => s.extractor.status)
+  const chargeStart = useGameStore((s) => s.extractor.chargeStart)
+  const phase = useGameStore((s) => s.phase)
+  const [, tick] = useState(0)
+  useEffect(() => {
+    if (status !== 'charging') return
+    const id = setInterval(() => tick((t) => t + 1), 200)
+    return () => clearInterval(id)
+  }, [status])
+  if (status === 'charging' && chargeStart !== null) {
+    const left = Math.max(0, Math.ceil(EXTRACTION.chargeSeconds - (performance.now() - chargeStart) / 1000))
+    return <div className="hud-banner charging">EXTRATOR ATIVANDO · {left}s</div>
+  }
+  if (phase === 'blackout') return <div className="hud-banner blackout">APAGÃO · VOLTE AO CARRO</div>
+  return null
+}
+
+/** Tela de pagamento ao voltar ao carro. */
+function Results() {
+  const result = useGameStore((s) => s.result)
+  const money = useGameStore((s) => s.money)
+  if (!result) return null
+  const total = payout(result)
+  return (
+    <div className="hud-results">
+      <h2>CONTRATO CUMPRIDO</h2>
+      <div className="row">
+        <span>Relíquias entregues ao C.R.O.S ({result.relics})</span>
+        <span>${result.relicValue}</span>
+      </div>
+      <div className="row">
+        <span>Saque vendido ({result.loot})</span>
+        <span>${result.lootValue}</span>
+      </div>
+      <div className="row total">
+        <span>Total</span>
+        <span>${total}</span>
+      </div>
+      <div className="row">
+        <span>Saldo</span>
+        <span>
+          ${money} → ${money + total}
+        </span>
+      </div>
+      <small>
+        <kbd>Enter</kbd> próximo contrato
+      </small>
+    </div>
+  )
 }
 
 /** Dica da mira, logo abaixo dela. */
@@ -66,7 +133,7 @@ function Inventory() {
   const slots = useItemStore((s) => s.slots)
   const selected = useItemStore((s) => s.selected)
   const hands = useItemStore((s) => s.hands)
-  const carried = Object.values(items).filter((it) => it.place !== 'world')
+  const carried = Object.values(items).filter(isCarried)
   const total = carried.reduce((sum, it) => sum + it.value, 0)
   const relics = carried.filter((it) => it.def.tag === 'relic' && !isBroken(it)).length
   return (
@@ -148,12 +215,16 @@ export function Hud({ level }: { level: LevelData }) {
         useGameStore.getState().restart()
         usePlayerStore.getState().respawn()
       }
+      if (k === 'enter' && useGameStore.getState().phase === 'results') {
+        useGameStore.getState().nextContract()
+        usePlayerStore.getState().respawn()
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [toggleDebug, toggleBlackout, toggleCameraMode, cycleVisit, level.rooms.length])
 
-  const playing = cameraMode === 'player' && phase !== 'gameover'
+  const playing = cameraMode === 'player' && !isPaused(phase)
 
   return (
     <div className="hud">
@@ -166,6 +237,7 @@ export function Hud({ level }: { level: LevelData }) {
         </div>
         <div className="hud-sub">
           {level.name} · fase: {phase} · meta: {level.relicQuota} relíquias
+          <ExtractorCount quota={level.relicQuota} />
           <EnemyTimer delay={level.enemyDelay} />
         </div>
 
@@ -287,6 +359,8 @@ export function Hud({ level }: { level: LevelData }) {
       {playing && locked && <div className="hud-crosshair" />}
       {playing && locked && <AimHint />}
       {playing && !locked && <div className="hud-center">clique para jogar</div>}
+      <Banner />
+      {phase === 'results' && <Results />}
       {phase === 'gameover' && (
         <div className="hud-center gameover">
           FIM DE JOGO

@@ -17,6 +17,7 @@ import { registerInteractable } from '../game/systems/interactables'
 import { useGameStore } from '../game/stores/gameStore'
 import { CARRY, RELIC_GLOW, type ItemDef } from './catalog'
 import { isBroken, useItemStore, type ItemInstance } from './itemStore'
+import { itemBodies } from './bodies'
 
 /** Nome com valor, para dicas e HUD. */
 export function itemLabel(item: ItemInstance) {
@@ -64,6 +65,15 @@ function WorldItem({ item }: { item: ItemInstance }) {
     const v = body.current?.linvel()
     if (v) st.speed = Math.hypot(v.x, v.y, v.z)
   })
+
+  useEffect(() => {
+    const b = body.current
+    if (!b) return
+    itemBodies.set(uid, b)
+    return () => {
+      if (itemBodies.get(uid) === b) itemBodies.delete(uid)
+    }
+  }, [uid])
 
   useEffect(() => {
     const c = collider.current

@@ -2,6 +2,7 @@ import { useLayoutEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { RigidBody } from '@react-three/rapier'
 import { WORLD_GROUPS } from '../game/physics'
+import { CarPanel } from './CarPanel'
 import type { LevelData, Prop } from '../game/data/types'
 import type { BuiltLevel } from './buildLevel'
 import { getTexture } from './textures'
@@ -20,7 +21,6 @@ function useMats() {
       porcelain: new THREE.MeshStandardMaterial({ map: getTexture('porcelain', 1, 1), roughness: 0.4 }),
       dark: new THREE.MeshStandardMaterial({ color: '#120c08', roughness: 1 }),
       brass: new THREE.MeshStandardMaterial({ color: '#8a6a2a', metalness: 0.6, roughness: 0.4 }),
-      screen: new THREE.MeshBasicMaterial({ color: '#3fbf5a' }),
     }),
     [],
   )
@@ -134,10 +134,8 @@ function PropMesh({ prop, m, scale, isOutdoor }: { prop: Prop; m: Mats; scale: n
           <mesh position={[0, 1.5, 0]} material={m.dark}>
             <boxGeometry args={[1.1, 0.7, 0.08]} />
           </mesh>
-          {/* Painel do carro: dinheiro + relíquias da meta (0.4.0) */}
-          <mesh position={[0, 1.5, 0.045]} material={m.screen}>
-            <planeGeometry args={[0.95, 0.55]} />
-          </mesh>
+          {/* Painel do carro: meta do contrato, extrator e saldo */}
+          <CarPanel />
         </>
       )
   }

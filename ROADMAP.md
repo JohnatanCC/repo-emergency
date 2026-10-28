@@ -56,13 +56,16 @@ você chega de **carro**, invade o lugar, encontra as **relíquias** que o C.R.O
 - Morrer: tudo o que carrega cai no local da morte
 - HUD: espaços, item nas mãos, valor carregado e número de relíquias
 
-## ⬜ 0.4.0 — Carro, extrator e fluxo do nível
-- **Painel do carro**: meta de relíquias do contrato + valor do saque coletado
-- **Extrator mágico** (sala roxa): itens depositados ficam guardados lá; quando o número de relíquias chega a `relicQuota`,
-  ele é ativado e leva **todos** os itens depositados ao mesmo tempo
-- **Apagão** após a extração: luzes apagam, entidades reaparecem perto da entrada, volta até o carro
+## ✅ 0.4.0 — Carro, extrator e fluxo do nível
+- **Painel do carro** (tela verde retrô): meta, relíquias e saque já no extrator, saldo; depois "extração ok"
+- **Extrator mágico** (sala roxa): itens largados dentro ficam depositados; com relíquias **inteiras** suficientes
+  para a `relicQuota`, ele carrega por 5 s (luz pulsando, aviso no HUD) e leva **todos** os itens de uma vez, com um clarão.
+  Tirar uma relíquia durante a carga cancela
+- **Apagão** após a extração: luzes apagam (só carro e extrator acesos), aviso "volte ao carro"
 - Fases: `car → exploring → hunted → blackout → results`
-- Tela de resultado: pagamento do C.R.O.S (relíquias) + venda do saque
+- Tela de resultado: pagamento do C.R.O.S (relíquias) + venda do saque, saldo acumulado; `Enter` = próximo contrato
+  (itens sorteados de novo, portas fechadas, vidas cheias)
+- 💡 A definir: itens trazidos ao carro sem passar pelo extrator também valem? Entidades reaparecem no apagão (0.7.0+)
 
 ## ⬜ 0.5.0 — Ruído e áudio
 - Passos e itens caindo também emitem ruído (`emitNoise` já existe desde a 0.2.0)

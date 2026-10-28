@@ -68,18 +68,8 @@ export function RoomLights({ level, built }: { level: LevelData; built: BuiltLev
       {fullbright && <hemisphereLight args={['#ffffff', '#444444', 1.2]} />}
 
       {level.rooms.map((room) => {
-        if (room.kind === 'extraction') {
-          return (
-            <pointLight
-              key={room.id}
-              position={built.toWorld(room.x + room.w / 2, room.y + room.h / 2, 1.2)}
-              color="#9a5cff"
-              intensity={3}
-              distance={6}
-              decay={1.6}
-            />
-          )
-        }
+        // a luz roxa do extrator fica em Extractor.tsx (pulsa ao carregar)
+        if (room.kind === 'extraction') return null
         if (room.light === 'dark') return null
         if (blackout && room.kind !== 'car') return null
         const preset = PRESETS[room.light]

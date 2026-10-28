@@ -6,13 +6,14 @@ import type { KinematicCharacterController } from '@dimforge/rapier3d-compat'
 import * as THREE from 'three'
 import type { LevelData } from '../game/data/types'
 import type { BuiltLevel } from '../world/buildLevel'
-import { useGameStore } from '../game/stores/gameStore'
+import { isPaused, useGameStore } from '../game/stores/gameStore'
 import { PLAYER } from './config'
 import { usePlayerStore } from './playerStore'
 import { PLAYER_GROUPS } from '../game/physics'
 import { debugApi } from '../game/debug'
 import { useItemStore } from '../items/itemStore'
 import { CARRY } from '../items/catalog'
+import { playerFeet } from './playerPos'
 
 /**
  * Investigador em primeira pessoa: cápsula cinemática movida pelo controlador
@@ -160,7 +161,7 @@ export function Player({ level, built }: { level: LevelData; built: BuiltLevel }
     const game = useGameStore.getState()
     const player = usePlayerStore.getState()
     const k = keys.current
-    const active = game.cameraMode === 'player' && game.phase !== 'gameover' && player.locked
+    const active = game.cameraMode === 'player' && !isPaused(game.phase) && player.locked
 
     const pos = b.translation()
     let shiftY = 0
@@ -214,6 +215,9 @@ export function Player({ level, built }: { level: LevelData; built: BuiltLevel }
     st.grounded = ctrl.computedGrounded()
     st.next.set(pos.x + m.x, pos.y + m.y, pos.z + m.z)
     b.setNextKinematicTranslation(st.next)
+    playerFeet.x = st.next.x
+    playerFeet.y = st.next.y - half() - R
+    playerFeet.z = st.next.z
 
     // estamina
     let stamina = player.stamina

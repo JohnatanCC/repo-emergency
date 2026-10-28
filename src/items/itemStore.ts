@@ -10,8 +10,9 @@ type Vec3 = [number, number, number]
  *  - world: corpo físico no mapa (o Rapier guarda a posição; aqui fica só onde ele (re)nasce)
  *  - inventory: num dos 3 espaços (só pequenos)
  *  - hands: nas mãos (um por vez; médio ou grande, ou pequeno com o inventário cheio)
+ *  - extracted: o extrator levou
  */
-export type ItemPlace = 'world' | 'inventory' | 'hands'
+export type ItemPlace = 'world' | 'inventory' | 'hands' | 'extracted'
 
 export interface ItemInstance {
   uid: string
@@ -35,7 +36,7 @@ interface ItemState {
   /** Sorteia os itens do nível (início e recomeço). */
   roll: (level: LevelData, built: BuiltLevel) => void
   /** Onde o item iria ao pegar; null = não cabe. */
-  wouldGo: (uid: string) => Exclude<ItemPlace, 'world'> | null
+  wouldGo: (uid: string) => 'inventory' | 'hands' | null
   pickUp: (uid: string) => boolean
   /** Devolve ao mundo na posição dada. */
   drop: (uid: string, pos: Vec3, yaw: number, vel?: Vec3) => void
@@ -46,6 +47,8 @@ interface ItemState {
   select: (slot: number) => void
   /** Impacto a `speed` m/s. */
   impact: (uid: string, speed: number) => void
+  /** O extrator levou estes itens. */
+  extract: (uids: string[]) => void
 }
 
 function shuffle<T>(list: T[]): T[] {
@@ -66,6 +69,10 @@ export function halfHeight(def: ItemDef) {
 
 export function isBroken(item: ItemInstance) {
   return item.value <= 0
+}
+
+export function isCarried(item: ItemInstance) {
+  return item.place === 'inventory' || item.place === 'hands'
 }
 
 export const useItemStore = create<ItemState>((set, get) => {
@@ -134,7 +141,7 @@ export const useItemStore = create<ItemState>((set, get) => {
     drop: (uid, pos, yaw, vel = [0, 0, 0]) =>
       set((s) => {
         const it = s.items[uid]
-        if (!it || it.place === 'world') return s
+        if (!it || !isCarried(it)) return s
         return {
           ...release(s, uid),
           items: { ...s.items, [uid]: { ...it, place: 'world', spawn: { pos, yaw, vel }, version: it.version + 1, graceUntil: 0 } },
@@ -151,7 +158,7 @@ export const useItemStore = create<ItemState>((set, get) => {
 
     dropAll: ([x, y, z]) => {
       const s = get()
-      const carried = Object.values(s.items).filter((it) => it.place !== 'world')
+      const carried = Object.values(s.items).filter(isCarried)
       carried.forEach((it, i) => {
         const a = (i / Math.max(carried.length, 1)) * Math.PI * 2
         s.drop(it.uid, [x + Math.cos(a) * 0.4, y + halfHeight(it.def) + 0.3, z + Math.sin(a) * 0.4], a)
@@ -168,6 +175,13 @@ export const useItemStore = create<ItemState>((set, get) => {
         let value = Math.max(0, Math.round(it.value - lost))
         if (value < it.def.value * CARRY.brokenAt) value = 0
         return value === it.value ? s : { items: { ...s.items, [uid]: { ...it, value } } }
+      }),
+
+    extract: (uids) =>
+      set((s) => {
+        const items = { ...s.items }
+        for (const uid of uids) if (items[uid]) items[uid] = { ...items[uid], place: 'extracted' }
+        return { items }
       }),
   }
 })
