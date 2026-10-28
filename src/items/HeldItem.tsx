@@ -5,6 +5,7 @@ import * as THREE from 'three'
 import { AIM_GROUPS } from '../game/physics'
 import { useGameStore } from '../game/stores/gameStore'
 import { usePlayerStore } from '../player/playerStore'
+import { useHidingStore } from '../player/hidingStore'
 import { ItemMesh } from './Items'
 import { halfHeight, isBroken, useItemStore, type ItemInstance } from './itemStore'
 import type { ItemSize } from '../game/data/types'
@@ -60,7 +61,7 @@ export function ItemControls() {
       const store = useItemStore.getState()
       const digit = ['Digit1', 'Digit2', 'Digit3'].indexOf(e.code)
       if (digit >= 0) store.select(digit)
-      if (e.code !== 'KeyQ' || e.repeat) return
+      if (e.code !== 'KeyQ' || e.repeat || useHidingStore.getState().wardrobeId) return
 
       camera.getWorldDirection(tmp.fwd)
       tmp.fwd.y = 0

@@ -14,6 +14,8 @@ import { debugApi } from '../game/debug'
 import { useItemStore } from '../items/itemStore'
 import { CARRY } from '../items/catalog'
 import { playerFeet } from './playerPos'
+import { useHidingStore } from './hidingStore'
+import { wardrobes } from '../world/HidingSpots'
 import { FLOOR_NOISE } from './config'
 import { emitNoise } from '../game/systems/noise'
 import { audio } from '../game/audio/engine'
@@ -33,6 +35,8 @@ const STAND_HALF = (PLAYER.standHeight - 2 * R) / 2
 const CROUCH_HALF = (PLAYER.crouchHeight - 2 * R) / 2
 /** Quanto o centro da cápsula desce ao agachar. */
 const CROUCH_DROP = STAND_HALF - CROUCH_HALF
+/** Quanto dá para virar a cabeça dentro do armário (rad). */
+const WARDROBE_LOOK = { yaw: 0.45, pitch: 0.35 }
 /** De frente para a saída do carro (+x). */
 const SPAWN_YAW = -Math.PI / 2
 const UP = new THREE.Vector3(0, 1, 0)
@@ -112,8 +116,47 @@ export function Player({ level, built }: { level: LevelData; built: BuiltLevel }
 
   const faceSpawn = () => camera.quaternion.setFromEuler(new THREE.Euler(0, SPAWN_YAW, 0, 'YXZ'))
 
+  // entrar/sair do armário: o corpo some lá dentro (colisor desligado) e a lanterna apaga
+  useEffect(() => {
+    let flashlightBefore = true
+    return useHidingStore.subscribe((s, prev) => {
+      if (s.wardrobeId === prev.wardrobeId) return
+      const b = body.current
+      const col = collider.current
+      const player = usePlayerStore.getState()
+      const entering = s.wardrobeId ? wardrobes.get(s.wardrobeId) : undefined
+      const leaving = prev.wardrobeId ? wardrobes.get(prev.wardrobeId) : undefined
+      if (st.crouched || st.growNext) {
+        col?.setHalfHeight(STAND_HALF)
+        st.crouched = st.growNext = false
+        player.setCrouching(false)
+      }
+      const place = ([x, , z]: [number, number, number]) => {
+        const y = STAND_HALF + R + 0.02
+        b?.setTranslation({ x, y, z }, true)
+        st.next.set(x, y, z)
+        st.vel.set(0, 0, 0)
+        st.bobAmp = 0
+      }
+      if (entering) {
+        col?.setEnabled(false)
+        place(entering.inside)
+        camera.quaternion.setFromEuler(new THREE.Euler(0, entering.yaw, 0, 'YXZ'))
+        flashlightBefore = player.flashlight
+        if (player.flashlight) player.toggleFlashlight()
+      } else if (leaving) {
+        col?.setEnabled(true)
+        place(leaving.exit)
+        if (flashlightBefore && !usePlayerStore.getState().flashlight) usePlayerStore.getState().toggleFlashlight()
+      }
+    })
+  }, [camera, st])
+
   // renascer no carro (início do nível, morte, recomeço)
   useEffect(() => {
+    // sai de qualquer esconderijo antes de ir para o carro
+    useHidingStore.getState().reset()
+    collider.current?.setEnabled(true)
     const b = body.current
     if (b) b.setTranslation(spawn, true)
     if (st.crouched || st.growNext) collider.current?.setHalfHeight(STAND_HALF)
@@ -174,6 +217,8 @@ export function Player({ level, built }: { level: LevelData; built: BuiltLevel }
     const game = useGameStore.getState()
     const player = usePlayerStore.getState()
     const k = keys.current
+    // dentro do armário não se mexe (o corpo está parado lá dentro)
+    if (useHidingStore.getState().wardrobeId) return
     const active = game.cameraMode === 'player' && !isPaused(game.phase) && player.locked
 
     const pos = b.translation()
@@ -282,6 +327,20 @@ export function Player({ level, built }: { level: LevelData; built: BuiltLevel }
 
   useFrame(() => {
     if (useGameStore.getState().cameraMode !== 'player') return
+
+    // no armário: olhos fixos atrás da fresta, dá para virar só um pouco
+    const w = useHidingStore.getState().wardrobeId
+    const wardrobe = w ? wardrobes.get(w) : undefined
+    if (wardrobe) {
+      camera.position.set(...wardrobe.eye)
+      const e = new THREE.Euler().setFromQuaternion(camera.quaternion, 'YXZ')
+      const dy = Math.atan2(Math.sin(e.y - wardrobe.yaw), Math.cos(e.y - wardrobe.yaw))
+      const yaw = wardrobe.yaw + THREE.MathUtils.clamp(dy, -WARDROBE_LOOK.yaw, WARDROBE_LOOK.yaw)
+      const pitch = THREE.MathUtils.clamp(e.x, -WARDROBE_LOOK.pitch, WARDROBE_LOOK.pitch)
+      camera.quaternion.setFromEuler(new THREE.Euler(pitch, yaw, 0, 'YXZ'))
+      return
+    }
+
     const feetY = st.next.y - (st.crouched ? CROUCH_HALF : STAND_HALF) - R
     const side = Math.cos(st.bob) * st.bobAmp * 0.6
     camera.getWorldDirection(tmp.fwd)

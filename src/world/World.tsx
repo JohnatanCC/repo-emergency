@@ -17,6 +17,7 @@ import { EditorCamera } from './EditorCamera'
 import { Extractor } from './Extractor'
 import { LevelFlow } from './LevelFlow'
 import { NoiseRings } from './NoiseRings'
+import { HidingSpots } from './HidingSpots'
 import { AudioDirector } from '../game/audio/AudioDirector'
 
 /** Tudo que existe no nível: geometria, móveis, luz, investigador e (debug) marcadores. */
@@ -34,6 +35,7 @@ export function World({ level }: { level: LevelData }) {
       {/* partida nova: portas voltam fechadas */}
       <Doors key={matchId} level={level} built={built} />
       <Items level={level} built={built} />
+      <HidingSpots level={level} built={built} />
       <Extractor level={level} built={built} />
       <RoomLights level={level} built={built} />
       {gizmos && <Gizmos level={level} built={built} />}

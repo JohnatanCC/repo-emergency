@@ -75,6 +75,34 @@ canvas.retro {
   background: #6a5a3a;
 }
 
+/* Dentro do armário: escuro com a fresta vertical no meio */
+.hud-wardrobe {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(5, 3, 2, 0.9) 0%, transparent 12%, transparent 88%, rgba(5, 3, 2, 0.9) 100%),
+    linear-gradient(
+      to right,
+      #070403 0%,
+      #0c0705 calc(50% - 7%),
+      rgba(12, 7, 5, 0.6) calc(50% - 4%),
+      transparent calc(50% - 2.5%),
+      transparent calc(50% + 2.5%),
+      rgba(12, 7, 5, 0.6) calc(50% + 4%),
+      #0c0705 calc(50% + 7%),
+      #070403 100%
+    );
+}
+.hud-hide {
+  position: absolute;
+  left: 16px;
+  bottom: 64px;
+  font-size: 18px;
+  color: #3fc1a5;
+}
+.hud-hide.marked {
+  color: #ff4a3a;
+}
+
 /* Inventário: embaixo, no centro */
 .hud-inventory {
   position: absolute;

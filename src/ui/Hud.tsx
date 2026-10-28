@@ -6,6 +6,7 @@ import { audio, SOUND_IDS } from '../game/audio/engine'
 import type { SoundId } from '../game/audio/sounds'
 import type { LevelData } from '../game/data/types'
 import { usePlayerStore } from '../player/playerStore'
+import { useHidingStore } from '../player/hidingStore'
 import { PLAYER } from '../player/config'
 import { isBroken, isCarried, useItemStore, type ItemInstance } from '../items/itemStore'
 
@@ -159,6 +160,27 @@ function Inventory() {
 }
 
 /** Vida, estamina e vidas restantes (canto inferior esquerdo). */
+const HIDE_LABEL = { wardrobe: 'no armário', 'under-table': 'embaixo da mesa', 'under-chair': 'atrás da cadeira (parcial)' }
+
+/** Escondido? (aparece acima das vidas) */
+function HideStatus() {
+  const spot = useHidingStore((s) => s.spot)
+  const marked = useHidingStore((s) => (s.spot ? s.marked.includes(s.spot.id) : false))
+  if (!spot) return null
+  return (
+    <div className={`hud-hide${marked ? ' marked' : ''}`}>
+      escondido · {HIDE_LABEL[spot.type]}
+      {marked && ' · MARCADO'}
+    </div>
+  )
+}
+
+/** Visão de dentro do armário: escuro, só a fresta entre as portas. */
+function WardrobeView() {
+  const inside = useHidingStore((s) => !!s.wardrobeId)
+  return inside ? <div className="hud-wardrobe" /> : null
+}
+
 function Vitals() {
   const health = usePlayerStore((s) => s.health)
   const stamina = usePlayerStore((s) => s.stamina)
@@ -368,6 +390,8 @@ export function Hud({ level }: { level: LevelData }) {
         </div>
       )}
 
+      {cameraMode === 'player' && <WardrobeView />}
+      {cameraMode === 'player' && <HideStatus />}
       {cameraMode === 'player' && <Vitals />}
       {cameraMode === 'player' && <Inventory />}
     </div>

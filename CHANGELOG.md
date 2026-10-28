@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.0 — Esconderijos · 2026-10-28
+
+### Adicionado
+- Esconderijos (`src/world/HidingSpots.tsx`): embaixo da mesa (agachado), atrás da cadeira (parcial) e armário.
+- Armário: `E` entra e sai; visão pela fresta (`hud-wardrobe`), câmera presa com pouco giro, lanterna apaga ao entrar e volta ao sair, rangido e barulho. Item grande nas mãos impede de entrar.
+- `src/player/hidingStore.ts`: esconderijo atual, cobertura por tipo, esconderijos marcados e `onHide` para as entidades.
+- HUD "escondido" (vermelho se marcado) e cores dos esconderijos no debug (`G`).
+
 ## 0.5.0 — Ruído e áudio · 2026-10-28
 
 ### Adicionado

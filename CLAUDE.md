@@ -26,5 +26,7 @@ Conceito, mecânicas e ordem das versões: `ROADMAP.md`. Histórico: `CHANGELOG.
   - `hold('KeyW', ms)` segura uma tecla · `press('KeyE')` aperta · `tp(x, z)` teleporta (coordenadas do mundo)
   - `aim()` o que a mira acertou (distância, se é interagível)
   - `game` / `player` / `items` são os stores Zustand (ex.: `items.getState().pickUp(uid)`)
+- Se o Vite servir um módulo vazio depois de várias edições seguidas (erro "does not provide an export"),
+  reinicie o servidor (`preview_stop` + `preview_start`).
 - O painel do navegador oculto pausa os frames (0 fps). `tick(ms)` avança o jogo à mão (`hold` já usa);
   use `await tick(…)` no lugar de `setTimeout` quando o teste precisa que o tempo passe no jogo.

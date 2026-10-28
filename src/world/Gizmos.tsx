@@ -2,6 +2,7 @@ import { Html } from '@react-three/drei'
 import type { EnemyId, LevelData } from '../game/data/types'
 import type { BuiltLevel } from './buildLevel'
 import { useGameStore } from '../game/stores/gameStore'
+import { useHidingStore } from '../player/hidingStore'
 
 /** Marcadores de debug (tecla G): spawns, esconderijos, 1ª porta, início, mortes. */
 
@@ -28,6 +29,8 @@ function Label({ text, color }: { text: string; color: string }) {
 export function Gizmos({ level, built }: { level: LevelData; built: BuiltLevel }) {
   const propById = new Map(level.props.map((p) => [p.id, p]))
   const deathSpots = useGameStore((s) => s.deathSpots)
+  const marked = useHidingStore((s) => s.marked)
+  const current = useHidingStore((s) => s.spot?.id)
   return (
     <group>
       {/* início do jogador */}
@@ -83,14 +86,14 @@ export function Gizmos({ level, built }: { level: LevelData; built: BuiltLevel }
         )
       })}
 
-      {/* esconderijos */}
+      {/* esconderijos: verde = livre · branco = você está nele · vermelho = marcado */}
       {level.hidingSpots.map((h) => {
         const p = propById.get(h.propId)
         if (!p) return null
         return (
           <mesh key={h.id} position={built.toWorld(p.x, p.y, 0.03)} rotation-x={-Math.PI / 2}>
             <ringGeometry args={[0.55, 0.65, 20]} />
-            <meshBasicMaterial color="#3fc1a5" />
+            <meshBasicMaterial color={marked.includes(h.id) ? '#ff4a3a' : current === h.id ? '#ffffff' : '#3fc1a5'} />
           </mesh>
         )
       })}

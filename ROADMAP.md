@@ -85,10 +85,15 @@ você chega de **carro**, invade o lugar, encontra as **relíquias** que o C.R.O
 - Debug: anéis de ruído no chão (`G`) com o raio de alcance de cada barulho
 - 💡 Bateria da lanterna passou para a 0.8.0 (Sombra); pool de luzes fica para quando o mapa crescer (0.12.0)
 
-## ⬜ 0.6.0 — Esconderijos
-- Agachar debaixo de mesas e cadeiras
-- Entrar em armários com visão pela fresta
-- Regra: se uma entidade **viu você entrar**, o esconderijo fica "marcado"
+## ✅ 0.6.0 — Esconderijos
+- **Embaixo da mesa**: agachado dentro da área da mesa = escondido (não dá para levantar ali)
+- **Atrás da cadeira**: o assento (0,42 m) é baixo demais para caber embaixo; agachado colado nela = esconderijo **parcial**
+- **Armário**: `E` entra (rangido + barulho de 3 m); a visão vira a fresta entre as portas, dá para virar só um pouco,
+  a lanterna apaga sozinha e não se mexe; `E` sai pela frente e a lanterna volta. Item grande nas mãos não entra
+- Cada esconderijo tem uma **cobertura** (armário 1, mesa 0,85, cadeira 0,5) para as entidades usarem
+- Regra pronta: `onHide` avisa quando o jogador se esconde; se uma entidade estava olhando, ela chama `mark` e o
+  esconderijo fica **marcado** (as entidades da 0.7.0+ é que vão marcar)
+- HUD: "escondido · …" (vermelho se marcado); debug `G`: anel verde livre, branco ocupado, vermelho marcado
 
 ## 💡 Entidades
 Cada uma conversa com uma mecânica do jogo, para que fugir de cada uma seja diferente.

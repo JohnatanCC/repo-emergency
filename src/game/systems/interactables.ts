@@ -18,7 +18,7 @@ export interface Hint {
 }
 
 export interface Interactable {
-  kind: 'door' | 'item'
+  kind: 'door' | 'item' | 'hide'
   label: () => Hint
   use: (ctx: UseContext) => void
 }

@@ -2,6 +2,7 @@ import { advance } from '@react-three/fiber'
 import { useGameStore } from './stores/gameStore'
 import { usePlayerStore } from '../player/playerStore'
 import { useItemStore } from '../items/itemStore'
+import { useHidingStore } from '../player/hidingStore'
 
 /**
  * Comandos de teste em `window.__relicario` (só em dev). Servem para testar
@@ -24,6 +25,7 @@ export const debugApi = {
   game: useGameStore,
   player: usePlayerStore,
   items: useItemStore,
+  hiding: useHidingStore,
   /** Simula o mouse travado. */
   play: () => usePlayerStore.getState().setLocked(true),
   tick,

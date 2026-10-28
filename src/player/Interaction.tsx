@@ -9,6 +9,8 @@ import { isPaused, useGameStore } from '../game/stores/gameStore'
 import { PLAYER } from './config'
 import { usePlayerStore } from './playerStore'
 import { debugApi } from '../game/debug'
+import { useHidingStore } from './hidingStore'
+import { leaveWardrobe } from '../world/HidingSpots'
 
 /**
  * Mira de interação: um raio do centro da tela até `PLAYER.interactRange`.
@@ -38,7 +40,8 @@ export function Interaction() {
     const player = usePlayerStore.getState()
     let found: Interactable | null = null
     let aim: ReturnType<typeof debugApi.aim> = null
-    if (game.cameraMode === 'player' && !isPaused(game.phase) && player.locked) {
+    const inWardrobe = !!useHidingStore.getState().wardrobeId
+    if (game.cameraMode === 'player' && !isPaused(game.phase) && player.locked && !inWardrobe) {
       camera.getWorldDirection(dir)
       const hit = world.castRay(new rapier.Ray(camera.position, dir), PLAYER.interactRange, true, undefined, AIM_GROUPS)
       if (hit) found = getInteractable(hit.collider.handle) ?? null
@@ -46,13 +49,15 @@ export function Interaction() {
     }
     debugApi.aim = () => aim
     target.current = found
-    const hint = found ? hintFor(found) : null
+    const hint = inWardrobe ? { text: 'sair do armário', ok: true } : found ? hintFor(found) : null
     if (hint?.text !== player.hint?.text || hint?.ok !== player.hint?.ok) player.setHint(hint)
   })
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.code !== 'KeyE' || e.repeat || !target.current || !hintFor(target.current).ok) return
+      if (e.code !== 'KeyE' || e.repeat) return
+      if (useHidingStore.getState().wardrobeId) return leaveWardrobe()
+      if (!target.current || !hintFor(target.current).ok) return
       const p = camera.position
       target.current.use({ from: [p.x, p.y, p.z], hard: e.shiftKey })
     }
