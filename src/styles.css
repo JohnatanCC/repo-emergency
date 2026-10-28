@@ -1,0 +1,95 @@
+@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  background: #050403;
+  overflow: hidden;
+  font-family: 'VT323', ui-monospace, monospace;
+  color: #d9c9a3;
+}
+
+/* Renderiza em baixa resolução e amplia sem suavizar: visual retrô */
+canvas.retro {
+  image-rendering: pixelated;
+}
+
+.hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  text-shadow:
+    0 0 4px #000,
+    1px 1px 0 #000;
+}
+
+.hud-title {
+  font-size: 28px;
+  letter-spacing: 2px;
+  color: #e8d7a8;
+}
+.hud-title small {
+  font-size: 18px;
+  color: #8a7a5a;
+  margin-left: 8px;
+}
+.hud-sub {
+  font-size: 18px;
+  color: #8a7a5a;
+}
+
+.hud-panel {
+  align-self: flex-start;
+  pointer-events: auto;
+  background: rgba(10, 8, 6, 0.78);
+  border: 1px solid #3a3020;
+  padding: 10px 14px;
+  font-size: 18px;
+  line-height: 1.3;
+  min-width: 260px;
+}
+.hud-panel h3 {
+  font-size: 20px;
+  font-weight: normal;
+  color: #e8d7a8;
+  margin-bottom: 4px;
+}
+.hud-panel .row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+.hud kbd {
+  font-family: inherit;
+  border: 1px solid #5a4a30;
+  padding: 0 5px;
+  color: #e8d7a8;
+}
+.hud-panel .on {
+  color: #9fd17a;
+}
+.hud-panel .off {
+  color: #a05a4a;
+}
+.hud-panel select,
+.hud-panel button {
+  font-family: inherit;
+  font-size: 17px;
+  background: #1a140d;
+  color: #d9c9a3;
+  border: 1px solid #5a4a30;
+  padding: 1px 6px;
+  cursor: pointer;
+}
