@@ -1,8 +1,9 @@
 import { Html } from '@react-three/drei'
 import type { EnemyId, LevelData } from '../game/data/types'
 import type { BuiltLevel } from './buildLevel'
+import { useGameStore } from '../game/stores/gameStore'
 
-/** Marcadores de debug (tecla G): spawns, esconderijos, 1ª porta, início. */
+/** Marcadores de debug (tecla G): spawns, esconderijos, 1ª porta, início, mortes. */
 
 const ENEMY_COLOR: Record<EnemyId, string> = {
   possessor: '#d8c23a',
@@ -26,6 +27,7 @@ function Label({ text, color }: { text: string; color: string }) {
 
 export function Gizmos({ level, built }: { level: LevelData; built: BuiltLevel }) {
   const propById = new Map(level.props.map((p) => [p.id, p]))
+  const deathSpots = useGameStore((s) => s.deathSpots)
   return (
     <group>
       {/* início do jogador */}
@@ -102,6 +104,19 @@ export function Gizmos({ level, built }: { level: LevelData; built: BuiltLevel }
           </mesh>
           <group position-y={0.8}>
             <Label text={`${ENEMY_NAME[e.enemy]}${e.phase === 'blackout' ? ' · apagão' : ''}`} color={ENEMY_COLOR[e.enemy]} />
+          </group>
+        </group>
+      ))}
+
+      {/* onde o investigador morreu: A COISA surge ali segurando a cabeça (0.10.0) */}
+      {deathSpots.map((p, i) => (
+        <group key={i} position={[p[0], p[1] + 0.5, p[2]]}>
+          <mesh>
+            <sphereGeometry args={[0.2, 8, 6]} />
+            <meshBasicMaterial color="#e8e8e8" wireframe />
+          </mesh>
+          <group position-y={0.6}>
+            <Label text="A COISA" color="#e8e8e8" />
           </group>
         </group>
       ))}

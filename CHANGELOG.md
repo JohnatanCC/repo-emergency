@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.0 — Player · 2026-10-28
+
+### Adicionado
+- `src/player/Player.tsx`: investigador em primeira pessoa (pointer lock) com cápsula cinemática e o controlador de personagem do Rapier: desliza nas paredes, sobe degraus de até 30 cm e gruda no chão.
+- Andar (`WASD`), correr (`Shift`) e agachar segurando `C`. Agachado, a cápsula tem 0,65 m e passa por baixo das mesas; só levanta se houver espaço acima.
+- Vida e estamina (`src/player/playerStore.ts`); todos os números em `src/player/config.ts`.
+- Balanço de câmera ao andar, correr e agachar.
+- HUD: vidas, barras de vida e estamina, mira, aviso "clique para jogar" e tela de fim de jogo.
+- 3 vidas por nível: morrer custa uma e renasce no carro; o local da morte fica guardado para A COISA (0.10.0) e aparece nos marcadores (`G`). Sem vidas, fim de jogo; `Enter` recomeça.
+- `F1` alterna entre o investigador e a câmera de editor; `K` dá 25 de dano para testar.
+
+### Alterado
+- Física com passo variável (um passo por frame), para a câmera não tremer em telas de 120/144 Hz.
+- ROADMAP: 0.10.0 agora descreve A COISA, o espírito pacífico que foge com a cabeça do investigador.
+
 ## 0.0.1 — Novo conceito · 2026-10-28
 
 ### Alterado

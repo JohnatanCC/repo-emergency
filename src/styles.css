@@ -35,6 +35,75 @@ canvas.retro {
     1px 1px 0 #000;
 }
 
+.hud-top {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+.hud-top .hud-panel {
+  margin-top: 8px;
+}
+
+/* Vida, estamina e vidas: discretos, no canto inferior esquerdo */
+.hud-vitals {
+  width: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.hud-lives {
+  font-size: 18px;
+  letter-spacing: 3px;
+  color: #c9b98f;
+}
+.hud .bar {
+  height: 5px;
+  background: rgba(20, 16, 10, 0.7);
+  border: 1px solid #3a3020;
+}
+.hud .bar > div {
+  height: 100%;
+}
+.hud .bar.health > div {
+  background: #a8433a;
+}
+.hud .bar.stamina > div {
+  background: #c9b98f;
+}
+.hud .bar.stamina.exhausted > div {
+  background: #6a5a3a;
+}
+
+.hud-crosshair {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  margin: -2px 0 0 -2px;
+  background: rgba(232, 215, 168, 0.7);
+}
+.hud-center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 26px;
+  letter-spacing: 2px;
+  color: #e8d7a8;
+  text-align: center;
+}
+.hud-center.gameover {
+  font-size: 48px;
+  color: #a8433a;
+}
+.hud-center small {
+  display: block;
+  font-size: 20px;
+  color: #8a7a5a;
+}
+
 .hud-title {
   font-size: 28px;
   letter-spacing: 2px;

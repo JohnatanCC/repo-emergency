@@ -21,12 +21,17 @@ você chega de **carro**, invade o lugar, encontra as **relíquias** que o C.R.O
 ## ✅ 0.0.1 — Novo conceito
 - Projeto vira **Relicário** (investigação paranormal); dados do nível usam carro, relíquias, saque e as novas entidades
 
-## ⬜ 0.1.0 — Player
-- Controle em primeira pessoa (pointer lock) com corpo físico (Rapier, cápsula cinemática)
-- Andar, correr, agachar (altura do colisor muda, passa por baixo de mesas)
-- **Vida 100 / Estamina 100**: correr gasta, regenera parado/andando
-- Balanço de câmera, passos, HUD mínimo
-- Spawn no carro; câmera de editor vira atalho de debug (tecla `F1`)
+## ✅ 0.1.0 — Player
+- Controle em primeira pessoa (pointer lock) com corpo físico (Rapier, cápsula cinemática + controlador de personagem)
+- Andar (`WASD`), correr (`Shift`), agachar segurando `C`: a cápsula cai para 0,65 m e passa por baixo das mesas;
+  só levanta se houver espaço acima da cabeça
+- **Vida 100 / Estamina 100**: correr gasta, regenera depois de 1 s sem correr; zerada, só volta a correr com 30
+- Balanço de câmera, HUD mínimo (vidas, vida, estamina, mira)
+- Spawn no carro; `F1` alterna para a câmera de editor
+- **3 vidas**: morrer custa uma e renasce no carro; o local da morte fica guardado para A COISA (marcador no `G`);
+  sem vidas, fim de jogo (`Enter` recomeça). `K` dá 25 de dano para testar
+- Números todos em `src/player/config.ts`
+- Os passos com som ficam para a 0.5.0 (ainda não há sons)
 
 ## ⬜ 0.2.0 — Interação e portas
 - Raio de interação (mira no centro da tela) com dica contextual
@@ -81,9 +86,15 @@ Cada uma conversa com uma mecânica do jogo, para que fugir de cada uma seja dif
 - Largar o objeto liberta o Possessor, que persegue por um tempo
 - Extrair o objeto possuído: o C.R.O.S desconta do pagamento. **Roubar tem risco**
 
-## ⬜ 0.10.0 — Morte e falha
-- 💡 Morrer: você larga tudo o que carrega e acorda no carro com vida máxima menor
-- 💡 Segunda morte no mesmo nível: contrato falha, o saque não extraído é perdido
+## ⬜ 0.10.0 — Morte e A COISA
+- Morrer custa **uma vida** e o investigador renasce no carro (base pronta na 0.1.0)
+- No lugar da morte surge **A COISA**: um espírito negro segurando a **cabeça** do investigador
+  - Criatura única e **pacífica**: não ataca, só **foge** quando o jogador chega perto (usa a navmesh da 0.7.0)
+  - Alcançá-la faz soltar a cabeça; a cabeça é um item que vai **nas mãos** (regras da 0.3.0)
+  - Levar a cabeça de volta ao **carro** devolve a vida perdida
+  - Uma COISA por morte; várias mortes = várias COISAS espalhadas pelo mapa
+- 💡 A definir: A COISA corre mais quando você corre? Some no apagão? Entidades atacam quem está carregando a cabeça?
+- 💡 Ao morrer, o que estava no inventário e nas mãos cai no chão no local da morte
 
 ## ⬜ 0.11.0 — Loja do C.R.O.S
 - Comprar equipamento entre níveis: lanterna melhor, **mochila +1 espaço**, detector de relíquias, sal (afasta uma entidade por alguns segundos), kit médico…

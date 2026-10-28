@@ -7,7 +7,7 @@ Você é um investigador contratado pelo **C.R.O.S** (Centro de Recuperação de
 Dá para roubar objetos da casa para vender, mas o inventário só tem 3 espaços e o que é grande vai nas mãos.
 Tudo vai para o **extrator mágico**, que leva tudo de uma vez quando a meta de relíquias é cumprida. Depois é voltar vivo para o carro.
 
-Versão atual: **0.0.1 — Novo conceito** · próximas etapas em [`ROADMAP.md`](./ROADMAP.md)
+Versão atual: **0.1.0 — Player** · próximas etapas em [`ROADMAP.md`](./ROADMAP.md)
 
 ## Rodando
 
