@@ -1,5 +1,6 @@
 import { useGameStore } from './stores/gameStore'
 import { usePlayerStore } from '../player/playerStore'
+import { useItemStore } from '../items/itemStore'
 
 /**
  * Comandos de teste em `window.__relicario` (só em dev). Servem para testar
@@ -9,6 +10,7 @@ import { usePlayerStore } from '../player/playerStore'
 export const debugApi = {
   game: useGameStore,
   player: usePlayerStore,
+  items: useItemStore,
   /** Simula o mouse travado. */
   play: () => usePlayerStore.getState().setLocked(true),
   /** Segura uma tecla (KeyboardEvent.code) por `ms` milissegundos. */
@@ -26,6 +28,8 @@ export const debugApi = {
     window.dispatchEvent(new KeyboardEvent('keyup', { code, key }))
   },
   pos: (): [number, number, number] => [0, 0, 0],
+  /** O que a mira acertou no último frame (distância e se é interagível). */
+  aim: (): { dist: number; interactable: boolean } | null => null,
   look: (_yawDeg: number, _pitchDeg = 0) => {},
   tp: (_x: number, _z: number) => {},
 }

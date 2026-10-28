@@ -128,7 +128,8 @@ function Door({ opening, level, built }: { opening: Opening; level: LevelData; b
     const c = collider.current
     if (!c) return
     return registerInteractable(c.handle, {
-      label: () => (Math.abs(angle()) < 0.3 ? 'abrir porta' : 'fechar porta'),
+      kind: 'door',
+      label: () => ({ text: Math.abs(angle()) < 0.3 ? 'abrir porta' : 'fechar porta', ok: true }),
       use: ({ from, hard }) => {
         const closed = Math.abs(angle()) < 0.3
         let target = 0

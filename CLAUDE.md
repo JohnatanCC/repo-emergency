@@ -23,5 +23,7 @@ Conceito, mecânicas e ordem das versões: `ROADMAP.md`. Histórico: `CHANGELOG.
 - Testar no navegador com `preview_start` (config `dev` em `.claude/launch.json`).
 - O pointer lock não funciona no navegador automatizado. Em dev existe `window.__relicario`:
   - `play()` simula o mouse travado · `look(yawGraus, pitchGraus)` gira a câmera · `pos()` posição dos pés
-  - `hold('KeyW', ms)` segura uma tecla · `tp(x, z)` teleporta (coordenadas do mundo)
-  - `game` / `player` são os stores Zustand
+  - `hold('KeyW', ms)` segura uma tecla · `press('KeyE')` aperta · `tp(x, z)` teleporta (coordenadas do mundo)
+  - `aim()` o que a mira acertou (distância, se é interagível)
+  - `game` / `player` / `items` são os stores Zustand (ex.: `items.getState().pickUp(uid)`)
+- O painel do navegador oculto pausa os frames (0 fps): mostre-o com `show_pane` antes de testar.

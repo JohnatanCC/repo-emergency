@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { PLAYER } from './config'
+import type { Hint } from '../game/systems/interactables'
 
 /**
  * Estado do investigador que o HUD mostra. Separado do gameStore porque a
@@ -16,13 +17,13 @@ interface PlayerState {
   /** Muda a cada renascimento; o Player teleporta para o carro quando muda. */
   respawnId: number
   /** Dica da mira, ex.: "abrir porta" (null = nada na frente). */
-  hint: string | null
+  hint: Hint | null
   flashlight: boolean
   damage: (amount: number) => void
   setStamina: (stamina: number, exhausted: boolean) => void
   setCrouching: (crouching: boolean) => void
   setLocked: (locked: boolean) => void
-  setHint: (hint: string | null) => void
+  setHint: (hint: Hint | null) => void
   toggleFlashlight: () => void
   respawn: () => void
 }

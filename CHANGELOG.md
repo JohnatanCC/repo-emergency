@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.3.0 — Itens e inventário · 2026-10-28
+
+### Adicionado
+- Catálogo de itens (`src/items/catalog.ts`): relíquias (Sino de exorcismo, Relicário de prata, Boneca de porcelana, Espelho velado) e saque (castiçal, relógio, taça, vaso, caixa de joias, quadro, gramofone), com tamanho, valor, fragilidade e massa.
+- Itens físicos no mapa (`src/items/Items.tsx`), sorteados a cada partida: meta + 1 relíquias e o resto saque. Relíquias brilham de leve.
+- Inventário de 3 espaços para itens pequenos (`1`–`3`) e um item nas mãos (`src/items/itemStore.ts`); `Q` larga apoiando no chão.
+- Item nas mãos desenhado na frente da câmera (`src/items/HeldItem.tsx`). Médio: 8% mais lento. Grande: 25% mais lento, não corre e não abre portas.
+- Dano por impacto (acima de 3 m/s, multiplicado pela fragilidade) e barulho ao bater; abaixo de 10% do valor o item quebra.
+- Morrer derruba tudo o que carrega no local da morte.
+- HUD do inventário: espaços, mãos, valor carregado e relíquias.
+- Dica da mira indica quando a ação está bloqueada (ex.: "mãos ocupadas"); comando de teste `aim()`.
+
 ## 0.2.0 — Portas e lanterna · 2026-10-28
 
 ### Adicionado

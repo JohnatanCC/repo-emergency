@@ -11,9 +11,15 @@ export interface UseContext {
   hard: boolean
 }
 
+/** Dica da mira: texto e se dá para usar agora (false = mostra sem a tecla E). */
+export interface Hint {
+  text: string
+  ok: boolean
+}
+
 export interface Interactable {
-  /** Texto da dica, ex.: "abrir porta". */
-  label: () => string
+  kind: 'door' | 'item'
+  label: () => Hint
   use: (ctx: UseContext) => void
 }
 

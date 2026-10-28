@@ -7,7 +7,7 @@ Você é um investigador contratado pelo **C.R.O.S** (Centro de Recuperação de
 Dá para roubar objetos da casa para vender, mas o inventário só tem 3 espaços e o que é grande vai nas mãos.
 Tudo vai para o **extrator mágico**, que leva tudo de uma vez quando a meta de relíquias é cumprida. Depois é voltar vivo para o carro.
 
-Versão atual: **0.2.0 — Portas e lanterna** · próximas etapas em [`ROADMAP.md`](./ROADMAP.md)
+Versão atual: **0.3.0 — Itens e inventário** · próximas etapas em [`ROADMAP.md`](./ROADMAP.md)
 
 ## Rodando
 
@@ -29,6 +29,8 @@ Clique na tela para travar o mouse (`Esc` solta).
 | `C` (segurar) | agachar |
 | `E` · `Shift+E` | usar (abrir/fechar porta) · com força |
 | `F` | lanterna |
+| `E` (mirando um item) | pegar: pequeno vai para o inventário, médio/grande para as mãos |
+| `1` `2` `3` · `Q` | escolher espaço do inventário · largar (mãos primeiro) |
 
 ### Debug
 
@@ -56,7 +58,7 @@ src/
     systems/               ruído, spawn, extração… (próximas versões)
   world/                   gera e desenha o nível (greybox, luzes, móveis)
   player/                  0.1.0
-  items/                   0.3.0 (itens e inventário)
+  items/                   catálogo, itens físicos, inventário e mãos
   enemies/                 0.7.0+ (Guardiã, Sombra, Possessor)
   fx/                      pós-processamento retrô
   ui/                      HUD e telas

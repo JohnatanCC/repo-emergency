@@ -13,6 +13,8 @@ export const GROUP = {
 
 export const WORLD_GROUPS = interactionGroups(GROUP.WORLD)
 export const PLAYER_GROUPS = interactionGroups(GROUP.PLAYER)
+/** Itens batem em tudo. */
+export const ITEM_GROUPS = interactionGroups(GROUP.ITEM)
 export const DOOR_GROUPS = interactionGroups(GROUP.DOOR, [GROUP.PLAYER, GROUP.ITEM])
 /** Raio da mira: bate em tudo menos no próprio jogador. */
 export const AIM_GROUPS = interactionGroups(GROUP.PLAYER, [GROUP.WORLD, GROUP.DOOR, GROUP.ITEM])

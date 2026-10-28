@@ -11,6 +11,8 @@ import { PLAYER } from './config'
 import { usePlayerStore } from './playerStore'
 import { PLAYER_GROUPS } from '../game/physics'
 import { debugApi } from '../game/debug'
+import { useItemStore } from '../items/itemStore'
+import { CARRY } from '../items/catalog'
 
 /**
  * Investigador em primeira pessoa: cápsula cinemática movida pelo controlador
@@ -189,14 +191,18 @@ export function Player({ level, built }: { level: LevelData; built: BuiltLevel }
     const r = active ? (k.has('KeyD') ? 1 : 0) - (k.has('KeyA') ? 1 : 0) : 0
     const moving = f !== 0 || r !== 0
     const wantRun = active && (k.has('ShiftLeft') || k.has('ShiftRight'))
-    const running = wantRun && moving && f >= 0 && !st.crouched && !st.exhausted && player.stamina > 0
+    // item nas mãos: médio deixa um pouco mais lento; grande não deixa correr
+    const items = useItemStore.getState()
+    const held = items.hands ? items.items[items.hands]?.def.size : undefined
+    const carry = held === 'large' ? CARRY.speedLarge : held === 'medium' ? CARRY.speedMedium : 1
+    const running = wantRun && moving && f >= 0 && !st.crouched && !st.exhausted && player.stamina > 0 && held !== 'large'
 
     camera.getWorldDirection(tmp.fwd)
     tmp.fwd.y = 0
     tmp.fwd.normalize()
     tmp.right.crossVectors(tmp.fwd, UP)
     tmp.move.set(0, 0, 0).addScaledVector(tmp.fwd, f).addScaledVector(tmp.right, r)
-    const speed = st.crouched ? PLAYER.crouchSpeed : running ? PLAYER.runSpeed : PLAYER.walkSpeed
+    const speed = (st.crouched ? PLAYER.crouchSpeed : running ? PLAYER.runSpeed : PLAYER.walkSpeed) * carry
     if (moving) tmp.move.normalize().multiplyScalar(speed)
     st.vel.lerp(tmp.move, 1 - Math.exp(-PLAYER.acceleration * dt))
 
@@ -232,7 +238,10 @@ export function Player({ level, built }: { level: LevelData; built: BuiltLevel }
     // morte: perde uma vida e renasce no carro
     if (player.health <= 0 && !st.dead) {
       st.dead = true
-      game.loseLife([st.next.x, st.next.y - half() - R, st.next.z])
+      const deathAt: [number, number, number] = [st.next.x, st.next.y - half() - R, st.next.z]
+      // tudo o que carregava cai no local da morte
+      items.dropAll(deathAt)
+      game.loseLife(deathAt)
       if (useGameStore.getState().phase !== 'gameover') player.respawn()
     }
   })

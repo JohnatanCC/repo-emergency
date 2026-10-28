@@ -5,6 +5,7 @@ import { SOUNDS, playSound } from '../game/audio/sounds'
 import type { LevelData } from '../game/data/types'
 import { usePlayerStore } from '../player/playerStore'
 import { PLAYER } from '../player/config'
+import { isBroken, useItemStore, type ItemInstance } from '../items/itemStore'
 
 const TOGGLES: { key: string; flag: keyof DebugFlags; label: string }[] = [
   { key: 'g', flag: 'gizmos', label: 'Marcadores' },
@@ -40,8 +41,56 @@ function AimHint() {
   const hint = usePlayerStore((s) => s.hint)
   if (!hint) return null
   return (
-    <div className="hud-hint">
-      <kbd>E</kbd> {hint}
+    <div className={`hud-hint${hint.ok ? '' : ' blocked'}`}>
+      {hint.ok && <kbd>E</kbd>} {hint.text}
+    </div>
+  )
+}
+
+function SlotItem({ item }: { item: ItemInstance | undefined }) {
+  if (!item) return <span className="empty">vazio</span>
+  return (
+    <>
+      <span className={item.def.tag === 'relic' ? 'relic' : undefined}>
+        {item.def.name}
+        {isBroken(item) && ' (quebrado)'}
+      </span>
+      <small>${item.value}</small>
+    </>
+  )
+}
+
+/** Inventário (3 espaços), item nas mãos e total carregado (embaixo, no centro). */
+function Inventory() {
+  const items = useItemStore((s) => s.items)
+  const slots = useItemStore((s) => s.slots)
+  const selected = useItemStore((s) => s.selected)
+  const hands = useItemStore((s) => s.hands)
+  const carried = Object.values(items).filter((it) => it.place !== 'world')
+  const total = carried.reduce((sum, it) => sum + it.value, 0)
+  const relics = carried.filter((it) => it.def.tag === 'relic' && !isBroken(it)).length
+  return (
+    <div className="hud-inventory">
+      <div className="hands">
+        {hands ? (
+          <>
+            nas mãos: <SlotItem item={items[hands]} />
+          </>
+        ) : (
+          <span className="empty">mãos livres</span>
+        )}
+      </div>
+      <div className="slots">
+        {slots.map((uid, i) => (
+          <div key={i} className={`slot${i === selected ? ' selected' : ''}`}>
+            <kbd>{i + 1}</kbd>
+            <SlotItem item={uid ? items[uid] : undefined} />
+          </div>
+        ))}
+      </div>
+      <div className="total">
+        carregando ${total} · {relics} relíquia{relics === 1 ? '' : 's'}
+      </div>
     </div>
   )
 }
@@ -157,6 +206,16 @@ export function Hud({ level }: { level: LevelData }) {
                     <kbd>Esc</kbd> soltar mouse
                   </span>
                 </div>
+                <div className="row">
+                  <span>
+                    <kbd>1</kbd>
+                    <kbd>2</kbd>
+                    <kbd>3</kbd> espaço do inventário
+                  </span>
+                  <span>
+                    <kbd>Q</kbd> largar
+                  </span>
+                </div>
               </>
             ) : (
               <>
@@ -238,6 +297,7 @@ export function Hud({ level }: { level: LevelData }) {
       )}
 
       {cameraMode === 'player' && <Vitals />}
+      {cameraMode === 'player' && <Inventory />}
     </div>
   )
 }

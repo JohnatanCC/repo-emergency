@@ -44,14 +44,17 @@ você chega de **carro**, invade o lugar, encontra as **relíquias** que o C.R.O
 - **Lanterna** forte de mão (`F`, começa ligada), com sombras e um leve atraso ao virar
 - Grupos de colisão (`src/game/physics.ts`); comandos de teste `window.__relicario` em dev
 
-## ⬜ 0.3.0 — Itens e inventário
-- Itens com **categoria** (`relic` / `loot`), **tamanho** (`small` / `medium` / `large`), **valor** e **fragilidade**
-- **Inventário de 3 espaços** só para itens pequenos (teclas `1`–`3` para escolher, `Q` para largar)
-- Itens **médios e grandes vão nas mãos**, um por vez:
-  - médio: uma mão, ainda dá para abrir portas
-  - 💡 grande: duas mãos, não corre e não abre portas (precisa largar ou empurrar com o corpo)
-- Largar/derrubar item quebrável reduz o valor e faz barulho
-- Sorteio de itens por partida usando os `itemSpawns` do nível (pontos `relic` podem virar relíquia ou saque)
+## ✅ 0.3.0 — Itens e inventário
+- Catálogo (`src/items/catalog.ts`): 4 relíquias e 7 tipos de saque, com **categoria**, **tamanho**, **valor**, **fragilidade** e massa
+- **Inventário de 3 espaços** só para itens pequenos (`1`–`3` escolhem, `Q` larga); com o inventário cheio, o pequeno vai para as mãos
+- Itens **médios e grandes vão nas mãos**, um por vez, desenhados na frente da câmera:
+  - médio: uma mão (esquerda), 8% mais lento, ainda abre portas
+  - grande: duas mãos, 25% mais lento, não corre e não abre portas
+- `Q` apoia o item no chão sem estragar; impactos acima de 3 m/s tiram valor (× fragilidade) e fazem barulho; abaixo de 10% do valor, quebra
+- Sorteio por partida usando os `itemSpawns`: meta + 1 relíquias, o resto vira saque; recomeçar sorteia de novo
+- Relíquias brilham de leve (roxo) para dar para achar no escuro
+- Morrer: tudo o que carrega cai no local da morte
+- HUD: espaços, item nas mãos, valor carregado e número de relíquias
 
 ## ⬜ 0.4.0 — Carro, extrator e fluxo do nível
 - **Painel do carro**: meta de relíquias do contrato + valor do saque coletado

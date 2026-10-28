@@ -1,6 +1,6 @@
 {
   "name": "relicario",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Relicário — terror singleplayer de investigação paranormal (projeto pessoal, sem fins comerciais)",
   "scripts": {
     "dev": "vite",

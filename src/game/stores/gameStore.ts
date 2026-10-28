@@ -33,6 +33,8 @@ interface GameState {
   /** Onde o investigador morreu: ali surge A COISA segurando a cabeça (0.10.0). */
   deathSpots: [number, number, number][]
   money: number
+  /** Muda a cada recomeço: os itens são sorteados de novo. */
+  matchId: number
   /** performance.now() de quando a 1ª porta abriu (timer das entidades); null = ainda fechada. */
   enemyTimerStart: number | null
   cameraMode: CameraMode
@@ -59,6 +61,7 @@ export const useGameStore = create<GameState>((set) => ({
   lives: LIVES,
   deathSpots: [],
   money: 0,
+  matchId: 0,
   enemyTimerStart: null,
   cameraMode: 'player',
   debug: { gizmos: true, fullbright: false, retro: true, fog: true },
@@ -70,7 +73,7 @@ export const useGameStore = create<GameState>((set) => ({
       const lives = s.lives - 1
       return { lives, deathSpots: [...s.deathSpots, at], phase: lives <= 0 ? 'gameover' : s.phase }
     }),
-  restart: () => set({ lives: LIVES, deathSpots: [], phase: 'car', enemyTimerStart: null }),
+  restart: () => set((s) => ({ lives: LIVES, deathSpots: [], phase: 'car', enemyTimerStart: null, matchId: s.matchId + 1 })),
   toggleCameraMode: () => set((s) => ({ cameraMode: s.cameraMode === 'player' ? 'editor' : 'player' })),
   toggleDebug: (key) => set((s) => ({ debug: { ...s.debug, [key]: !s.debug[key] } })),
   toggleBlackout: () => set((s) => ({ phase: s.phase === 'blackout' ? 'car' : 'blackout' })),
