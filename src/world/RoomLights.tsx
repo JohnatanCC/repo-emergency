@@ -4,10 +4,12 @@ import * as THREE from 'three'
 import type { LevelData, LightLevel, Room } from '../game/data/types'
 import type { BuiltLevel } from './buildLevel'
 import { useGameStore } from '../game/stores/gameStore'
+import { LIGHTING } from '../game/config'
 
 /**
  * Luz por zona: "claro" perto do carro, "penumbra" no meio, "escuro" no fundo.
  * No apagão (após a extração) só o carro e o extrator continuam acesos.
+ * A luz de fundo (LIGHTING em game/config.ts) evita o preto total.
  *
  * Orçamento: three.js fica pesado com muitas point lights. Este nível usa ~15.
  * Se crescer, a 0.5.0 troca por um "pool" que acende só as lâmpadas mais
@@ -29,12 +31,18 @@ function Lamp({ position, preset, seed }: { position: [number, number, number]; 
     // pisca de vez em quando, não o tempo todo
     const glitch = Math.sin(t * 0.7) > 0.93 ? (Math.sin(t * 47) > 0 ? 0.15 : 1) : 1
     const k = (0.85 + Math.sin(t * 3.1) * 0.08 + Math.sin(t * 11.3) * 0.05) * glitch
-    light.current.intensity = preset.intensity * k
+    light.current.intensity = preset.intensity * LIGHTING.lampScale * k
     if (bulb.current) bulb.current.color.setScalar(k).multiply(new THREE.Color(preset.color))
   })
   return (
     <group position={position}>
-      <pointLight ref={light} color={preset.color} intensity={preset.intensity} distance={preset.distance} decay={1.6} />
+      <pointLight
+        ref={light}
+        color={preset.color}
+        intensity={preset.intensity * LIGHTING.lampScale}
+        distance={preset.distance}
+        decay={1.6}
+      />
       <mesh>
         <sphereGeometry args={[0.08, 6, 4]} />
         <meshBasicMaterial ref={bulb} color={preset.color} />
@@ -64,8 +72,11 @@ export function RoomLights({ level, built }: { level: LevelData; built: BuiltLev
 
   return (
     <group>
-      <ambientLight color="#4a5070" intensity={fullbright ? 2.2 : blackout ? 0.02 : 0.06} />
-      {fullbright && <hemisphereLight args={['#ffffff', '#444444', 1.2]} />}
+      {fullbright ? (
+        <hemisphereLight args={['#ffffff', '#444444', 3]} />
+      ) : (
+        <hemisphereLight args={[LIGHTING.fillSky, LIGHTING.fillGround, blackout ? LIGHTING.fillBlackout : LIGHTING.fill]} />
+      )}
 
       {level.rooms.map((room) => {
         // a luz roxa do extrator fica em Extractor.tsx (pulsa ao carregar)

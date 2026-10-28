@@ -13,6 +13,8 @@ import type { LevelData } from '../game/data/types'
 import type { BuiltLevel } from '../world/buildLevel'
 import { ITEM_GROUPS } from '../game/physics'
 import { emitNoise } from '../game/systems/noise'
+import { audio } from '../game/audio/engine'
+import { AUDIO } from '../game/audio/sounds'
 import { registerInteractable } from '../game/systems/interactables'
 import { useGameStore } from '../game/stores/gameStore'
 import { CARRY, RELIC_GLOW, type ItemDef } from './catalog'
@@ -88,17 +90,26 @@ function WorldItem({ item }: { item: ItemInstance }) {
         return go ? { text: `pegar ${itemLabel(it)}`, ok: true } : { text: `${itemLabel(it)} — mãos ocupadas`, ok: false }
       },
       use: () => {
-        useItemStore.getState().pickUp(uid)
+        if (useItemStore.getState().pickUp(uid)) audio.play('rustle', { volume: 0.6 })
       },
     })
   }, [uid])
 
   const onImpact = () => {
     const speed = st.speed
+    const p = body.current?.translation()
+    if (!p || speed < 1.2) return
+    const pos: [number, number, number] = [p.x, p.y, p.z]
+    // som em qualquer batida; frágil que bateu forte estilhaça
+    const breaks = speed > CARRY.safeImpact && item.def.fragility >= 0.8
+    audio.play(breaks ? 'shatter' : 'thunk', {
+      pos,
+      volume: AUDIO.items * Math.min(1, speed / 6),
+      rate: breaks ? 1 : 1.3 - Math.min(item.def.mass, 10) / 20,
+    })
     if (speed <= CARRY.safeImpact) return
     useItemStore.getState().impact(uid, speed)
-    const p = body.current?.translation()
-    if (p) emitNoise({ pos: [p.x, p.y, p.z], radius: speed * CARRY.noisePerImpact, type: 'item' })
+    emitNoise({ pos, radius: speed * CARRY.noisePerImpact, type: 'item' })
   }
 
   return (

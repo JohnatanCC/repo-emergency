@@ -11,6 +11,9 @@ export type LightLevel = 'lit' | 'dim' | 'dark' | 'moon'
 export type FloorType = 'metal' | 'wood' | 'checker' | 'tile' | 'grass' | 'carpet'
 export type WallType = 'metal' | 'wallpaper' | 'panel' | 'brick' | 'tile'
 
+/** drip = goteira · clock = relógio de pêndulo · crickets = grilos */
+export type AmbientSound = 'drip' | 'clock' | 'crickets'
+
 export type RoomKind = 'car' | 'corridor' | 'room' | 'outdoor' | 'extraction'
 
 export interface Rect {
@@ -27,6 +30,8 @@ export interface Room extends Rect {
   light: LightLevel
   floor: FloorType
   wall: WallType
+  /** Sons de ambiente que saem desta sala (posicionais). */
+  ambient?: AmbientSound[]
 }
 
 /**

@@ -14,6 +14,10 @@ import { debugApi } from '../game/debug'
 import { useItemStore } from '../items/itemStore'
 import { CARRY } from '../items/catalog'
 import { playerFeet } from './playerPos'
+import { FLOOR_NOISE } from './config'
+import { emitNoise } from '../game/systems/noise'
+import { audio } from '../game/audio/engine'
+import { AUDIO } from '../game/audio/sounds'
 
 /**
  * Investigador em primeira pessoa: cápsula cinemática movida pelo controlador
@@ -36,7 +40,12 @@ const UP = new THREE.Vector3(0, 1, 0)
 function useKeys() {
   const keys = useRef(new Set<string>())
   useEffect(() => {
-    const down = (e: KeyboardEvent) => keys.current.add(e.code)
+    const down = (e: KeyboardEvent) => {
+      keys.current.add(e.code)
+      // Ctrl agacha: bloqueia os atalhos do navegador com Ctrl enquanto joga
+      // (Ctrl+W/T/N não dá para bloquear fora da tela cheia)
+      if (e.ctrlKey && document.pointerLockElement) e.preventDefault()
+    }
     const up = (e: KeyboardEvent) => keys.current.delete(e.code)
     const clear = () => keys.current.clear()
     window.addEventListener('keydown', down)
@@ -80,6 +89,8 @@ export function Player({ level, built }: { level: LevelData; built: BuiltLevel }
     eye: PLAYER.standEye,
     bob: 0,
     bobAmp: 0,
+    /** Último meio ciclo do balanço que virou passo. */
+    lastStep: 0,
     next: new THREE.Vector3(spawn.x, spawn.y, spawn.z),
   }).current
   const tmp = useMemo(() => ({ fwd: new THREE.Vector3(), right: new THREE.Vector3(), move: new THREE.Vector3() }), [])
@@ -89,7 +100,9 @@ export function Player({ level, built }: { level: LevelData; built: BuiltLevel }
     c.enableAutostep(0.3, 0.2, false)
     c.enableSnapToGround(0.3)
     c.setMaxSlopeClimbAngle((45 * Math.PI) / 180)
+    // empurra portas e itens ao encostar
     c.setApplyImpulsesToDynamicBodies(true)
+    c.setCharacterMass(PLAYER.mass)
     controller.current = c
     return () => {
       world.removeCharacterController(c)
@@ -173,8 +186,8 @@ export function Player({ level, built }: { level: LevelData; built: BuiltLevel }
       st.growNext = false
     }
 
-    // agachar (segurar C)
-    const wantCrouch = active && k.has('KeyC')
+    // agachar (segurar C ou Ctrl)
+    const wantCrouch = active && (k.has('KeyC') || k.has('ControlLeft') || k.has('ControlRight'))
     if (wantCrouch && !st.crouched) {
       col.setHalfHeight(CROUCH_HALF)
       st.crouched = true
@@ -236,6 +249,23 @@ export function Player({ level, built }: { level: LevelData; built: BuiltLevel }
     const ampTarget = st.grounded && hSpeed > 0.3 ? (st.crouched ? PLAYER.bobCrouch : running ? PLAYER.bobRun : PLAYER.bobWalk) : 0
     st.bobAmp += (ampTarget - st.bobAmp) * (1 - Math.exp(-8 * dt))
     st.bob += dt * hSpeed * PLAYER.bobFrequency
+
+    // passo: cada meio ciclo do balanço (quando a cabeça desce) com o jogador andando no chão
+    const stepIdx = Math.floor(st.bob / Math.PI)
+    if (stepIdx !== st.lastStep) {
+      st.lastStep = stepIdx
+      if (st.grounded && hSpeed > 0.5) {
+        const floor = built.roomAt(st.next.x, st.next.z)?.floor ?? 'wood'
+        const [radius, volume] = st.crouched
+          ? [PLAYER.stepNoiseCrouch, PLAYER.stepVolumeCrouch]
+          : running
+            ? [PLAYER.stepNoiseRun, PLAYER.stepVolumeRun]
+            : [PLAYER.stepNoiseWalk, PLAYER.stepVolumeWalk]
+        const feet: [number, number, number] = [st.next.x, st.next.y - half() - R + 0.05, st.next.z]
+        emitNoise({ pos: feet, radius: radius * FLOOR_NOISE[floor], type: 'footstep' })
+        audio.play(`step-${floor}`, { pos: feet, volume: AUDIO.steps * volume, rate: 0.9 + Math.random() * 0.2 })
+      }
+    }
     const eyeTarget = st.crouched ? PLAYER.crouchEye : PLAYER.standEye
     st.eye += (eyeTarget - st.eye) * (1 - Math.exp(-12 * dt))
 

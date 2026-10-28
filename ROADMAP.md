@@ -67,11 +67,23 @@ você chega de **carro**, invade o lugar, encontra as **relíquias** que o C.R.O
   (itens sorteados de novo, portas fechadas, vidas cheias)
 - 💡 A definir: itens trazidos ao carro sem passar pelo extrator também valem? Entidades reaparecem no apagão (0.7.0+)
 
-## ⬜ 0.5.0 — Ruído e áudio
-- Passos e itens caindo também emitem ruído (`emitNoise` já existe desde a 0.2.0)
-- Áudio posicional 3D, ambiência, batimento cardíaco por proximidade
-- 💡 **Bateria da lanterna** (importante para a Sombra); pool de luzes (só as lâmpadas próximas ficam ativas)
-- Sons só próprios ou de licença livre (freesound.org), com créditos no README
+## ✅ 0.5.0 — Ruído e áudio
+- **Todos os sons gerados por código** (`src/game/audio/synth.ts`), sem arquivos; qualquer um pode ser trocado por
+  arquivo próprio ou de licença livre em `SOUND_FILES` (`sounds.ts`)
+- Áudio posicional 3D (HRTF) com o ouvinte na câmera; `M` deixa mudo
+- **Passos** com som do piso (metal, madeira, xadrez, azulejo, grama, carpete) e ruído: agachado 1,5 m, andando 6 m,
+  correndo 12 m, × piso (carpete abafa, metal espalha)
+- Portas rangem / batem, itens fazem barulho ao bater (taça e porcelana estilhaçam), lanterna dá clique, pegar item farfalha
+- Extrator: zumbido, tom subindo durante a carga, sopro com estrondo na extração
+- Ambiência da casa por fase (mais grave e alta no apagão), rangidos distantes aleatórios
+- **Dentro × fora**: vento forte no pátio e no carro, abafado dentro da casa; trovões distantes (abafados dentro)
+- Sons por sala nos dados (`ambient` em `mansion-01.ts`): relógio de pêndulo no Salão, goteira no Banheiro, grilos no Pátio
+- **Portas viram física livre**: abrem ao encostar (investigador, itens e, depois, entidades); `E` continua abrindo/fechando
+- Iluminação mais escura (lâmpadas mais fracas) com luz de fundo que evita o preto total (`LIGHTING` em `src/game/config.ts`)
+- Agachar também com `Ctrl` (`Ctrl+W` ainda fecha a aba: o navegador não deixa bloquear fora da tela cheia)
+- Batimento cardíaco pelo nível de perigo (`src/game/systems/danger.ts`, as entidades vão alimentar); por enquanto a fase dá a tensão
+- Debug: anéis de ruído no chão (`G`) com o raio de alcance de cada barulho
+- 💡 Bateria da lanterna passou para a 0.8.0 (Sombra); pool de luzes fica para quando o mapa crescer (0.12.0)
 
 ## ⬜ 0.6.0 — Esconderijos
 - Agachar debaixo de mesas e cadeiras
@@ -91,6 +103,7 @@ Cada uma conversa com uma mecânica do jogo, para que fugir de cada uma seja dif
 - Vive nas salas `dark`. **Só se move quando não está no feixe da lanterna**
 - Iluminada, congela, mas a lanterna descarrega mais rápido enquanto você a encara
 - Encostar = dano alto; não entra em salas `lit`
+- **Bateria da lanterna** (entra junto com a Sombra): gasta ligada, recarrega no carro; pilhas como item pequeno
 
 ### ⬜ 0.9.0 — O Possessor
 - Entra em **um objeto de saque** aleatório por partida; o objeto parece normal

@@ -1,3 +1,4 @@
+import { advance } from '@react-three/fiber'
 import { useGameStore } from './stores/gameStore'
 import { usePlayerStore } from '../player/playerStore'
 import { useItemStore } from '../items/itemStore'
@@ -7,21 +8,31 @@ import { useItemStore } from '../items/itemStore'
  * sem pointer lock, por exemplo no navegador automatizado. O Player preenche
  * `pos`, `look` e `tp` quando monta.
  */
+/**
+ * Avança o jogo por `ms` milissegundos desenhando frames à mão. Com o painel
+ * do navegador escondido o requestAnimationFrame para, e sem isso nada se mexe.
+ */
+async function tick(ms: number) {
+  const end = performance.now() + ms
+  while (performance.now() < end) {
+    advance(performance.now())
+    await new Promise((r) => setTimeout(r, 16))
+  }
+}
+
 export const debugApi = {
   game: useGameStore,
   player: usePlayerStore,
   items: useItemStore,
   /** Simula o mouse travado. */
   play: () => usePlayerStore.getState().setLocked(true),
-  /** Segura uma tecla (KeyboardEvent.code) por `ms` milissegundos. */
-  hold: (code: string, ms: number) =>
-    new Promise<void>((resolve) => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { code }))
-      setTimeout(() => {
-        window.dispatchEvent(new KeyboardEvent('keyup', { code }))
-        resolve()
-      }, ms)
-    }),
+  tick,
+  /** Segura uma tecla (KeyboardEvent.code) por `ms` milissegundos, avançando os frames. */
+  hold: async (code: string, ms: number) => {
+    window.dispatchEvent(new KeyboardEvent('keydown', { code }))
+    await tick(ms)
+    window.dispatchEvent(new KeyboardEvent('keyup', { code }))
+  },
   /** Aperta uma tecla uma vez. */
   press: (code: string, key = '') => {
     window.dispatchEvent(new KeyboardEvent('keydown', { code, key }))

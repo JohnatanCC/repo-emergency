@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.5.0 — Ruído e áudio · 2026-10-28
+
+### Adicionado
+- Sons gerados por código (`src/game/audio/synth.ts`): passos por piso, rangido e batida de porta, impacto, estilhaço, farfalhar, clique, ambiência, zumbido, carga e extração do extrator, batimento. Podem ser trocados por arquivos em `SOUND_FILES`.
+- Motor de áudio 3D (`src/game/audio/engine.ts`) com HRTF, loops e mudo (`M`); ouvinte e ambiência no `AudioDirector`.
+- Passos com som e ruído conforme o andar (agachado/andando/correndo) e o piso da sala (`roomAt` no `buildLevel`).
+- Sons em portas, itens (frágeis estilhaçam), lanterna, pegar item e extrator.
+- Ambiência que muda com a fase, rangidos distantes e batimento cardíaco ligado ao nível de perigo (`src/game/systems/danger.ts`).
+- Debug: anéis de ruído (`G`) e `tick(ms)` em `window.__relicario`, que avança os frames à mão para testar com o painel oculto.
+- Ambiência de dentro e de fora: vento forte lá fora e abafado na casa, trovões distantes, e sons por sala definidos nos dados (`ambient`: relógio no Salão, goteira no Banheiro, grilos no Pátio).
+- Agachar também com `Ctrl`; atalhos do navegador com `Ctrl` ficam bloqueados enquanto o mouse está travado (menos `Ctrl+W/T/N`).
+
+### Alterado
+- Portas viram física livre (só atrito): abrem ao encostar o corpo, itens ou, no futuro, entidades. `E` continua abrindo/fechando e depois a porta volta a ficar solta.
+- O investigador tem massa (70 kg) para empurrar portas e itens.
+- Iluminação: lâmpadas 38% mais fracas e uma luz de fundo azulada (céu/chão) no lugar da ambiente quase zero. Fica mais escuro, mas nunca preto total: sem lanterna ainda dá para ver os contornos. Números em `LIGHTING` (`src/game/config.ts`).
+- Testador de som do painel lista os sons do jogo.
+
 ## 0.4.0 — Extrator e contrato · 2026-10-28
 
 ### Adicionado

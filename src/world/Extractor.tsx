@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import type { LevelData } from '../game/data/types'
@@ -9,6 +9,8 @@ import { useGameStore, type ExtractorContents } from '../game/stores/gameStore'
 import { emitNoise } from '../game/systems/noise'
 import { useItemStore, isBroken } from '../items/itemStore'
 import { itemBodies } from '../items/bodies'
+import { audio, type LoopHandle } from '../game/audio/engine'
+import { AUDIO } from '../game/audio/sounds'
 
 /**
  * Extrator mágico (sala roxa). Itens largados dentro da sala ficam
@@ -23,6 +25,11 @@ const same = (a: ExtractorContents, b: ExtractorContents) =>
 export function Extractor({ level, built }: { level: LevelData; built: BuiltLevel }) {
   const light = useRef<THREE.PointLight>(null)
   const flash = useRef(0)
+  const sound = useRef<{ hum: LoopHandle | null; charge: LoopHandle | null; status: string }>({
+    hum: null,
+    charge: null,
+    status: 'idle',
+  })
 
   const area = useMemo(() => {
     const room = level.rooms.find((r) => r.kind === 'extraction')
@@ -33,8 +40,41 @@ export function Extractor({ level, built }: { level: LevelData; built: BuiltLeve
     return { x0: x0 + t, x1: x1 - t, z0: z0 + t, z1: z1 - t, center: built.toWorld(room.x + room.w / 2, room.y + room.h / 2, 1.2) }
   }, [level, built])
 
+  // zumbido parado na sala enquanto o extrator existir
+  useEffect(() => {
+    if (!area) return
+    const s = sound.current
+    s.hum = audio.loop('hum', { pos: area.center, volume: AUDIO.extractor * 0.4 })
+    return () => {
+      s.hum?.stop()
+      s.charge?.stop()
+      s.hum = s.charge = null
+    }
+  }, [area])
+
+  /** Sons quando o estado do extrator muda. */
+  const onStatus = (status: string) => {
+    const s = sound.current
+    if (status === s.status || !area) return
+    s.charge?.stop()
+    s.charge = null
+    if (status === 'charging') {
+      s.charge = audio.loop('charge', { pos: area.center, volume: AUDIO.extractor })
+      s.hum?.setRate(1.5)
+      s.hum?.setVolume(AUDIO.extractor * 0.7)
+    } else if (status === 'done') {
+      audio.play('whoosh', { pos: area.center, volume: 1 })
+      s.hum?.setVolume(0, 1.5)
+    } else {
+      s.hum?.setRate(1)
+      s.hum?.setVolume(AUDIO.extractor * 0.4)
+    }
+    s.status = status
+  }
+
   useFrame(({ clock }, dt) => {
     if (!area) return
+    onStatus(useGameStore.getState().extractor.status)
     const game = useGameStore.getState()
     const items = useItemStore.getState()
     const ex = game.extractor

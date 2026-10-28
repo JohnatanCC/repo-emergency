@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { VERSION, VERSION_NAME } from '../game/version'
 import { isPaused, payout, useGameStore, type DebugFlags } from '../game/stores/gameStore'
 import { EXTRACTION } from '../game/config'
-import { SOUNDS, playSound } from '../game/audio/sounds'
+import { audio, SOUND_IDS } from '../game/audio/engine'
+import type { SoundId } from '../game/audio/sounds'
 import type { LevelData } from '../game/data/types'
 import { usePlayerStore } from '../player/playerStore'
 import { PLAYER } from '../player/config'
@@ -17,11 +18,6 @@ const TOGGLES: { key: string; flag: keyof DebugFlags; label: string }[] = [
 
 /** Dano da tecla K, para testar morte e renascimento. */
 const DEBUG_DAMAGE = 25
-
-/** Todos os sons do manifesto como "grupo: nome", para o teste no painel. */
-const SOUND_LIST = Object.entries(SOUNDS).flatMap(([group, sounds]) =>
-  Object.entries(sounds).map(([name, src]) => ({ id: `${group}.${name}`, label: `${group}: ${name}`, src })),
-)
 
 /** Contagem da 1ª porta até as entidades (só informativo enquanto elas não existem). */
 function EnemyTimer({ delay }: { delay: number }) {
@@ -191,7 +187,8 @@ export function Hud({ level }: { level: LevelData }) {
   const cycleVisit = useGameStore((s) => s.cycleVisit)
   const visitRoom = useGameStore((s) => s.visitRoom)
   const locked = usePlayerStore((s) => s.locked)
-  const [sound, setSound] = useState(SOUND_LIST[0]?.id ?? '')
+  const [sound, setSound] = useState<SoundId>('creak')
+  const [muted, setMuted] = useState(false)
   const [panel, setPanel] = useState(true)
 
   useEffect(() => {
@@ -210,7 +207,11 @@ export function Hud({ level }: { level: LevelData }) {
       if (k === 'v' && useGameStore.getState().cameraMode === 'editor') cycleVisit(level.rooms.length)
       if (k === 'h') setPanel((v) => !v)
       if (k === 'k') usePlayerStore.getState().damage(DEBUG_DAMAGE)
-      if (k === 'f' && useGameStore.getState().cameraMode === 'player') usePlayerStore.getState().toggleFlashlight()
+      if (k === 'm') setMuted(audio.toggleMute())
+      if (k === 'f' && useGameStore.getState().cameraMode === 'player') {
+        usePlayerStore.getState().toggleFlashlight()
+        audio.play('click', { volume: 0.5 })
+      }
       if (k === 'enter' && useGameStore.getState().phase === 'gameover') {
         useGameStore.getState().restart()
         usePlayerStore.getState().respawn()
@@ -264,7 +265,7 @@ export function Hud({ level }: { level: LevelData }) {
                 </div>
                 <div className="row">
                   <span>
-                    <kbd>C</kbd> agachar (segurar)
+                    <kbd>C</kbd>/<kbd>Ctrl</kbd> agachar
                   </span>
                   <span>
                     <kbd>F</kbd> lanterna
@@ -328,25 +329,22 @@ export function Hud({ level }: { level: LevelData }) {
                 <kbd>K</kbd> Tomar {DEBUG_DAMAGE} de dano
               </span>
             </div>
-            {SOUND_LIST.length > 0 && (
-              <div className="row" style={{ marginTop: 6 }}>
-                <select value={sound} onChange={(e) => setSound(e.target.value)}>
-                  {SOUND_LIST.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.label}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  onClick={() => {
-                    const s = SOUND_LIST.find((s) => s.id === sound)
-                    if (s) playSound(s.src)
-                  }}
-                >
-                  ▶ tocar
-                </button>
-              </div>
-            )}
+            <div className="row">
+              <span>
+                <kbd>M</kbd> Som
+              </span>
+              <span className={muted ? 'off' : 'on'}>{muted ? 'mudo' : 'ligado'}</span>
+            </div>
+            <div className="row" style={{ marginTop: 6 }}>
+              <select value={sound} onChange={(e) => setSound(e.target.value as SoundId)}>
+                {SOUND_IDS.map((id) => (
+                  <option key={id} value={id}>
+                    {id}
+                  </option>
+                ))}
+              </select>
+              <button onClick={() => audio.play(sound)}>▶ tocar</button>
+            </div>
             <div className="row" style={{ marginTop: 4 }}>
               <span>
                 <kbd>H</kbd> esconder painel

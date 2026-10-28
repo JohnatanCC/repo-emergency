@@ -31,6 +31,8 @@ export interface BuiltLevel {
   openings: Opening[]
   /** Converte coordenada de planta em posição do mundo (y = altura). */
   toWorld: (x: number, y: number, height?: number) => Vec3
+  /** Sala que contém o ponto do mundo (x, z), se houver. */
+  roomAt: (x: number, z: number) => Room | undefined
   center: { x: number; y: number }
   size: { w: number; d: number }
 }
@@ -166,6 +168,11 @@ export function buildLevel(level: LevelData): BuiltLevel {
     floors,
     openings,
     toWorld,
+    roomAt: (x, z) => {
+      const px = x / s + cx
+      const py = z / s + cy
+      return level.rooms.find((r) => px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h)
+    },
     center: { x: cx, y: cy },
     size: { w: (maxX - minX) * s, d: (maxY - minY) * s },
   }

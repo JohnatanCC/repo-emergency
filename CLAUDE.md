@@ -26,4 +26,5 @@ Conceito, mecânicas e ordem das versões: `ROADMAP.md`. Histórico: `CHANGELOG.
   - `hold('KeyW', ms)` segura uma tecla · `press('KeyE')` aperta · `tp(x, z)` teleporta (coordenadas do mundo)
   - `aim()` o que a mira acertou (distância, se é interagível)
   - `game` / `player` / `items` são os stores Zustand (ex.: `items.getState().pickUp(uid)`)
-- O painel do navegador oculto pausa os frames (0 fps): mostre-o com `show_pane` antes de testar.
+- O painel do navegador oculto pausa os frames (0 fps). `tick(ms)` avança o jogo à mão (`hold` já usa);
+  use `await tick(…)` no lugar de `setTimeout` quando o teste precisa que o tempo passe no jogo.

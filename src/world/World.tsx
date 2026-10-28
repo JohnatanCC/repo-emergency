@@ -16,6 +16,8 @@ import { Gizmos } from './Gizmos'
 import { EditorCamera } from './EditorCamera'
 import { Extractor } from './Extractor'
 import { LevelFlow } from './LevelFlow'
+import { NoiseRings } from './NoiseRings'
+import { AudioDirector } from '../game/audio/AudioDirector'
 
 /** Tudo que existe no nível: geometria, móveis, luz, investigador e (debug) marcadores. */
 export function World({ level }: { level: LevelData }) {
@@ -35,12 +37,14 @@ export function World({ level }: { level: LevelData }) {
       <Extractor level={level} built={built} />
       <RoomLights level={level} built={built} />
       {gizmos && <Gizmos level={level} built={built} />}
+      {gizmos && <NoiseRings />}
       <Player level={level} built={built} />
       <Interaction />
       <ItemControls />
       {cameraMode === 'player' && <HeldItem />}
       {cameraMode === 'player' && <Flashlight />}
       <LevelFlow level={level} built={built} />
+      <AudioDirector level={level} built={built} />
       {/* F1: câmera livre do modo editor */}
       {cameraMode === 'editor' && <EditorCamera level={level} built={built} />}
       {/* 0.7.0+: <Enemies /> · 0.10.0: <ACoisa /> */}

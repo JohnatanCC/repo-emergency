@@ -1,9 +1,13 @@
+import type { FloorType } from '../game/data/types'
+
 /**
  * Números do investigador. Ajuste aqui, sem mexer na lógica do Player.
  * Distâncias em metros, velocidades em m/s.
  */
 export const PLAYER = {
   radius: 0.25,
+  /** kg; quanto o corpo empurra portas e itens ao encostar. */
+  mass: 70,
   /** Altura total em pé / agachado. O tampo das mesas fica a 0.72 m: agachado precisa caber embaixo. */
   standHeight: 1.7,
   crouchHeight: 0.65,
@@ -36,6 +40,25 @@ export const PLAYER = {
 
   /** Alcance da mira para usar portas e itens. */
   interactRange: 2.2,
+
+  /** Barulho de cada passo (raio em metros, antes do piso). */
+  stepNoiseCrouch: 1.5,
+  stepNoiseWalk: 6,
+  stepNoiseRun: 12,
+  /** Volume do passo por andar (0–1). */
+  stepVolumeCrouch: 0.3,
+  stepVolumeWalk: 0.65,
+  stepVolumeRun: 1,
+}
+
+/** Quanto cada piso espalha o barulho dos passos. */
+export const FLOOR_NOISE: Record<FloorType, number> = {
+  carpet: 0.6,
+  grass: 0.7,
+  wood: 1,
+  checker: 1,
+  tile: 1.1,
+  metal: 1.3,
 }
 
 /** Lanterna de mão (tecla F, começa ligada). Luz forte e estreita, com sombras. */

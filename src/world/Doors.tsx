@@ -13,6 +13,8 @@ import type { BuiltLevel } from './buildLevel'
 import { DOOR_HEIGHT, WALL_THICKNESS } from './buildLevel'
 import { DOOR_GROUPS } from '../game/physics'
 import { emitNoise } from '../game/systems/noise'
+import { audio } from '../game/audio/engine'
+import { AUDIO } from '../game/audio/sounds'
 import { registerInteractable } from '../game/systems/interactables'
 import { useGameStore } from '../game/stores/gameStore'
 import { getTexture } from './textures'
@@ -21,9 +23,10 @@ import { getTexture } from './textures'
  * Portas com dobradiça. Corpo dinâmico preso por uma junta de revolução;
  * só colide com o jogador e itens (as paredes ficam de fora, ver physics.ts).
  *
- * - Fechada: fica trancada no lugar por um motor. `E` abre devagar, para o lado
- *   oposto ao jogador. `Shift+E` abre/fecha com força e faz barulho.
- * - Aberta: solta, o jogador consegue empurrar com o corpo.
+ * - Física livre (só atrito): qualquer corpo que encostar empurra a porta —
+ *   investigador, itens e, depois, as entidades.
+ * - `E` abre devagar, para o lado oposto ao jogador; `Shift+E` abre/fecha com
+ *   força e faz barulho. Ao chegar, a porta volta a ficar solta.
  * - Fechar rápido demais conta como batida (barulho alto).
  */
 
@@ -39,8 +42,7 @@ export const DOOR = {
   /** Motor (modelo por aceleração): rigidez e amortecimento. */
   soft: { stiffness: 14, damping: 7.5 },
   hard: { stiffness: 140, damping: 9 },
-  latch: { stiffness: 60, damping: 15 },
-  /** Atrito quando solta. */
+  /** Atrito quando solta: maior = mais difícil de empurrar e para mais rápido. */
   friction: 2.5,
   /** Barulho (raio em metros). */
   noiseSoft: 4,
@@ -88,7 +90,9 @@ function Door({ opening, level, built }: { opening: Opening; level: LevelData; b
 
   const st = useRef({
     /** Ângulo alvo do motor; null = solta. */
-    target: 0 as number | null,
+    target: null as number | null,
+    /** Atrito já configurado no motor (no primeiro passo da física). */
+    ready: false,
     hard: false,
     until: 0,
     prevAngle: 0,
@@ -115,14 +119,6 @@ function Door({ opening, level, built }: { opening: Opening; level: LevelData; b
     }
   }
 
-  // começa fechada e trancada
-  useEffect(() => {
-    const id = requestAnimationFrame(() => {
-      joint.current?.configureMotorPosition(0, DOOR.latch.stiffness, DOOR.latch.damping)
-    })
-    return () => cancelAnimationFrame(id)
-  }, [joint])
-
   // a mira encontra a porta pelo colisor
   useEffect(() => {
     const c = collider.current
@@ -141,6 +137,8 @@ function Door({ opening, level, built }: { opening: Opening; level: LevelData; b
         drive(target, hard)
         const [x, , z] = g.hinge
         emitNoise({ pos: [x, 1, z], radius: hard ? DOOR.noiseHard : DOOR.noiseSoft, type: hard ? 'doorSlam' : 'door' })
+        // com força o rangido é curto e alto; a batida (se fechar) vem da detecção abaixo
+        audio.play('creak', { pos: [x, 1.2, z], volume: AUDIO.doors * (hard ? 1 : 0.7), rate: hard ? 1.7 : 0.9 + Math.random() * 0.2 })
       },
     })
   }, [g])
@@ -164,17 +162,18 @@ function Door({ opening, level, built }: { opening: Opening; level: LevelData; b
       st.lastSlam = now
       const [x, , z] = g.hinge
       emitNoise({ pos: [x, 1, z], radius: DOOR.noiseSlam, type: 'doorSlam' })
+      audio.play('slam', { pos: [x, 1.2, z], volume: AUDIO.doors })
+    }
+
+    // começa fechada e solta, só com atrito
+    if (!st.ready) {
+      st.ready = true
+      j.configureMotorVelocity(0, DOOR.friction)
     }
 
     if (st.target === null) return
-    const reached = Math.abs(a - st.target) < 0.04
-    if (st.target === 0 && (reached || (Math.abs(a) < 0.1 && now > st.until))) {
-      // fechou: tranca de novo
-      j.configureMotorPosition(0, DOOR.latch.stiffness, DOOR.latch.damping)
-    } else if (st.target !== 0 && (reached || now > st.until)) {
-      // abriu: solta para poder ser empurrada
-      drive(null, false)
-    }
+    // chegou onde o E mandou (ou desistiu): volta a ficar solta
+    if (Math.abs(a - st.target) < 0.04 || now > st.until) drive(null, false)
   })
 
   const mats = useMemo(
