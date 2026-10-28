@@ -17,6 +17,7 @@ export default function App() {
   return (
     <>
       <Canvas
+        shadows
         className={debug.retro ? 'retro' : undefined}
         dpr={debug.retro ? RETRO_DPR : [1, 2]}
         gl={{ antialias: !debug.retro }}

@@ -1,6 +1,7 @@
-import { useMemo } from 'react'
+import { useLayoutEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { RigidBody } from '@react-three/rapier'
+import { WORLD_GROUPS } from '../game/physics'
 import type { LevelData, Prop } from '../game/data/types'
 import type { BuiltLevel } from './buildLevel'
 import { getTexture } from './textures'
@@ -145,8 +146,17 @@ function PropMesh({ prop, m, scale, isOutdoor }: { prop: Prop; m: Mats; scale: n
 export function Props({ level, built }: { level: LevelData; built: BuiltLevel }) {
   const m = useMats()
   const outdoorRooms = level.rooms.filter((r) => r.kind === 'outdoor')
+  const group = useRef<THREE.Group>(null)
+
+  // móveis fazem e recebem a sombra da lanterna
+  useLayoutEffect(() => {
+    group.current?.traverse((o) => {
+      if (o instanceof THREE.Mesh) o.castShadow = o.receiveShadow = true
+    })
+  }, [level])
+
   return (
-    <group>
+    <group ref={group}>
       {level.props.map((p) => {
         const isOutdoor = outdoorRooms.some((r) => p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h)
         return (
@@ -154,6 +164,7 @@ export function Props({ level, built }: { level: LevelData; built: BuiltLevel })
             key={p.id}
             type="fixed"
             colliders={p.type === 'monitor' ? false : 'cuboid'}
+            collisionGroups={WORLD_GROUPS}
             position={built.toWorld(p.x, p.y)}
             rotation={[0, ((p.rot ?? 0) * Math.PI) / 180, 0]}
           >

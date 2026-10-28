@@ -7,9 +7,15 @@ import type { FloorType, WallType } from '../game/data/types'
  * imagem, basta devolver um THREE.Texture carregado em `getTexture`.
  */
 
-export type TextureKey = FloorType | WallType | 'lintel' | 'ceiling' | 'books' | 'darkwood' | 'stone' | 'porcelain'
+export type TextureKey = FloorType | WallType | 'lintel' | 'ceiling' | 'books' | 'darkwood' | 'stone' | 'porcelain' | 'door'
 
 const SIZE = 64
+
+/** Texturas que cobrem um objeto inteiro em vez de repetir (largura × altura em px). */
+const CUSTOM_SIZE: Partial<Record<TextureKey, [number, number]>> = {
+  // ~1,0 × 2,2 m, mesma densidade de pixels das paredes
+  door: [34, 76],
+}
 
 function rng(seed: number) {
   return () => {
@@ -20,7 +26,7 @@ function rng(seed: number) {
 
 function grit(ctx: CanvasRenderingContext2D, amount: number, seed: number) {
   const r = rng(seed)
-  const img = ctx.getImageData(0, 0, SIZE, SIZE)
+  const img = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height)
   for (let i = 0; i < img.data.length; i += 4) {
     const n = (r() - 0.5) * amount
     img.data[i] += n
@@ -190,6 +196,51 @@ const painters: Record<TextureKey, Painter> = {
     c.fillRect(0, 0, SIZE, SIZE)
     grit(c, 10, 43)
   },
+  /** Porta de madeira com 4 almofadas (2 altas em cima, 2 baixas embaixo). */
+  door: (c) => {
+    const W = c.canvas.width
+    const H = c.canvas.height
+    const r = rng(47)
+    // madeira com veios verticais
+    c.fillStyle = '#4e321d'
+    c.fillRect(0, 0, W, H)
+    for (let x = 0; x < W; x++) {
+      if (r() > 0.6) {
+        c.fillStyle = r() > 0.5 ? 'rgba(30,16,8,0.35)' : 'rgba(120,80,45,0.25)'
+        c.fillRect(x, 0, 1, H)
+      }
+    }
+    const panel = (x: number, y: number, w: number, h: number) => {
+      // rebaixo em volta da almofada
+      c.fillStyle = '#2a190d'
+      c.fillRect(x - 1, y - 1, w + 2, h + 2)
+      // almofada
+      c.fillStyle = '#5a3a22'
+      c.fillRect(x, y, w, h)
+      // luz em cima/esquerda, sombra embaixo/direita
+      c.fillStyle = '#7a5434'
+      c.fillRect(x, y, w, 1)
+      c.fillRect(x, y, 1, h)
+      c.fillStyle = '#301d0f'
+      c.fillRect(x, y + h - 1, w, 1)
+      c.fillRect(x + w - 1, y, 1, h)
+      // chanfro interno
+      c.strokeStyle = 'rgba(25,14,6,0.6)'
+      c.lineWidth = 1
+      c.strokeRect(x + 3.5, y + 3.5, w - 7, h - 7)
+    }
+    panel(5, 5, 10, 36)
+    panel(19, 5, 10, 36)
+    panel(5, 47, 10, 24)
+    panel(19, 47, 10, 24)
+    // borda da folha
+    c.fillStyle = '#24150a'
+    c.fillRect(0, 0, W, 1)
+    c.fillRect(0, H - 1, W, 1)
+    c.fillRect(0, 0, 1, H)
+    c.fillRect(W - 1, 0, 1, H)
+    grit(c, 14, 48)
+  },
 }
 
 const cache = new Map<TextureKey, THREE.CanvasTexture>()
@@ -198,7 +249,7 @@ function base(key: TextureKey): THREE.CanvasTexture {
   let tex = cache.get(key)
   if (!tex) {
     const canvas = document.createElement('canvas')
-    canvas.width = canvas.height = SIZE
+    ;[canvas.width, canvas.height] = CUSTOM_SIZE[key] ?? [SIZE, SIZE]
     painters[key](canvas.getContext('2d')!)
     tex = new THREE.CanvasTexture(canvas)
     tex.magFilter = THREE.NearestFilter

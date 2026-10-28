@@ -33,6 +33,27 @@ export const PLAYER = {
   bobRun: 0.06,
   bobCrouch: 0.02,
   bobFrequency: 2.4,
+
+  /** Alcance da mira para usar portas e itens. */
+  interactRange: 2.2,
+}
+
+/** Lanterna de mão (tecla F, começa ligada). Luz forte e estreita, com sombras. */
+export const FLASHLIGHT = {
+  intensity: 70,
+  distance: 30,
+  decay: 1.4,
+  /** Abertura do cone em radianos (~24°). */
+  angle: 0.42,
+  penumbra: 0.45,
+  color: '#fff1d6',
+  /** Posição na mão, relativa à câmera (direita, baixo). */
+  offset: [0.18, -0.2, 0] as [number, number, number],
+  /** Atraso ao virar (maior = acompanha mais rápido). */
+  follow: 18,
+  /** Luz fraca em volta, para ver o que está bem perto. */
+  spill: 0.5,
+  shadowMapSize: 1024,
 }
 
 /** Vidas por nível. Morrer custa uma; A COISA guarda a cabeça no local da morte (0.10.0). */

@@ -15,10 +15,15 @@ interface PlayerState {
   locked: boolean
   /** Muda a cada renascimento; o Player teleporta para o carro quando muda. */
   respawnId: number
+  /** Dica da mira, ex.: "abrir porta" (null = nada na frente). */
+  hint: string | null
+  flashlight: boolean
   damage: (amount: number) => void
   setStamina: (stamina: number, exhausted: boolean) => void
   setCrouching: (crouching: boolean) => void
   setLocked: (locked: boolean) => void
+  setHint: (hint: string | null) => void
+  toggleFlashlight: () => void
   respawn: () => void
 }
 
@@ -29,10 +34,14 @@ export const usePlayerStore = create<PlayerState>((set) => ({
   crouching: false,
   locked: false,
   respawnId: 0,
+  hint: null,
+  flashlight: true,
   damage: (amount) => set((s) => ({ health: Math.max(0, s.health - amount) })),
   setStamina: (stamina, exhausted) => set({ stamina, exhausted }),
   setCrouching: (crouching) => set({ crouching }),
   setLocked: (locked) => set({ locked }),
+  setHint: (hint) => set({ hint }),
+  toggleFlashlight: () => set((s) => ({ flashlight: !s.flashlight })),
   respawn: () =>
     set((s) => ({
       health: PLAYER.maxHealth,

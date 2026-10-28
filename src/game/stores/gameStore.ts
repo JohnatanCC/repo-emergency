@@ -33,11 +33,15 @@ interface GameState {
   /** Onde o investigador morreu: ali surge A COISA segurando a cabeça (0.10.0). */
   deathSpots: [number, number, number][]
   money: number
+  /** performance.now() de quando a 1ª porta abriu (timer das entidades); null = ainda fechada. */
+  enemyTimerStart: number | null
   cameraMode: CameraMode
   debug: DebugFlags
   /** Sala visitada pela câmera de editor (-1 = visão geral). Tecla V. */
   visitRoom: number
   setPhase: (phase: GamePhase) => void
+  /** 1ª porta aberta: sai do carro e começa a contagem até as entidades. */
+  startEnemyTimer: () => void
   /** Perde uma vida; sem vidas, fim de jogo. */
   loseLife: (at: [number, number, number]) => void
   /** Recomeça o nível depois do fim de jogo. */
@@ -55,15 +59,18 @@ export const useGameStore = create<GameState>((set) => ({
   lives: LIVES,
   deathSpots: [],
   money: 0,
+  enemyTimerStart: null,
   cameraMode: 'player',
   debug: { gizmos: true, fullbright: false, retro: true, fog: true },
   setPhase: (phase) => set({ phase }),
+  startEnemyTimer: () =>
+    set((s) => (s.enemyTimerStart !== null ? s : { enemyTimerStart: performance.now(), phase: s.phase === 'car' ? 'exploring' : s.phase })),
   loseLife: (at) =>
     set((s) => {
       const lives = s.lives - 1
       return { lives, deathSpots: [...s.deathSpots, at], phase: lives <= 0 ? 'gameover' : s.phase }
     }),
-  restart: () => set({ lives: LIVES, deathSpots: [], phase: 'car' }),
+  restart: () => set({ lives: LIVES, deathSpots: [], phase: 'car', enemyTimerStart: null }),
   toggleCameraMode: () => set((s) => ({ cameraMode: s.cameraMode === 'player' ? 'editor' : 'player' })),
   toggleDebug: (key) => set((s) => ({ debug: { ...s.debug, [key]: !s.debug[key] } })),
   toggleBlackout: () => set((s) => ({ phase: s.phase === 'blackout' ? 'car' : 'blackout' })),

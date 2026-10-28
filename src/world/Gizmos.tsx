@@ -42,7 +42,7 @@ export function Gizmos({ level, built }: { level: LevelData; built: BuiltLevel }
       </group>
 
       {/* primeira porta (dispara o timer dos monstros) */}
-      {level.openings
+      {built.openings
         .filter((o) => o.firstDoor)
         .map((o) => (
           <group key={o.id} position={built.toWorld(o.x + o.w / 2, o.y + o.h / 2, 2.6)}>
@@ -51,7 +51,7 @@ export function Gizmos({ level, built }: { level: LevelData; built: BuiltLevel }
         ))}
 
       {/* portas (placeholder até a 0.2.0) */}
-      {level.openings
+      {built.openings
         .filter((o) => o.kind === 'door')
         .map((o) => {
           const along = o.w >= o.h

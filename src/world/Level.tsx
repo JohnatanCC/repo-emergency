@@ -3,8 +3,9 @@ import * as THREE from 'three'
 import { CuboidCollider, RigidBody } from '@react-three/rapier'
 import type { BuiltLevel } from './buildLevel'
 import { getTexture } from './textures'
+import { WORLD_GROUPS } from '../game/physics'
 
-/** Pisos, tetos e paredes do greybox + colisores fixos (usados pelo player na 0.1.0). */
+/** Pisos, tetos e paredes do greybox + colisores fixos. Recebem a sombra da lanterna. */
 export function Level({ built, wallHeight }: { built: BuiltLevel; wallHeight: number }) {
   const floorMats = useMemo(
     () =>
@@ -31,7 +32,7 @@ export function Level({ built, wallHeight }: { built: BuiltLevel; wallHeight: nu
     <group>
       {built.floors.map((f, i) => (
         <group key={f.key} position={f.pos}>
-          <mesh rotation-x={-Math.PI / 2} material={floorMats[i]}>
+          <mesh rotation-x={-Math.PI / 2} material={floorMats[i]} receiveShadow>
             <planeGeometry args={f.size} />
           </mesh>
           {f.room.kind === 'extraction' && (
@@ -41,7 +42,7 @@ export function Level({ built, wallHeight }: { built: BuiltLevel; wallHeight: nu
             </mesh>
           )}
           {f.ceiling && (
-            <mesh rotation-x={Math.PI / 2} position-y={wallHeight} material={ceilingMats[i]}>
+            <mesh rotation-x={Math.PI / 2} position-y={wallHeight} material={ceilingMats[i]} receiveShadow>
               <planeGeometry args={f.size} />
             </mesh>
           )}
@@ -49,17 +50,27 @@ export function Level({ built, wallHeight }: { built: BuiltLevel; wallHeight: nu
       ))}
 
       {built.walls.map((w, i) => (
-        <mesh key={w.key} position={w.pos} material={wallMats[i]}>
+        <mesh key={w.key} position={w.pos} material={wallMats[i]} castShadow receiveShadow>
           <boxGeometry args={w.size} />
         </mesh>
       ))}
 
       <RigidBody type="fixed" colliders={false}>
         {built.floors.map((f) => (
-          <CuboidCollider key={f.key} args={[f.size[0] / 2, 0.1, f.size[1] / 2]} position={[f.pos[0], -0.1, f.pos[2]]} />
+          <CuboidCollider
+            key={f.key}
+            args={[f.size[0] / 2, 0.1, f.size[1] / 2]}
+            position={[f.pos[0], -0.1, f.pos[2]]}
+            collisionGroups={WORLD_GROUPS}
+          />
         ))}
         {built.walls.map((w) => (
-          <CuboidCollider key={w.key} args={[w.size[0] / 2, w.size[1] / 2, w.size[2] / 2]} position={w.pos} />
+          <CuboidCollider
+            key={w.key}
+            args={[w.size[0] / 2, w.size[1] / 2, w.size[2] / 2]}
+            position={w.pos}
+            collisionGroups={WORLD_GROUPS}
+          />
         ))}
       </RigidBody>
     </group>

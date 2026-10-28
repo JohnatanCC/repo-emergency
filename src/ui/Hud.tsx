@@ -10,7 +10,7 @@ const TOGGLES: { key: string; flag: keyof DebugFlags; label: string }[] = [
   { key: 'g', flag: 'gizmos', label: 'Marcadores' },
   { key: 'l', flag: 'fullbright', label: 'Luz total' },
   { key: 'r', flag: 'retro', label: 'Filtro retrô' },
-  { key: 'f', flag: 'fog', label: 'Neblina' },
+  { key: 'n', flag: 'fog', label: 'Neblina' },
 ]
 
 /** Dano da tecla K, para testar morte e renascimento. */
@@ -20,6 +20,31 @@ const DEBUG_DAMAGE = 25
 const SOUND_LIST = Object.entries(SOUNDS).flatMap(([group, sounds]) =>
   Object.entries(sounds).map(([name, src]) => ({ id: `${group}.${name}`, label: `${group}: ${name}`, src })),
 )
+
+/** Contagem da 1ª porta até as entidades (só informativo enquanto elas não existem). */
+function EnemyTimer({ delay }: { delay: number }) {
+  const start = useGameStore((s) => s.enemyTimerStart)
+  const [, tick] = useState(0)
+  useEffect(() => {
+    if (start === null) return
+    const id = setInterval(() => tick((t) => t + 1), 250)
+    return () => clearInterval(id)
+  }, [start])
+  if (start === null) return <> · entidades: 1ª porta fechada</>
+  const left = Math.ceil(delay - (performance.now() - start) / 1000)
+  return <> · entidades {left > 0 ? `em ${left}s` : 'ativas'}</>
+}
+
+/** Dica da mira, logo abaixo dela. */
+function AimHint() {
+  const hint = usePlayerStore((s) => s.hint)
+  if (!hint) return null
+  return (
+    <div className="hud-hint">
+      <kbd>E</kbd> {hint}
+    </div>
+  )
+}
 
 /** Vida, estamina e vidas restantes (canto inferior esquerdo). */
 function Vitals() {
@@ -69,6 +94,7 @@ export function Hud({ level }: { level: LevelData }) {
       if (k === 'v' && useGameStore.getState().cameraMode === 'editor') cycleVisit(level.rooms.length)
       if (k === 'h') setPanel((v) => !v)
       if (k === 'k') usePlayerStore.getState().damage(DEBUG_DAMAGE)
+      if (k === 'f' && useGameStore.getState().cameraMode === 'player') usePlayerStore.getState().toggleFlashlight()
       if (k === 'enter' && useGameStore.getState().phase === 'gameover') {
         useGameStore.getState().restart()
         usePlayerStore.getState().respawn()
@@ -91,6 +117,7 @@ export function Hud({ level }: { level: LevelData }) {
         </div>
         <div className="hud-sub">
           {level.name} · fase: {phase} · meta: {level.relicQuota} relíquias
+          <EnemyTimer delay={level.enemyDelay} />
         </div>
 
         {!panel && (
@@ -117,6 +144,14 @@ export function Hud({ level }: { level: LevelData }) {
                 <div className="row">
                   <span>
                     <kbd>C</kbd> agachar (segurar)
+                  </span>
+                  <span>
+                    <kbd>F</kbd> lanterna
+                  </span>
+                </div>
+                <div className="row">
+                  <span>
+                    <kbd>E</kbd> usar · <kbd>Shift</kbd>+<kbd>E</kbd> com força
                   </span>
                   <span>
                     <kbd>Esc</kbd> soltar mouse
@@ -191,6 +226,7 @@ export function Hud({ level }: { level: LevelData }) {
       </div>
 
       {playing && locked && <div className="hud-crosshair" />}
+      {playing && locked && <AimHint />}
       {playing && !locked && <div className="hud-center">clique para jogar</div>}
       {phase === 'gameover' && (
         <div className="hud-center gameover">

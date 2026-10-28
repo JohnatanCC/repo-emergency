@@ -33,10 +33,16 @@ você chega de **carro**, invade o lugar, encontra as **relíquias** que o C.R.O
 - Números todos em `src/player/config.ts`
 - Os passos com som ficam para a 0.5.0 (ainda não há sons)
 
-## ⬜ 0.2.0 — Interação e portas
-- Raio de interação (mira no centro da tela) com dica contextual
-- Portas com dobradiça (abrir devagar = silêncio, bater = barulho)
-- Evento da **1ª porta** → inicia o timer de 20s das entidades
+## ✅ 0.2.0 — Interação, portas e lanterna
+- Mira de interação (raio do centro da tela, 2,2 m) com dica contextual; paredes bloqueiam
+- Portas com dobradiça (corpo dinâmico + junta de revolução), tamanho padrão 1,0 × 2,2 m:
+  - fechada fica trancada; `E` abre devagar para longe do jogador (barulho baixo)
+  - `Shift+E` abre/fecha com força (barulho alto); fechar rápido conta como **batida**
+  - aberta fica solta e pode ser empurrada com o corpo
+- Evento da **1ª porta** → fase `exploring` e timer de 20 s → fase `hunted`
+- Barramento de ruído (`src/game/systems/noise.ts`), já usado pelas portas
+- **Lanterna** forte de mão (`F`, começa ligada), com sombras e um leve atraso ao virar
+- Grupos de colisão (`src/game/physics.ts`); comandos de teste `window.__relicario` em dev
 
 ## ⬜ 0.3.0 — Itens e inventário
 - Itens com **categoria** (`relic` / `loot`), **tamanho** (`small` / `medium` / `large`), **valor** e **fragilidade**
@@ -55,10 +61,10 @@ você chega de **carro**, invade o lugar, encontra as **relíquias** que o C.R.O
 - Fases: `car → exploring → hunted → blackout → results`
 - Tela de resultado: pagamento do C.R.O.S (relíquias) + venda do saque
 
-## ⬜ 0.5.0 — Ruído, áudio e lanterna
-- Barramento de ruído `emitNoise({ pos, radius, type })` (passos, portas, itens caindo)
+## ⬜ 0.5.0 — Ruído e áudio
+- Passos e itens caindo também emitem ruído (`emitNoise` já existe desde a 0.2.0)
 - Áudio posicional 3D, ambiência, batimento cardíaco por proximidade
-- **Lanterna** com bateria; pool de luzes (só as lâmpadas próximas ficam ativas)
+- 💡 **Bateria da lanterna** (importante para a Sombra); pool de luzes (só as lâmpadas próximas ficam ativas)
 - Sons só próprios ou de licença livre (freesound.org), com créditos no README
 
 ## ⬜ 0.6.0 — Esconderijos

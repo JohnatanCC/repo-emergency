@@ -7,7 +7,7 @@ Você é um investigador contratado pelo **C.R.O.S** (Centro de Recuperação de
 Dá para roubar objetos da casa para vender, mas o inventário só tem 3 espaços e o que é grande vai nas mãos.
 Tudo vai para o **extrator mágico**, que leva tudo de uma vez quando a meta de relíquias é cumprida. Depois é voltar vivo para o carro.
 
-Versão atual: **0.1.0 — Player** · próximas etapas em [`ROADMAP.md`](./ROADMAP.md)
+Versão atual: **0.2.0 — Portas e lanterna** · próximas etapas em [`ROADMAP.md`](./ROADMAP.md)
 
 ## Rodando
 
@@ -18,17 +18,30 @@ npm run dev
 
 Abre em `http://localhost:5173`.
 
-## Controles (modo editor, até a 0.1.0)
+## Controles
+
+Clique na tela para travar o mouse (`Esc` solta).
 
 | Tecla | Ação |
 |---|---|
-| arrastar / scroll / botão direito | girar, zoom, mover câmera |
-| `V` | visitar a próxima sala na altura dos olhos |
-| `G` | marcadores (spawns, esconderijos, portas) |
-| `L` | luz total (para editar) |
+| `W` `A` `S` `D` · mouse | andar · olhar |
+| `Shift` | correr |
+| `C` (segurar) | agachar |
+| `E` · `Shift+E` | usar (abrir/fechar porta) · com força |
+| `F` | lanterna |
+
+### Debug
+
+| Tecla | Ação |
+|---|---|
+| `F1` | alterna investigador / câmera de editor (arrastar, scroll, botão direito) |
+| `V` | (editor) visitar a próxima sala na altura dos olhos |
+| `G` | marcadores (spawns, esconderijos, portas, mortes) |
+| `L` | luz total |
 | `B` | prévia do apagão pós-extração |
 | `R` | filtro retrô |
-| `F` | neblina |
+| `N` | neblina |
+| `K` | tomar 25 de dano |
 | `H` | esconder painel |
 
 ## Estrutura
@@ -57,6 +70,7 @@ Em `mansion-01.ts`:
 
 - **rooms**: retângulos `x, y, w, h`, com tipo de luz (`lit`, `dim`, `dark`, `moon`), piso e parede.
 - **openings**: retângulo fino em cima da parede compartilhada (`door` ou `passage`), igual às portas vermelhas do desenho.
+  Toda `door` vira uma porta padrão de 1,0 × 2,2 m centralizada no retângulo (`DOOR_WIDTH` / `DOOR_HEIGHT` em `buildLevel.ts`); `passage` usa o vão inteiro.
 - **props / hidingSpots / itemSpawns / enemySpawns**: posições na planta. `itemSpawns` aceitam `relic` e/ou `loot`.
 - **relicQuota**: quantas relíquias o extrator precisa para levar tudo.
 

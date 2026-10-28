@@ -84,6 +84,15 @@ canvas.retro {
   margin: -2px 0 0 -2px;
   background: rgba(232, 215, 168, 0.7);
 }
+.hud-hint {
+  position: absolute;
+  left: 50%;
+  top: calc(50% + 18px);
+  transform: translateX(-50%);
+  font-size: 20px;
+  color: #e8d7a8;
+  white-space: nowrap;
+}
 .hud-center {
   position: absolute;
   left: 50%;

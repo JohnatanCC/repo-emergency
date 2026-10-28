@@ -9,6 +9,8 @@ import type { BuiltLevel } from '../world/buildLevel'
 import { useGameStore } from '../game/stores/gameStore'
 import { PLAYER } from './config'
 import { usePlayerStore } from './playerStore'
+import { PLAYER_GROUPS } from '../game/physics'
+import { debugApi } from '../game/debug'
 
 /**
  * Investigador em primeira pessoa: cápsula cinemática movida pelo controlador
@@ -105,6 +107,20 @@ export function Player({ level, built }: { level: LevelData; built: BuiltLevel }
     usePlayerStore.getState().setCrouching(false)
     if (useGameStore.getState().cameraMode === 'player') faceSpawn()
   }, [respawnId, spawn])
+
+  // comandos de teste (window.__relicario, só em dev)
+  useEffect(() => {
+    const half = () => (st.crouched ? CROUCH_HALF : STAND_HALF)
+    debugApi.pos = () => [st.next.x, st.next.y - half() - R, st.next.z]
+    debugApi.look = (yawDeg, pitchDeg = 0) =>
+      camera.quaternion.setFromEuler(new THREE.Euler((pitchDeg * Math.PI) / 180, (yawDeg * Math.PI) / 180, 0, 'YXZ'))
+    debugApi.tp = (x, z) => {
+      const y = half() + R + 0.02
+      body.current?.setTranslation({ x, y, z }, true)
+      st.next.set(x, y, z)
+      st.vel.set(0, 0, 0)
+    }
+  }, [camera, st])
 
   // voltando do modo editor: olhar na horizontal, mantendo a direção
   useEffect(() => {
@@ -245,7 +261,7 @@ export function Player({ level, built }: { level: LevelData; built: BuiltLevel }
         position={[spawn.x, spawn.y, spawn.z]}
         enabledRotations={[false, false, false]}
       >
-        <CapsuleCollider ref={collider} args={[STAND_HALF, R]} />
+        <CapsuleCollider ref={collider} args={[STAND_HALF, R]} collisionGroups={PLAYER_GROUPS} />
       </RigidBody>
       {cameraMode === 'player' && (
         <PointerLockControls selector="canvas" onLock={() => setLocked(true)} onUnlock={() => setLocked(false)} />

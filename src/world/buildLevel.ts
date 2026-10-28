@@ -27,6 +27,8 @@ export interface FloorPiece {
 export interface BuiltLevel {
   walls: Box[]
   floors: FloorPiece[]
+  /** Aberturas do nível, com as portas já no tamanho padrão. */
+  openings: Opening[]
   /** Converte coordenada de planta em posição do mundo (y = altura). */
   toWorld: (x: number, y: number, height?: number) => Vec3
   center: { x: number; y: number }
@@ -34,7 +36,9 @@ export interface BuiltLevel {
 }
 
 export const WALL_THICKNESS = 0.15
-export const DOOR_HEIGHT = 2.3
+/** Toda porta tem o mesmo tamanho (m), centralizada no vão desenhado na planta. */
+export const DOOR_WIDTH = 1.0
+export const DOOR_HEIGHT = 2.2
 const OUTDOOR_WALL_FACTOR = 1.9
 
 type Interval = [number, number]
@@ -54,6 +58,13 @@ function subtract(range: Interval, cuts: Interval[]): Interval[] {
     parts = next
   }
   return parts.filter(([a, b]) => b - a > 0.01)
+}
+
+/** Encolhe uma porta para DOOR_WIDTH, mantendo o centro. Passagens ficam como estão. */
+export function standardOpening(o: Opening, scale: number): Opening {
+  if (o.kind !== 'door') return o
+  const len = DOOR_WIDTH / scale
+  return o.w >= o.h ? { ...o, x: o.x + (o.w - len) / 2, w: len } : { ...o, y: o.y + (o.h - len) / 2, h: len }
 }
 
 /** Aberturas que cortam uma aresta da sala. */
@@ -94,6 +105,7 @@ export function buildLevel(level: LevelData): BuiltLevel {
 
   const toWorld = (x: number, y: number, height = 0): Vec3 => [(x - cx) * s, height, (y - cy) * s]
 
+  const openings = level.openings.map((o) => standardOpening(o, s))
   const walls: Box[] = []
   const floors: FloorPiece[] = []
   const T = WALL_THICKNESS
@@ -122,7 +134,7 @@ export function buildLevel(level: LevelData): BuiltLevel {
     ]
 
     edges.forEach(([horizontal, line, from, to, inset], ei) => {
-      const cuts = openingsOnEdge(level.openings, horizontal, line, from, to)
+      const cuts = openingsOnEdge(openings, horizontal, line, from, to)
       const segments = subtract(
         [from, to],
         cuts.map((c) => c.cut),
@@ -152,6 +164,7 @@ export function buildLevel(level: LevelData): BuiltLevel {
   return {
     walls,
     floors,
+    openings,
     toWorld,
     center: { x: cx, y: cy },
     size: { w: (maxX - minX) * s, d: (maxY - minY) * s },

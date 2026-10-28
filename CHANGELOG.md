@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.2.0 — Portas e lanterna · 2026-10-28
+
+### Adicionado
+- Portas físicas com dobradiça (`src/world/Doors.tsx`), todas no tamanho padrão 1,0 × 2,2 m com textura própria de 4 almofadas e batente de madeira cobrindo as emendas: fechadas ficam trancadas; `E` abre devagar para longe do jogador, `Shift+E` abre/fecha com força; abertas podem ser empurradas com o corpo. Fechar rápido conta como batida.
+- Mira de interação com dica (`src/player/Interaction.tsx` + `src/game/systems/interactables.ts`), pronta para os itens da 0.3.0.
+- Barramento de ruído (`src/game/systems/noise.ts`): portas fazem barulho baixo, alto ou de batida.
+- 1ª porta inicia o timer das entidades: fase `exploring` e, depois de 20 s, `hunted` (contagem no HUD).
+- Lanterna forte de mão (`F`, `src/player/Flashlight.tsx`), ligada desde o início, com sombras de paredes, móveis e portas.
+- Grupos de colisão (`src/game/physics.ts`): portas ignoram as paredes para girar rente a elas.
+- Para desenvolver: `CLAUDE.md` com as convenções, `.claude/launch.json`, `.gitattributes` (quebras de linha LF) e comandos de teste em `window.__relicario` (só em dev).
+
+### Alterado
+- Neblina passou para a tecla `N` (`F` agora é a lanterna).
+- Vãos de porta da planta viram portas padrão (`DOOR_WIDTH` / `DOOR_HEIGHT` em `buildLevel.ts`), centralizadas no vão; a parede fecha o resto.
+- README com os controles do jogo.
+
 ## 0.1.0 — Player · 2026-10-28
 
 ### Adicionado
