@@ -133,7 +133,7 @@ function PropMesh({ prop, m, scale, isOutdoor }: { prop: Prop; m: Mats; scale: n
           <mesh position={[0, 1.5, 0]} material={m.dark}>
             <boxGeometry args={[1.1, 0.7, 0.08]} />
           </mesh>
-          {/* Monitor do caminhão: dinheiro + itens obrigatórios (0.4.0) */}
+          {/* Painel do carro: dinheiro + relíquias da meta (0.4.0) */}
           <mesh position={[0, 1.5, 0.045]} material={m.screen}>
             <planeGeometry args={[0.95, 0.55]} />
           </mesh>

@@ -1,7 +1,7 @@
 {
-  "name": "repo-emergency",
-  "version": "0.0.0",
-  "description": "R.E.P.O: Emergency — reimaginação singleplayer de terror (projeto pessoal, sem fins comerciais)",
+  "name": "relicario",
+  "version": "0.0.1",
+  "description": "Relicário — terror singleplayer de investigação paranormal (projeto pessoal, sem fins comerciais)",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

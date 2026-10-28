@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { VERSION, VERSION_NAME } from '../game/version'
 import { useGameStore, type DebugFlags } from '../game/stores/gameStore'
-import { SOUNDS, playSound, type EsposaSound } from '../game/audio/sounds'
+import { SOUNDS, playSound } from '../game/audio/sounds'
 import type { LevelData } from '../game/data/types'
 
 const TOGGLES: { key: string; flag: keyof DebugFlags; label: string }[] = [
@@ -11,25 +11,19 @@ const TOGGLES: { key: string; flag: keyof DebugFlags; label: string }[] = [
   { key: 'f', flag: 'fog', label: 'Neblina' },
 ]
 
-const SOUND_LABELS: Record<EsposaSound, string> = {
-  idle: 'Rondando (aleatório)',
-  near: 'Perto (dedos)',
-  targeting: 'Te viu',
-  searchHiding: 'Vasculhando esconderijo',
-  attack: 'Ataque',
-  stunStart: 'Atordoada',
-  stunLoop: 'Atordoada (loop)',
-}
+/** Todos os sons do manifesto como "grupo: nome", para o teste no painel. */
+const SOUND_LIST = Object.entries(SOUNDS).flatMap(([group, sounds]) =>
+  Object.entries(sounds).map(([name, src]) => ({ id: `${group}.${name}`, label: `${group}: ${name}`, src })),
+)
 
 export function Hud({ level }: { level: LevelData }) {
   const debug = useGameStore((s) => s.debug)
   const phase = useGameStore((s) => s.phase)
-  const lives = useGameStore((s) => s.lives)
   const toggleDebug = useGameStore((s) => s.toggleDebug)
   const toggleBlackout = useGameStore((s) => s.toggleBlackout)
   const cycleVisit = useGameStore((s) => s.cycleVisit)
   const visitRoom = useGameStore((s) => s.visitRoom)
-  const [sound, setSound] = useState<EsposaSound>('targeting')
+  const [sound, setSound] = useState(SOUND_LIST[0]?.id ?? '')
   const [panel, setPanel] = useState(true)
 
   useEffect(() => {
@@ -50,13 +44,13 @@ export function Hud({ level }: { level: LevelData }) {
     <div className="hud">
       <div>
         <div className="hud-title">
-          R.E.P.O: EMERGENCY
+          RELICÁRIO
           <small>
             v{VERSION} · {VERSION_NAME}
           </small>
         </div>
         <div className="hud-sub">
-          {level.name} · fase: {phase} · vidas: {lives} · itens: {level.requiredItems.join(', ')}
+          {level.name} · fase: {phase} · meta: {level.relicQuota} relíquias
         </div>
       </div>
 
@@ -92,16 +86,25 @@ export function Hud({ level }: { level: LevelData }) {
             </span>
             <span>{visitRoom < 0 ? 'visão geral' : level.rooms[visitRoom].name}</span>
           </div>
-          <div className="row" style={{ marginTop: 6 }}>
-            <select value={sound} onChange={(e) => setSound(e.target.value as EsposaSound)}>
-              {(Object.keys(SOUNDS.esposa) as EsposaSound[]).map((k) => (
-                <option key={k} value={k}>
-                  Esposa: {SOUND_LABELS[k]}
-                </option>
-              ))}
-            </select>
-            <button onClick={() => playSound(SOUNDS.esposa[sound])}>▶ tocar</button>
-          </div>
+          {SOUND_LIST.length > 0 && (
+            <div className="row" style={{ marginTop: 6 }}>
+              <select value={sound} onChange={(e) => setSound(e.target.value)}>
+                {SOUND_LIST.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={() => {
+                  const s = SOUND_LIST.find((s) => s.id === sound)
+                  if (s) playSound(s.src)
+                }}
+              >
+                ▶ tocar
+              </button>
+            </div>
+          )}
           <div className="row" style={{ marginTop: 4 }}>
             <span>
               <kbd>H</kbd> esconder painel

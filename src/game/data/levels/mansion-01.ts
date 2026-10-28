@@ -4,7 +4,7 @@ import type { LevelData } from '../types'
  * Mansão — Nível 1
  *
  * Mesma planta do diagrama (unidades de planta, 1u = 0.08 m).
- * Fluxo: Caminhão → entrada → Salão → (corredores / pátio) → bibliotecas
+ * Fluxo: Carro → entrada → Salão → (corredores / pátio) → bibliotecas
  *        → sala de Leitura → Extração (roxo).
  * Loops de fuga: Salão ↔ Norte ↔ Bib. A ↔ Leitura ↔ Bib. B ↔ Sul ↔ Salão.
  */
@@ -14,11 +14,11 @@ export const mansion01: LevelData = {
   scale: 0.08,
   wallHeight: 3.2,
   enemyDelay: 20,
-  requiredItems: ['musicBox', 'goldenChalice'],
+  relicQuota: 2,
   playerStart: { x: 75, y: 260 },
 
   rooms: [
-    { id: 'truck', name: 'Caminhão', kind: 'truck', light: 'lit', floor: 'metal', wall: 'metal', x: 40, y: 230, w: 70, h: 60 },
+    { id: 'car', name: 'Carro', kind: 'car', light: 'lit', floor: 'metal', wall: 'metal', x: 40, y: 230, w: 70, h: 60 },
     { id: 'entrance', name: 'Entrada', kind: 'corridor', light: 'lit', floor: 'wood', wall: 'panel', x: 110, y: 240, w: 90, h: 40 },
     { id: 'hall', name: 'Salão', kind: 'room', light: 'lit', floor: 'checker', wall: 'wallpaper', x: 200, y: 150, w: 100, h: 220 },
     { id: 'corrN', name: 'Corredor norte', kind: 'corridor', light: 'dim', floor: 'wood', wall: 'panel', x: 200, y: 100, w: 280, h: 50 },
@@ -46,7 +46,7 @@ export const mansion01: LevelData = {
   ],
 
   openings: [
-    { id: 'truck-entrance', kind: 'passage', x: 106, y: 242, w: 8, h: 36 },
+    { id: 'car-entrance', kind: 'passage', x: 106, y: 242, w: 8, h: 36 },
     { id: 'D1', kind: 'door', firstDoor: true, x: 196, y: 248, w: 8, h: 24 },
     { id: 'D2', kind: 'door', x: 230, y: 146, w: 40, h: 8 },
     { id: 'D3', kind: 'door', x: 230, y: 366, w: 40, h: 8 },
@@ -65,7 +65,7 @@ export const mansion01: LevelData = {
   ],
 
   props: [
-    { id: 'truck-monitor', type: 'monitor', x: 44, y: 260, rot: 90 },
+    { id: 'car-panel', type: 'monitor', x: 44, y: 260, rot: 90 },
 
     { id: 'hall-t1', type: 'table', x: 240, y: 195 },
     { id: 'hall-t2', type: 'table', x: 265, y: 300 },
@@ -117,26 +117,26 @@ export const mansion01: LevelData = {
   ],
 
   itemSpawns: [
-    { id: 'i-patio', x: 385, y: 255, accepts: ['musicBox', 'generic'] },
-    { id: 'i-libA', x: 545, y: 145, accepts: ['musicBox', 'generic'] },
-    { id: 'i-libB', x: 545, y: 400, accepts: ['goldenChalice', 'generic'] },
-    { id: 'i-bath', x: 368, y: 82, accepts: ['goldenChalice', 'generic'] },
-    { id: 'i-hall', x: 285, y: 165, accepts: ['generic'] },
-    { id: 'i-corrN', x: 440, y: 125, accepts: ['generic'] },
-    { id: 'i-corrS', x: 440, y: 395, accepts: ['generic'] },
-    { id: 'i-reading', x: 565, y: 250, accepts: ['generic'] },
-    { id: 'i-libA2', x: 500, y: 90, accepts: ['generic'] },
-    { id: 'i-libB2', x: 500, y: 340, accepts: ['generic'] },
-    { id: 'i-back', x: 450, y: 470, accepts: ['generic'] },
-    { id: 'i-patio2', x: 320, y: 190, accepts: ['generic'] },
+    { id: 'i-patio', x: 385, y: 255, accepts: ['relic', 'loot'] },
+    { id: 'i-libA', x: 545, y: 145, accepts: ['relic', 'loot'] },
+    { id: 'i-libB', x: 545, y: 400, accepts: ['relic', 'loot'] },
+    { id: 'i-bath', x: 368, y: 82, accepts: ['relic', 'loot'] },
+    { id: 'i-hall', x: 285, y: 165, accepts: ['loot'] },
+    { id: 'i-corrN', x: 440, y: 125, accepts: ['loot'] },
+    { id: 'i-corrS', x: 440, y: 395, accepts: ['loot'] },
+    { id: 'i-reading', x: 565, y: 250, accepts: ['loot'] },
+    { id: 'i-libA2', x: 500, y: 90, accepts: ['loot'] },
+    { id: 'i-libB2', x: 500, y: 340, accepts: ['loot'] },
+    { id: 'i-back', x: 450, y: 470, accepts: ['loot'] },
+    { id: 'i-patio2', x: 320, y: 190, accepts: ['loot'] },
   ],
 
   enemySpawns: [
-    { id: 'e-pato', enemy: 'patofera', x: 400, y: 330, phase: 'start' },
-    { id: 'e-ocopus', enemy: 'ocopus', x: 520, y: 100, phase: 'start' },
-    { id: 'e-esposa', enemy: 'esposa', x: 590, y: 470, phase: 'start' },
-    { id: 'eb-pato', enemy: 'patofera', x: 250, y: 350, phase: 'blackout' },
-    { id: 'eb-ocopus', enemy: 'ocopus', x: 230, y: 125, phase: 'blackout' },
-    { id: 'eb-esposa', enemy: 'esposa', x: 160, y: 260, phase: 'blackout' },
+    { id: 'e-possessor', enemy: 'possessor', x: 400, y: 330, phase: 'start' },
+    { id: 'e-sombra', enemy: 'sombra', x: 520, y: 100, phase: 'start' },
+    { id: 'e-guardia', enemy: 'guardia', x: 590, y: 470, phase: 'start' },
+    { id: 'eb-possessor', enemy: 'possessor', x: 250, y: 350, phase: 'blackout' },
+    { id: 'eb-sombra', enemy: 'sombra', x: 230, y: 125, phase: 'blackout' },
+    { id: 'eb-guardia', enemy: 'guardia', x: 160, y: 260, phase: 'blackout' },
   ],
 }

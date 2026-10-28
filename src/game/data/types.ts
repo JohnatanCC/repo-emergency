@@ -11,7 +11,7 @@ export type LightLevel = 'lit' | 'dim' | 'dark' | 'moon'
 export type FloorType = 'metal' | 'wood' | 'checker' | 'tile' | 'grass' | 'carpet'
 export type WallType = 'metal' | 'wallpaper' | 'panel' | 'brick' | 'tile'
 
-export type RoomKind = 'truck' | 'corridor' | 'room' | 'outdoor' | 'extraction'
+export type RoomKind = 'car' | 'corridor' | 'room' | 'outdoor' | 'extraction'
 
 export interface Rect {
   x: number
@@ -65,7 +65,17 @@ export interface HidingSpot {
   propId: string
 }
 
-export type ItemTag = 'musicBox' | 'goldenChalice' | 'generic'
+/**
+ * - relic: relíquia paranormal pedida pelo C.R.O.S (conta para a meta do nível)
+ * - loot: objeto comum da casa, roubado para vender
+ */
+export type ItemTag = 'relic' | 'loot'
+
+/**
+ * Pequeno cabe num dos 3 espaços do inventário; médio e grande
+ * precisam ser carregados nas mãos (um por vez).
+ */
+export type ItemSize = 'small' | 'medium' | 'large'
 
 export interface ItemSpawn {
   id: string
@@ -75,7 +85,8 @@ export interface ItemSpawn {
   accepts: ItemTag[]
 }
 
-export type EnemyId = 'patofera' | 'ocopus' | 'esposa'
+/** Entidades da casa (detalhes no ROADMAP.md). */
+export type EnemyId = 'guardia' | 'sombra' | 'possessor'
 
 export interface EnemySpawn {
   id: string
@@ -98,7 +109,8 @@ export interface LevelData {
   hidingSpots: HidingSpot[]
   itemSpawns: ItemSpawn[]
   enemySpawns: EnemySpawn[]
-  requiredItems: ItemTag[]
+  /** Quantas relíquias precisam estar no extrator para ele levar tudo. */
+  relicQuota: number
   playerStart: { x: number; y: number }
   /** Segundos após cruzar a primeira porta até os monstros aparecerem. */
   enemyDelay: number

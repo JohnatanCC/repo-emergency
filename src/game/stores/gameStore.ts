@@ -2,15 +2,15 @@ import { create } from 'zustand'
 
 /**
  * Fases de um nível (a lógica de cada transição entra nas próximas versões):
- *  truck      → jogador no caminhão, vê o monitor
- *  exploring  → saiu do caminhão; timer de spawn começa ao cruzar a 1ª porta
+ *  car        → jogador no carro, vê o painel com a meta de relíquias
+ *  exploring  → saiu do carro; timer de spawn começa ao cruzar a 1ª porta
  *  hunted     → monstros ativos
  *  blackout   → carrinho extraído: luzes apagam, monstros reaparecem no início
- *  results    → voltou ao caminhão
+ *  results    → voltou ao carro
  *  shop       → loja entre níveis
- *  gameover   → acabaram as 3 vidas
+ *  gameover   → o investigador morreu
  */
-export type GamePhase = 'truck' | 'exploring' | 'hunted' | 'blackout' | 'results' | 'shop' | 'gameover'
+export type GamePhase = 'car' | 'exploring' | 'hunted' | 'blackout' | 'results' | 'shop' | 'gameover'
 
 export interface DebugFlags {
   /** Marcadores de spawn, esconderijos, portas */
@@ -25,8 +25,6 @@ export interface DebugFlags {
 interface GameState {
   levelIndex: number
   phase: GamePhase
-  /** Vidas compartilhadas do nível (clones reserva) */
-  lives: number
   money: number
   debug: DebugFlags
   /** Sala visitada pela câmera de editor (-1 = visão geral). Tecla V. */
@@ -40,13 +38,12 @@ interface GameState {
 
 export const useGameStore = create<GameState>((set) => ({
   levelIndex: 0,
-  phase: 'truck',
-  lives: 3,
+  phase: 'car',
   money: 0,
   debug: { gizmos: true, fullbright: false, retro: true, fog: true },
   setPhase: (phase) => set({ phase }),
   toggleDebug: (key) => set((s) => ({ debug: { ...s.debug, [key]: !s.debug[key] } })),
-  toggleBlackout: () => set((s) => ({ phase: s.phase === 'blackout' ? 'truck' : 'blackout' })),
+  toggleBlackout: () => set((s) => ({ phase: s.phase === 'blackout' ? 'car' : 'blackout' })),
   visitRoom: -1,
   cycleVisit: (roomCount) => set((s) => ({ visitRoom: s.visitRoom + 1 >= roomCount ? -1 : s.visitRoom + 1 })),
 }))

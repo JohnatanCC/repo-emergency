@@ -22,7 +22,7 @@ export function World({ level }: { level: LevelData }) {
       {gizmos && <Gizmos level={level} built={built} />}
       {/* Câmera de editor. Na 0.1.0 dá lugar à câmera em primeira pessoa do player. */}
       <EditorCamera level={level} built={built} />
-      {/* 0.1.0: <Player /> · 0.3.0: <Items /> <Cart /> · 0.7.0+: <Enemies /> */}
+      {/* 0.1.0: <Player /> · 0.3.0: <Items /> <Inventory /> · 0.7.0+: <Enemies /> */}
     </Physics>
   )
 }

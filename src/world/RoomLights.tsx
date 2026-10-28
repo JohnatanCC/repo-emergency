@@ -6,8 +6,8 @@ import type { BuiltLevel } from './buildLevel'
 import { useGameStore } from '../game/stores/gameStore'
 
 /**
- * Luz por zona: "claro" perto do caminhão, "penumbra" no meio, "escuro" no fundo.
- * No apagão (após a extração) só o caminhão e o extrator continuam acesos.
+ * Luz por zona: "claro" perto do carro, "penumbra" no meio, "escuro" no fundo.
+ * No apagão (após a extração) só o carro e o extrator continuam acesos.
  *
  * Orçamento: three.js fica pesado com muitas point lights. Este nível usa ~15.
  * Se crescer, a 0.5.0 troca por um "pool" que acende só as lâmpadas mais
@@ -81,7 +81,7 @@ export function RoomLights({ level, built }: { level: LevelData; built: BuiltLev
           )
         }
         if (room.light === 'dark') return null
-        if (blackout && room.kind !== 'truck') return null
+        if (blackout && room.kind !== 'car') return null
         const preset = PRESETS[room.light]
         const h = room.kind === 'outdoor' ? level.wallHeight * 1.8 : level.wallHeight - 0.35
         return lampPositions(room, level, built, h).map((pos, i) => (
