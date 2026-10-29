@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.7.0 — A Guardiã · 2026-10-28
+
+### Adicionado
+- A Guardiã (`src/enemies/guardia/`): patrulha, ouve barulhos, vê num cone (alcance pela luz, lanterna e postura), persegue, ataca (40) e recua; segue a origem das relíquias pegas e o rastro até o jogador; fica mais rápida a cada relíquia carregada; vai direto em esconderijos marcados e puxa o jogador do armário.
+- Grade de navegação gerada da planta com A* (`src/enemies/nav.ts`).
+- `Enemies`: entidades aparecem na fase `hunted` e reaparecem no apagão perto da entrada.
+- Sons gerados: passos arrastados, sussurro (loop que acompanha), grito, golpe. Loops 3D agora podem se mover (`setPos`).
+- Eventos para entidades: `onFirstTaken` (itens) e grupos de colisão `ENEMY` e `SIGHT`.
+- Portas: `doorHandles` para entidades abrirem na força quando travam.
+- Debug: estado e caminho da Guardiã (`G`) e `window.__relicario.guardia`.
+
+### Corrigido
+- Abrir uma porta rápido a partir do fechado não conta mais como batida (só ao fechar).
+- Guardiã ficava parada para sempre na patrulha (o destino antigo não era esquecido e ela "já tinha chegado" de novo a cada volta).
+- Travamentos em portas abertas atravessadas, quinas de estantes e itens: detecção por progresso (e por "não saiu do lugar", que vale também na perseguição) e destravamento em etapas — joga portas próximas para longe dela em qualquer ângulo, dá um passo de lado, e por fim desiste do destino.
+- Caminhos com folga: a grade fica 10 cm mais longe de paredes e móveis (não nos vãos de porta) e a suavização confere três linhas paralelas, sem cortar quinas.
+- Paradas mais curtas na patrulha (1–2,5 s).
+
 ## 0.6.0 — Esconderijos · 2026-10-28
 
 ### Adicionado

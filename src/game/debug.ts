@@ -3,6 +3,7 @@ import { useGameStore } from './stores/gameStore'
 import { usePlayerStore } from '../player/playerStore'
 import { useItemStore } from '../items/itemStore'
 import { useHidingStore } from '../player/hidingStore'
+import { guardiaDebug } from '../enemies/guardia/Guardia'
 
 /**
  * Comandos de teste em `window.__relicario` (só em dev). Servem para testar
@@ -26,6 +27,8 @@ export const debugApi = {
   player: usePlayerStore,
   items: useItemStore,
   hiding: useHidingStore,
+  /** Estado da Guardiã (state, seeing, pos, path). */
+  guardia: guardiaDebug,
   /** Simula o mouse travado. */
   play: () => usePlayerStore.getState().setLocked(true),
   tick,

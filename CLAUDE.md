@@ -25,7 +25,12 @@ Conceito, mecânicas e ordem das versões: `ROADMAP.md`. Histórico: `CHANGELOG.
   - `play()` simula o mouse travado · `look(yawGraus, pitchGraus)` gira a câmera · `pos()` posição dos pés
   - `hold('KeyW', ms)` segura uma tecla · `press('KeyE')` aperta · `tp(x, z)` teleporta (coordenadas do mundo)
   - `aim()` o que a mira acertou (distância, se é interagível)
-  - `game` / `player` / `items` são os stores Zustand (ex.: `items.getState().pickUp(uid)`)
+  - `guardia` estado da Guardiã (`state`, `seeing`, `sight` = motivo de ver/não ver, `pos`, `path`, `unsticks`);
+    `guardia.tp(x, z)` teleporta e `guardia.goTo(x, z)` manda investigar um ponto (reproduzir casos)
+  - Para testar a IA, rode testes longos (minutos) **sem** barulhos artificiais: barulhos dão destinos novos e
+    escondem travamentos. A ferramenta corta scripts com mais de 45 s: rode em segundo plano e leia depois.
+  - forçar a fase: `game.getState().setPhase('hunted')` faz as entidades aparecerem
+  - `game` / `player` / `items` / `hiding` são os stores Zustand (ex.: `items.getState().pickUp(uid)`)
 - Se o Vite servir um módulo vazio depois de várias edições seguidas (erro "does not provide an export"),
   reinicie o servidor (`preview_stop` + `preview_start`).
 - O painel do navegador oculto pausa os frames (0 fps). `tick(ms)` avança o jogo à mão (`hold` já usa);

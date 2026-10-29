@@ -26,6 +26,21 @@ export interface ItemInstance {
   version: number
   /** Até quando (performance.now) impactos não estragam o item. */
   graceUntil: number
+  /** Onde o item estava no começo da partida (a Guardiã sabe de onde saiu cada relíquia). */
+  origin: Vec3
+  /** Já foi pego alguma vez. */
+  taken: boolean
+}
+
+type TakenListener = (item: ItemInstance) => void
+const takenListeners = new Set<TakenListener>()
+
+/** Avisa na primeira vez que cada item é pego (as entidades reagem às relíquias). */
+export function onFirstTaken(listener: TakenListener) {
+  takenListeners.add(listener)
+  return () => {
+    takenListeners.delete(listener)
+  }
 }
 
 interface ItemState {
@@ -111,6 +126,8 @@ export const useItemStore = create<ItemState>((set, get) => {
           spawn: { pos: [x, 1.2, z], yaw: Math.random() * Math.PI * 2, vel: [0, 0, 0] },
           version: 0,
           graceUntil: performance.now() + CARRY.spawnGrace,
+          origin: [x, 0, z],
+          taken: false,
         }
       }
       set({ items, slots: Array(CARRY.slots).fill(null), selected: 0, hands: null })
@@ -127,14 +144,16 @@ export const useItemStore = create<ItemState>((set, get) => {
     pickUp: (uid) => {
       const to = get().wouldGo(uid)
       if (!to) return false
+      const first = !get().items[uid].taken
       set((s) => {
-        const items = { ...s.items, [uid]: { ...s.items[uid], place: to } }
+        const items = { ...s.items, [uid]: { ...s.items[uid], place: to, taken: true } }
         if (to === 'hands') return { items, hands: uid }
         const free = s.slots.indexOf(null)
         const slots = [...s.slots]
         slots[free] = uid
         return { items, slots, selected: free }
       })
+      if (first) takenListeners.forEach((l) => l(get().items[uid]))
       return true
     },
 

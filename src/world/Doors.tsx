@@ -54,6 +54,12 @@ export const DOOR = {
 
 const UP = new THREE.Vector3(0, 1, 0)
 
+/**
+ * Portas para as entidades: centro do vão e `force`, que abre na força se
+ * estiver fechada (para quando o empurrão do corpo não vence o atrito).
+ */
+export const doorHandles = new Map<string, { x: number; z: number; force: (from: [number, number, number]) => void }>()
+
 /** Ângulo (yaw) de um quaternion que só gira em Y. */
 function yawOf(q: { y: number; w: number }) {
   return 2 * Math.atan2(q.y, q.w)
@@ -123,24 +129,40 @@ function Door({ opening, level, built }: { opening: Opening; level: LevelData; b
   useEffect(() => {
     const c = collider.current
     if (!c) return
-    return registerInteractable(c.handle, {
-      kind: 'door',
-      label: () => ({ text: Math.abs(angle()) < 0.3 ? 'abrir porta' : 'fechar porta', ok: true }),
-      use: ({ from, hard }) => {
-        const closed = Math.abs(angle()) < 0.3
-        let target = 0
-        if (closed) {
-          // abre para longe de quem está usando
-          const v = new THREE.Vector3(from[0] - g.hinge[0], 0, from[2] - g.hinge[2]).applyAxisAngle(UP, -g.yaw0)
-          target = v.z >= 0 ? DOOR.openAngle : -DOOR.openAngle
-        }
-        drive(target, hard)
-        const [x, , z] = g.hinge
-        emitNoise({ pos: [x, 1, z], radius: hard ? DOOR.noiseHard : DOOR.noiseSoft, type: hard ? 'doorSlam' : 'door' })
-        // com força o rangido é curto e alto; a batida (se fechar) vem da detecção abaixo
-        audio.play('creak', { pos: [x, 1.2, z], volume: AUDIO.doors * (hard ? 1 : 0.7), rate: hard ? 1.7 : 0.9 + Math.random() * 0.2 })
+    /** Ângulo aberto para longe de quem está em `from`. */
+    const awayFrom = (from: [number, number, number]) => {
+      const v = new THREE.Vector3(from[0] - g.hinge[0], 0, from[2] - g.hinge[2]).applyAxisAngle(UP, -g.yaw0)
+      return v.z >= 0 ? DOOR.openAngle : -DOOR.openAngle
+    }
+    const use = (
+      { from, hard }: { from: [number, number, number]; hard: boolean },
+      target = Math.abs(angle()) < 0.3 ? awayFrom(from) : 0,
+    ) => {
+      drive(target, hard)
+      const [x, , z] = g.hinge
+      emitNoise({ pos: [x, 1, z], radius: hard ? DOOR.noiseHard : DOOR.noiseSoft, type: hard ? 'doorSlam' : 'door' })
+      // com força o rangido é curto e alto; a batida (se fechar) vem da detecção abaixo
+      audio.play('creak', { pos: [x, 1.2, z], volume: AUDIO.doors * (hard ? 1 : 0.7), rate: hard ? 1.7 : 0.9 + Math.random() * 0.2 })
+    }
+    const along = g.yaw0 === 0 ? [1, 0] : [0, 1]
+    doorHandles.set(opening.id, {
+      x: g.start[0] + (along[0] * g.len) / 2,
+      z: g.start[2] + (along[1] * g.len) / 2,
+      // joga a porta para longe de quem empurra, em qualquer ângulo (inclusive aberta atravessada no caminho)
+      force: (from) => {
+        const target = awayFrom(from)
+        if (Math.abs(angle() - target) > 0.3) use({ from, hard: true }, target)
       },
     })
+    const unregister = registerInteractable(c.handle, {
+      kind: 'door',
+      label: () => ({ text: Math.abs(angle()) < 0.3 ? 'abrir porta' : 'fechar porta', ok: true }),
+      use,
+    })
+    return () => {
+      unregister()
+      doorHandles.delete(opening.id)
+    }
   }, [g])
 
   useBeforePhysicsStep((world) => {
@@ -148,6 +170,8 @@ function Door({ opening, level, built }: { opening: Opening; level: LevelData; b
     if (!j || !door.current) return
     const a = angle()
     const speed = Math.abs(wrap(a - st.prevAngle)) / Math.max(world.timestep, 1e-3)
+    // só fecha se o ângulo está diminuindo (abrir rápido a partir do fechado não é batida)
+    const closing = Math.abs(a) < Math.abs(st.prevAngle)
     st.prevAngle = a
 
     // 1ª porta aberta: começa a contagem das entidades
@@ -158,7 +182,7 @@ function Door({ opening, level, built }: { opening: Opening; level: LevelData; b
 
     // fechou rápido demais: batida
     const now = performance.now()
-    if (Math.abs(a) < 0.08 && speed > DOOR.slamSpeed && now - st.lastSlam > 600) {
+    if (closing && Math.abs(a) < 0.08 && speed > DOOR.slamSpeed && now - st.lastSlam > 600) {
       st.lastSlam = now
       const [x, , z] = g.hinge
       emitNoise({ pos: [x, 1, z], radius: DOOR.noiseSlam, type: 'doorSlam' })

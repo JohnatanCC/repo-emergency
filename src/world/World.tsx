@@ -18,6 +18,7 @@ import { Extractor } from './Extractor'
 import { LevelFlow } from './LevelFlow'
 import { NoiseRings } from './NoiseRings'
 import { HidingSpots } from './HidingSpots'
+import { Enemies } from '../enemies/Enemies'
 import { AudioDirector } from '../game/audio/AudioDirector'
 
 /** Tudo que existe no nível: geometria, móveis, luz, investigador e (debug) marcadores. */
@@ -45,11 +46,12 @@ export function World({ level }: { level: LevelData }) {
       <ItemControls />
       {cameraMode === 'player' && <HeldItem />}
       {cameraMode === 'player' && <Flashlight />}
+      <Enemies level={level} built={built} />
       <LevelFlow level={level} built={built} />
       <AudioDirector level={level} built={built} />
       {/* F1: câmera livre do modo editor */}
       {cameraMode === 'editor' && <EditorCamera level={level} built={built} />}
-      {/* 0.7.0+: <Enemies /> · 0.10.0: <ACoisa /> */}
+      {/* 0.10.0: <ACoisa /> */}
     </Physics>
   )
 }

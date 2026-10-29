@@ -26,6 +26,10 @@ export type SoundId =
   | 'drip'
   | 'tick'
   | 'thunder'
+  | 'shuffle'
+  | 'whisper'
+  | 'shriek'
+  | 'hit'
 
 export const AUDIO_DIR = `${import.meta.env.BASE_URL}audio/`
 
@@ -56,4 +60,6 @@ export const AUDIO = {
   drip: 0.5,
   clock: 0.45,
   thunder: 0.7,
+  /** Guardiã. */
+  guardia: 0.9,
 }

@@ -377,3 +377,77 @@ export const thunder: Synth = (sr) =>
     }
     return normalize(x, 0.9)
   })
+
+/** Guardiã: pé arrastando no chão. */
+export const shuffle: Synth = (sr) =>
+  variants(3, (r) => {
+    const dur = 0.45
+    const n = Math.floor(sr * dur)
+    const x = noise(n, r)
+    lowpass(x, 0.12)
+    for (let i = 0; i < n; i++) {
+      const t = i / sr
+      // sobe devagar (arrasto) e corta
+      x[i] *= Math.sin((Math.PI * t) / dur) ** 2 * (0.7 + 0.3 * Math.sin(t * 60 + r()))
+    }
+    return normalize(mix([x, 1], [thump(sr, 0.15, 90, 60, 30), 0.3, Math.floor(sr * 0.25)]), 0.6)
+  })
+
+/** Guardiã: sussurro sem palavras (loop). Sílabas de ruído em duas formantes. */
+export const whisper: Synth = (sr) =>
+  variants(1, (r) => {
+    const dur = 7
+    const n = Math.floor(sr * dur)
+    const out = new Float32Array(n)
+    let t = 0.2
+    while (t < dur - 0.6) {
+      const len = 0.12 + r() * 0.22
+      const s0 = Math.floor(t * sr)
+      const m = Math.floor(len * sr)
+      const a = noise(m, r)
+      const b = Float32Array.from(a)
+      bandpass(a, sr, 500 + r() * 400, 5)
+      bandpass(b, sr, 1500 + r() * 900, 6)
+      const hiss = noise(m, r)
+      bandpass(hiss, sr, 5000, 1.5)
+      for (let i = 0; i < m; i++) {
+        const env = Math.sin((Math.PI * i) / m) ** 1.5
+        out[s0 + i] += (a[i] * 0.9 + b[i] * 0.7 + hiss[i] * 0.25) * env
+      }
+      // pausas entre "palavras"
+      t += len + (r() < 0.25 ? 0.5 + r() * 0.8 : 0.03 + r() * 0.08)
+    }
+    return normalize(out, 0.5)
+  })
+
+/** Guardiã: grito ao ver o jogador. */
+export const shriek: Synth = (sr) =>
+  variants(2, (r) => {
+    const dur = 1.3
+    const n = Math.floor(sr * dur)
+    const x = new Float32Array(n)
+    let ph = 0
+    let ph2 = 0
+    const base = 650 + r() * 150
+    for (let i = 0; i < n; i++) {
+      const t = i / sr
+      const f = base * (1 + 0.6 * Math.min(1, t * 4)) * (1 + 0.04 * Math.sin(TAU * 7 * t))
+      ph += (TAU * f) / sr
+      ph2 += (TAU * f * 1.5 + 30) / sr
+      const env = Math.min(1, t * 12) * Math.exp(-t * 1.6)
+      x[i] = (Math.sin(ph) + 0.5 * Math.sin(ph2) + 0.3 * Math.sign(Math.sin(ph * 2))) * env
+    }
+    const rasp = noise(n, r)
+    bandpass(rasp, sr, 2500, 2)
+    for (let i = 0; i < n; i++) rasp[i] *= Math.min(1, (i / sr) * 12) * Math.exp((-i / sr) * 1.6)
+    return normalize(mix([normalize(x), 0.8], [normalize(rasp), 0.4]), 0.85)
+  })
+
+/** Guardiã: golpe. */
+export const hit: Synth = (sr) =>
+  variants(2, (r) => {
+    const swish = noise(Math.floor(sr * 0.2), r)
+    bandpass(swish, sr, 1800, 1)
+    for (let i = 0; i < swish.length; i++) swish[i] *= Math.sin((Math.PI * i) / swish.length) ** 2
+    return normalize(mix([normalize(swish), 0.5], [thump(sr, 0.4, 120, 50, 12), 1, Math.floor(sr * 0.15)]))
+  })

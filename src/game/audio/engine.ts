@@ -29,6 +29,10 @@ const SYNTHS = {
   drip: S.drip,
   tick: S.tick,
   thunder: S.thunder,
+  shuffle: S.shuffle,
+  whisper: S.whisper,
+  shriek: S.shriek,
+  hit: S.hit,
 } as Record<SoundId, S.Synth>
 
 export const SOUND_IDS = Object.keys(SYNTHS) as SoundId[]
@@ -48,6 +52,8 @@ export interface PlayOptions {
 export interface LoopHandle {
   setVolume: (v: number, seconds?: number) => void
   setRate: (r: number) => void
+  /** Move um som 3D (ex.: preso a uma entidade). */
+  setPos: (p: Vec3) => void
   stop: () => void
 }
 
@@ -112,8 +118,9 @@ class AudioEngine {
     const gain = ctx.createGain()
     gain.gain.value = opts.volume ?? 1
     src.connect(gain)
+    let panner: PannerNode | null = null
     if (opts.pos) {
-      const p = ctx.createPanner()
+      const p = (panner = ctx.createPanner())
       p.panningModel = 'HRTF'
       p.distanceModel = 'inverse'
       p.refDistance = opts.ref ?? AUDIO.refDistance
@@ -125,7 +132,7 @@ class AudioEngine {
       gain.connect(p).connect(master)
     } else gain.connect(master)
     src.start()
-    return { ctx, src, gain }
+    return { ctx, src, gain, panner }
   }
 
   play(id: SoundId, opts: PlayOptions = {}) {
@@ -137,11 +144,12 @@ class AudioEngine {
     let node = this.chain(id, opts, true)
     let volume = opts.volume ?? 1
     let rate = opts.rate ?? 1
+    let pos = opts.pos
     let stopped = false
     // arquivo ainda carregando: tenta de novo daqui a pouco
     const retry = setInterval(() => {
       if (node || stopped) return clearInterval(retry)
-      node = this.chain(id, { ...opts, volume, rate }, true)
+      node = this.chain(id, { ...opts, volume, rate, pos }, true)
     }, 500)
     return {
       setVolume: (v, seconds = 0.3) => {
@@ -151,6 +159,15 @@ class AudioEngine {
       setRate: (r) => {
         rate = r
         if (node) node.src.playbackRate.setTargetAtTime(r, node.ctx.currentTime, 0.1)
+      },
+      setPos: (p) => {
+        pos = p
+        const pn = node?.panner
+        if (!pn || !node) return
+        const t = node.ctx.currentTime
+        pn.positionX.setTargetAtTime(p[0], t, 0.05)
+        pn.positionY.setTargetAtTime(p[1], t, 0.05)
+        pn.positionZ.setTargetAtTime(p[2], t, 0.05)
       },
       stop: () => {
         stopped = true

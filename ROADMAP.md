@@ -98,11 +98,23 @@ você chega de **carro**, invade o lugar, encontra as **relíquias** que o C.R.O
 ## 💡 Entidades
 Cada uma conversa com uma mecânica do jogo, para que fugir de cada uma seja diferente.
 
-### ⬜ 0.7.0 — A Guardiã
-- A antiga dona da casa. **Sabe de onde saiu cada relíquia**: quando você pega uma, ela vai até aquela sala e segue o rastro
-- Fica **mais rápida quanto mais relíquias** você carrega (inventário + mãos)
-- Navmesh (recast) gerado a partir do greybox; estados `idle → patrol → investigate → chase → checkHiding → attack`
-- Vasculha esconderijos marcados
+### ✅ 0.7.0 — A Guardiã
+- A antiga dona da casa: figura alta de vestido escuro, braços pálidos, cabeça caída; olhos acendem na perseguição
+- Aparece na fase `hunted` (pontos `start`); no apagão reaparece perto da entrada (pontos `blackout`) já indo até o jogador
+- **Grade de navegação** própria (`src/enemies/nav.ts`, A* + suavização), gerada da planta; sem biblioteca externa
+- Corpo cinemático com controlador de personagem: **empurra portas e itens**; se travar, destrava em etapas: joga a porta
+  próxima para longe (rangido alto), dá um passo de lado e, por fim, desiste do destino
+- Estados: `patrol → idle`, `investigate → search`, `chase`, `checkHiding`, `recover`
+- **Ouve** os barulhos (ruído das 0.2–0.5) e vai até eles; ignora os que ela mesma causa
+- **Vê** num cone de 110°: alcance pela luz da sala (15/10/6 m), 22 m com a lanterna ligada, × 0,6 agachado;
+  embaixo da mesa só de muito perto; no armário não vê. Paredes, móveis e portas bloqueiam
+- **Sabe de onde saiu cada relíquia**: ao pegar uma, ela vai até a origem e depois segue o rastro até você
+- **Mais rápida a cada relíquia** carregada (+0,35 m/s)
+- **Esconderijo marcado**: se te viu entrar, vai direto nele e puxa para fora (armário) e ataca
+- Ataque: 40 de dano; depois recua um pouco (chance de fugir)
+- Sons próprios gerados: passos arrastados, sussurro que a acompanha, grito ao te ver, golpe
+- Batimento cardíaco pela distância e pelo estado dela
+- Debug (`G`): estado em cima dela e caminho em vermelho; `window.__relicario.guardia` (estado, visão, caminho)
 
 ### ⬜ 0.8.0 — A Sombra
 - Vive nas salas `dark`. **Só se move quando não está no feixe da lanterna**
