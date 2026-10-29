@@ -30,6 +30,9 @@ Conceito, mecânicas e ordem das versões: `ROADMAP.md`. Histórico: `CHANGELOG.
   - `sombra` estado da Sombra (`state`, `lit` = no feixe, `pos`, `path`, `unsticks`, `tp(x, z)`)
   - `possessor` (`carrying`, `freed` = figuras soltas, `ghostState`, `ghostPos`); o item possuído tem `possessed: true`
     no store de itens (`items.getState().pickUp/drop` liberta a figura)
+  - `coisa.list` as COISAS em cena (`id`, `state`, `x`, `z`); morrer (`player.getState().damage(100)`) cria uma
+  - Cuidado com a geometria nos testes de perseguição: mesas e móveis travam o jogador; prefira corredores retos
+    (ex.: corredor sul, z ≈ 10, x de −11 a 11)
   - Para testar a IA, rode testes longos (minutos) **sem** barulhos artificiais: barulhos dão destinos novos e
     escondem travamentos. A ferramenta corta scripts com mais de 45 s: rode em segundo plano e leia depois.
   - forçar a fase: `game.getState().setPhase('hunted')` faz as entidades aparecerem

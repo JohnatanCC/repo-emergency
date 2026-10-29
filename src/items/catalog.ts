@@ -15,7 +15,7 @@ export interface ItemDef {
   id: string
   name: string
   /** relic / loot vêm do sorteio; supply = suprimento que é usado ao pegar (não vai para o inventário). */
-  tag: ItemTag | 'supply'
+  tag: ItemTag | 'supply' | 'head'
   size: ItemSize
   /** Valor inteiro, em dinheiro. */
   value: number
@@ -188,6 +188,20 @@ export const SUPPLIES: ItemDef[] = [
 
 /** Quantos pontos de saque viram pilhas a cada partida. */
 export const SUPPLY_SPAWNS = 2
+
+/** A cabeça do investigador, que A COISA leva ao morrer. Levar ao carro devolve uma vida. */
+export const HEAD: ItemDef = {
+  id: 'cabeca',
+  name: 'Cabeça do investigador',
+  tag: 'head',
+  size: 'medium',
+  value: 0,
+  fragility: 0,
+  mass: 4,
+  shape: 'sphere',
+  dims: [0.12],
+  color: '#c8a888',
+}
 
 /** Regras de carregar e de dano. */
 export const CARRY = {

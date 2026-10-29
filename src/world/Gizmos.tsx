@@ -111,7 +111,7 @@ export function Gizmos({ level, built }: { level: LevelData; built: BuiltLevel }
         </group>
       ))}
 
-      {/* onde o investigador morreu: A COISA surge ali segurando a cabeça (0.10.0) */}
+      {/* onde o investigador morreu (ali surgiu A COISA) */}
       {deathSpots.map((p, i) => (
         <group key={i} position={[p[0], p[1] + 0.5, p[2]]}>
           <mesh>
@@ -119,7 +119,7 @@ export function Gizmos({ level, built }: { level: LevelData; built: BuiltLevel }
             <meshBasicMaterial color="#e8e8e8" wireframe />
           </mesh>
           <group position-y={0.6}>
-            <Label text="A COISA" color="#e8e8e8" />
+            <Label text="morte" color="#e8e8e8" />
           </group>
         </group>
       ))}

@@ -137,15 +137,16 @@ Cada uma conversa com uma mecânica do jogo, para que fugir de cada uma seja dif
 - **Extrair** o objeto com o Possessor dentro: **multa de $300** no pagamento (linha na tela de resultado).
   Se ele estiver solto na hora da extração, o objeto vai "vazio", sem multa. **Roubar tem risco**
 
-## ⬜ 0.10.0 — Morte e A COISA
-- Morrer custa **uma vida** e o investigador renasce no carro (base pronta na 0.1.0)
-- No lugar da morte surge **A COISA**: um espírito negro segurando a **cabeça** do investigador
-  - Criatura única e **pacífica**: não ataca, só **foge** quando o jogador chega perto (usa a navmesh da 0.7.0)
-  - Alcançá-la faz soltar a cabeça; a cabeça é um item que vai **nas mãos** (regras da 0.3.0)
-  - Levar a cabeça de volta ao **carro** devolve a vida perdida
-  - Uma COISA por morte; várias mortes = várias COISAS espalhadas pelo mapa
-- 💡 A definir: A COISA corre mais quando você corre? Some no apagão? Entidades atacam quem está carregando a cabeça?
-- 💡 Ao morrer, o que estava no inventário e nas mãos cai no chão no local da morte
+## ✅ 0.10.0 — Morte e A COISA
+- Morrer custa **uma vida**, o que carregava cai no local e o investigador renasce no carro
+- No lugar da morte surge **A COISA**: espírito negro e curvado (não reflete luz) segurando a **cabeça** do investigador
+  - **Pacífica**: ronda perto de onde surgiu; a menos de 7 m **foge** para o ponto mais longe de você que alcança
+  - **Corre mais quando você corre**: 3,4 m/s (você andando a 3 não alcança) e 4,8 m/s (você correndo a 5,5 alcança,
+    gastando estamina); encurralar ajuda. Não entra no carro nem no extrator
+  - Alcançada, **solta a cabeça** e se desfaz; a cabeça é item **médio, nas mãos**
+  - Entrar no **carro** com a cabeça (ou largá-la lá dentro) **devolve uma vida**
+  - Uma COISA por morte; continua no apagão; contrato novo ou recomeço limpa as que sobraram
+- A cabeça não vale dinheiro e o extrator a ignora; as entidades tratam quem a carrega como sempre
 
 ## ⬜ 0.11.0 — Loja do C.R.O.S
 - Comprar equipamento entre níveis: lanterna melhor, **mochila +1 espaço**, detector de relíquias, sal (afasta uma entidade por alguns segundos), kit médico…

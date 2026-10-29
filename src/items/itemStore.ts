@@ -90,6 +90,10 @@ interface ItemState {
   consume: (uid: string) => ItemDef | null
   /** O Possessor voltou para dentro do objeto. */
   repossess: (uid: string) => void
+  /** Cria um item fora do sorteio (ex.: a cabeça que A COISA solta). */
+  spawnItem: (def: ItemDef, uid: string, pos: Vec3) => void
+  /** Some com o item de onde estiver (ex.: cabeça entregue no carro). */
+  discard: (uid: string) => void
   /** Primeiro sussurro: o objeto passa a dar pistas. */
   reveal: (uid: string) => void
 }
@@ -262,6 +266,30 @@ export const useItemStore = create<ItemState>((set, get) => {
       set((s) => ({ items: { ...s.items, [uid]: { ...it, place: 'used' } } }))
       return it.def
     },
+
+    spawnItem: (def, uid, pos) =>
+      set((s) => ({
+        items: {
+          ...s.items,
+          [uid]: {
+            uid,
+            def,
+            value: def.value,
+            place: 'world',
+            spawn: { pos, yaw: Math.random() * Math.PI * 2, vel: [0, 0, 0] },
+            version: 0,
+            graceUntil: performance.now() + CARRY.spawnGrace,
+            origin: [pos[0], 0, pos[2]],
+            taken: false,
+            possessed: false,
+            freed: false,
+            revealed: false,
+          },
+        },
+      })),
+
+    discard: (uid) =>
+      set((s) => (s.items[uid] ? { ...release(s, uid), items: { ...s.items, [uid]: { ...s.items[uid], place: 'used' } } } : s)),
 
     repossess: (uid) => set((s) => (s.items[uid] ? { items: { ...s.items, [uid]: { ...s.items[uid], freed: false } } } : s)),
 

@@ -87,7 +87,8 @@ export function Extractor({ level, built }: { level: LevelData; built: BuiltLeve
         if (it.place !== 'world') continue
         const p = itemBodies.get(it.uid)?.translation()
         if (!p || p.x < area.x0 || p.x > area.x1 || p.z < area.z0 || p.z > area.z1) continue
-        if (it.def.tag === 'supply') continue
+        // suprimentos e cabeças não são entregues ao C.R.O.S
+        if (it.def.tag === 'supply' || it.def.tag === 'head') continue
         uids.push(it.uid)
         if (it.def.tag === 'relic') {
           if (!isBroken(it)) inside.relics++

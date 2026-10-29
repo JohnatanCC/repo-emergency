@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.10.0 — A COISA · 2026-10-29
+
+### Adicionado
+- A COISA (`src/enemies/coisa/`): surge onde o investigador morreu, segurando a cabeça dele. Pacífica: ronda o lugar e foge quando o jogador chega a 7 m (3,4 m/s; 4,8 m/s se ele corre). Alcançada, solta a cabeça e se desfaz.
+- A cabeça do investigador (item médio, nas mãos): entrar no carro com ela, ou largá-la lá dentro, devolve uma vida.
+- `spawnItem` e `discard` no store de itens; `regainLife` no gameStore.
+- Debug: `window.__relicario.coisa` (lista com estado e posição).
+
+### Alterado
+- O marcador de debug no local da morte agora diz "morte" (A COISA de verdade anda pelo mapa).
+
 ## 0.9.0 — O Possessor · 2026-10-29
 
 ### Adicionado

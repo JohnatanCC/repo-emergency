@@ -96,6 +96,7 @@ function WorldItem({ item }: { item: ItemInstance }) {
         const s = useItemStore.getState()
         const it = s.items[uid]
         if (!it) return { text: '', ok: false }
+        if (it.def.tag === 'head' && s.wouldGo(uid)) return { text: `pegar ${it.def.name} (leve ao carro: +1 vida)`, ok: true }
         if (it.def.tag === 'supply') return { text: `pegar ${it.def.name} (+${it.def.battery}% bateria)`, ok: true }
         const go = s.wouldGo(uid)
         return go ? { text: `pegar ${itemLabel(it)}`, ok: true } : { text: `${itemLabel(it)} — mãos ocupadas`, ok: false }

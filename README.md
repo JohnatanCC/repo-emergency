@@ -8,7 +8,7 @@ Dá para roubar objetos da casa para vender, mas o inventário só tem 3 espaço
 Tudo vai para o **extrator mágico** (sala roxa): largue os itens lá dentro e, quando a meta de relíquias for cumprida, ele leva tudo de uma vez.
 Aí as luzes apagam e é voltar vivo para o carro para receber o pagamento.
 
-Versão atual: **0.9.0 — O Possessor** · próximas etapas em [`ROADMAP.md`](./ROADMAP.md)
+Versão atual: **0.10.0 — A COISA** · próximas etapas em [`ROADMAP.md`](./ROADMAP.md)
 
 ## Rodando
 
@@ -62,7 +62,7 @@ src/
   world/                   gera e desenha o nível (greybox, luzes, móveis)
   player/                  0.1.0
   items/                   catálogo, itens físicos, inventário e mãos
-  enemies/                 entidades + grade de navegação + andar comum (Guardiã, Sombra, Possessor)
+  enemies/                 entidades + grade de navegação + andar comum (Guardiã, Sombra, Possessor, A COISA)
   fx/                      pós-processamento retrô
   ui/                      HUD e telas
 public/audio/              sons (só próprios ou com licença livre)

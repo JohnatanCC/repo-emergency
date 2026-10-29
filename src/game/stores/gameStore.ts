@@ -78,6 +78,8 @@ interface GameState {
   completeExtraction: (result: ExtractorContents) => void
   /** Voltou ao carro depois da extração. */
   reachCar: () => void
+  /** Cabeça entregue no carro: devolve uma vida. */
+  regainLife: () => void
   /** Recebe o pagamento e começa um contrato novo. */
   nextContract: () => void
   /** Recomeça o nível depois do fim de jogo. */
@@ -145,6 +147,7 @@ export const useGameStore = create<GameState>((set) => ({
       phase: s.phase === 'gameover' ? s.phase : 'blackout',
     })),
   reachCar: () => set((s) => (s.phase === 'blackout' ? { phase: 'results' } : s)),
+  regainLife: () => set((s) => ({ lives: Math.min(LIVES, s.lives + 1) })),
   nextContract: () => set((s) => ({ ...freshMatch(s.matchId), money: s.money + (s.result ? payout(s.result) : 0) })),
   restart: () => set((s) => freshMatch(s.matchId)),
   toggleCameraMode: () => set((s) => ({ cameraMode: s.cameraMode === 'player' ? 'editor' : 'player' })),
