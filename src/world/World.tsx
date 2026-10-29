@@ -12,6 +12,13 @@ import { HeldItem, ItemControls } from '../items/HeldItem'
 import { buildLevel } from './buildLevel'
 import { Level } from './Level'
 import { Props } from './Props'
+import { Decor } from './Decor'
+import { Revive } from './Revive'
+import { DebugProbe } from './DebugProbe'
+import { Prewarm } from './Prewarm'
+import { Immersion } from '../player/Immersion'
+import { Dust } from './Dust'
+import { MapTracker } from './MapTracker'
 import { RoomLights } from './RoomLights'
 import { Gizmos } from './Gizmos'
 import { EditorCamera } from './EditorCamera'
@@ -37,6 +44,7 @@ export function World({ level }: { level: LevelData }) {
     <Physics gravity={[0, -9.81, 0]} timeStep="vary" paused={paused}>
       <Level built={built} wallHeight={level.wallHeight} />
       <Props level={level} built={built} />
+      <Decor level={level} built={built} />
       {/* partida nova: portas voltam fechadas */}
       <Doors key={matchId} level={level} built={built} />
       <Items level={level} built={built} />
@@ -51,6 +59,12 @@ export function World({ level }: { level: LevelData }) {
       <Tools />
       {cameraMode === 'player' && <HeldItem />}
       {cameraMode === 'player' && <Flashlight built={built} />}
+      {cameraMode === 'player' && <Revive level={level} built={built} />}
+      {cameraMode === 'player' && <Immersion />}
+      {cameraMode === 'player' && <Dust />}
+      {cameraMode === 'player' && <MapTracker />}
+      {import.meta.env.DEV && <DebugProbe />}
+      <Prewarm version={level} />
       <Enemies level={level} built={built} />
       <LevelFlow level={level} built={built} />
       <AudioDirector level={level} built={built} />

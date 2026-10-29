@@ -19,6 +19,8 @@ export interface Hint {
 
 export interface Interactable {
   kind: 'door' | 'item' | 'hide'
+  /** Id para destacar o objeto quando está na mira (systems/aim.ts). */
+  highlight?: string
   label: () => Hint
   use: (ctx: UseContext) => void
 }

@@ -125,8 +125,6 @@ export const orphanage02: LevelData = {
 
   enemySpawns: [
     { id: 'e-guardia', enemy: 'guardia', x: 500, y: 400, phase: 'start' },
-    { id: 'e-sombra', enemy: 'sombra', x: 400, y: 250, phase: 'start' },
     { id: 'eb-guardia', enemy: 'guardia', x: 260, y: 300, phase: 'blackout' },
-    { id: 'eb-sombra', enemy: 'sombra', x: 250, y: 200, phase: 'blackout' },
   ],
 }

@@ -92,6 +92,7 @@ export function Player({ level, built }: { level: LevelData; built: BuiltLevel }
     regenDelay: 0,
     exhausted: false,
     dead: false,
+    regen: 0,
     eye: PLAYER.standEye,
     bob: 0,
     bobAmp: 0,
@@ -221,7 +222,8 @@ export function Player({ level, built }: { level: LevelData; built: BuiltLevel }
     const k = keys.current
     // dentro do armário não se mexe (o corpo está parado lá dentro)
     if (useHidingStore.getState().wardrobeId) return
-    const active = game.cameraMode === 'player' && !isPaused(game.phase) && player.locked
+    // renascendo: a cena controla a câmera e o corpo fica parado no carro
+    const active = game.cameraMode === 'player' && !isPaused(game.phase) && player.locked && player.reviving === null
 
     const pos = b.translation()
     let shiftY = 0
@@ -316,6 +318,15 @@ export function Player({ level, built }: { level: LevelData; built: BuiltLevel }
     const eyeTarget = st.crouched ? PLAYER.crouchEye : PLAYER.standEye
     st.eye += (eyeTarget - st.eye) * (1 - Math.exp(-12 * dt))
 
+    // vida volta devagar depois de um tempo sem apanhar (em passos de 1, para não redesenhar o HUD todo frame)
+    if (player.health > 0 && player.health < PLAYER.regenCap && performance.now() - player.lastHitAt > PLAYER.regenDelay * 1000) {
+      st.regen += PLAYER.regenPerSec * dt
+      if (st.regen >= 1) {
+        player.damage(-Math.min(Math.floor(st.regen), PLAYER.regenCap - player.health))
+        st.regen -= Math.floor(st.regen)
+      }
+    }
+
     // morte: perde uma vida e renasce no carro
     if (player.health <= 0 && !st.dead) {
       st.dead = true
@@ -323,12 +334,19 @@ export function Player({ level, built }: { level: LevelData; built: BuiltLevel }
       // tudo o que carregava cai no local da morte
       items.dropAll(deathAt)
       game.loseLife(deathAt)
+      // morto por uma criatura: o rosto dela na tela (ui/Jumpscare.tsx), depois o renascimento;
+      // sem criatura (ex.: tecla K), vai direto para o renascimento
+      // (na última vida o susto aparece, mas não há renascimento: Jumpscare.tsx confere)
+      if (player.lastHit) player.scare(player.lastHit)
+      else if (useGameStore.getState().phase !== 'gameover') player.startRevive()
       if (useGameStore.getState().phase !== 'gameover') player.respawn()
     }
   })
 
   useFrame(() => {
     if (useGameStore.getState().cameraMode !== 'player') return
+    // renascendo: a câmera é da cena (world/Revive.tsx)
+    if (usePlayerStore.getState().reviving !== null) return
 
     // no armário: olhos fixos atrás da fresta, dá para virar só um pouco
     const w = useHidingStore.getState().wardrobeId

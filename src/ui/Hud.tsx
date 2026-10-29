@@ -10,7 +10,10 @@ import type { LevelData } from '../game/data/types'
 import { usePlayerStore } from '../player/playerStore'
 import { useHidingStore } from '../player/hidingStore'
 import { FLASHLIGHT, PLAYER } from '../player/config'
-import { DamageFeedback, PauseMenu, TitleScreen, useTitleStore, VhsOverlay } from './Screens'
+import { DamageFeedback, useTitleStore, VhsOverlay } from './Screens'
+import { MainMenu, PauseMenu } from './Menu'
+import { MapPanel } from './MapPanel'
+import { Jumpscare } from './Jumpscare'
 import { hasPossessor, isBroken, isCarried, useItemStore, type ItemInstance } from '../items/itemStore'
 
 const TOGGLES: { key: string; flag: keyof DebugFlags; label: string }[] = [
@@ -289,6 +292,7 @@ export function Hud({ level }: { level: LevelData }) {
   const cycleVisit = useGameStore((s) => s.cycleVisit)
   const visitRoom = useGameStore((s) => s.visitRoom)
   const locked = usePlayerStore((s) => s.locked)
+  const reviving = usePlayerStore((s) => s.reviving)
   const [sound, setSound] = useState<SoundId>('creak')
   const [muted, setMuted] = useState(false)
   const [panel, setPanel] = useState(false)
@@ -466,8 +470,13 @@ export function Hud({ level }: { level: LevelData }) {
         )}
       </div>
 
-      {playing && locked && <div className="hud-crosshair" />}
-      {playing && locked && <AimHint />}
+      {playing && locked && reviving === null && <div className="hud-crosshair" />}
+      {playing && locked && reviving === null && <AimHint />}
+      {reviving !== null && (
+        <div className="revive-caption">
+          <i>●</i> C.R.O.S · RECONSTITUIÇÃO DO INVESTIGADOR
+        </div>
+      )}
       {playing && <Toast />}
       {playing && started && !locked && <PauseMenu />}
       <Banner />
@@ -488,7 +497,9 @@ export function Hud({ level }: { level: LevelData }) {
       {cameraMode === 'player' && started && <Inventory />}
       {cameraMode === 'player' && started && debug.retro && <VhsOverlay level={level} />}
       {cameraMode === 'player' && <DamageFeedback />}
-      {cameraMode === 'player' && !started && <TitleScreen />}
+      {cameraMode === 'player' && !started && <MainMenu />}
+      {cameraMode === 'player' && <MapPanel level={level} enabled={playing && started && locked && reviving === null} />}
+      <Jumpscare />
     </div>
   )
 }

@@ -4,6 +4,8 @@ import * as THREE from 'three'
 import { psxBasic, raggedLathe } from './psx'
 import { creatureTextures } from './textures'
 import type { Pose } from './pose'
+import { spring, stepSpring, turnLag } from './spring'
+import { ANIM } from './config'
 
 /**
  * A figura do Possessor (pés em y = 0): fantasma translúcido que flutua, de
@@ -57,27 +59,36 @@ export function PossessorModel({ pose }: { pose: Pose }) {
     [],
   )
 
-  useFrame(({ clock }) => {
+  const sp = useMemo(
+    () => ({ bob: spring(), tailX: spring(), tailZ: spring(), armL: spring(-1.35), armR: spring(-1.35), turn: spring() }),
+    [],
+  )
+
+  useFrame(({ clock }, delta) => {
     const t = clock.elapsedTime
+    const dt = Math.min(delta, 0.05)
     const b = body.current
     if (!b) return
+    turnLag(sp.turn, b, dt, ANIM.turn)
     // flutua, tremula e some no fim
     m.ghost.opacity = (0.22 + 0.25 * Math.abs(Math.sin(t * 9) * Math.sin(t * 2.3))) * pose.fade
     m.face.opacity = 0.85 * pose.fade
-    b.position.set((Math.random() - 0.5) * 0.03, Math.sin(t * 2) * 0.06, (Math.random() - 0.5) * 0.03)
+    const bob = stepSpring(sp.bob, Math.sin(t * 2) * 0.08, dt, ANIM.soft)
+    b.position.set((Math.random() - 0.5) * 0.03, bob, (Math.random() - 0.5) * 0.03)
     b.scale.setScalar(0.6 + 0.4 * pose.fade)
     b.rotation.z = pose.stunned ? Math.sin(t * 45) * 0.1 : 0
-    // cauda ondulando
+    // cauda: segue a velocidade de giro do corpo (chicoteia nas curvas) e ondula
     const tl = tail.current
     if (tl) {
-      tl.rotation.x = Math.sin(t * 3) * 0.25
-      tl.rotation.z = Math.cos(t * 2.4) * 0.15
+      tl.rotation.x = stepSpring(sp.tailX, Math.sin(t * 3) * 0.25 + sp.bob.v * 1.5, dt, ANIM.head)
+      tl.rotation.z = stepSpring(sp.tailZ, Math.cos(t * 2.4) * 0.15 + sp.turn.v * 0.25, dt, ANIM.head)
     }
-    for (const [arm, side] of [
-      [armL.current, -1],
-      [armR.current, 1],
+    for (const [arm, s, side] of [
+      [armL.current, sp.armL, -1],
+      [armR.current, sp.armR, 1],
     ] as const) {
-      if (arm) arm.rotation.x = -1.35 + Math.sin(t * 5 + side) * 0.15
+      // garras abrindo e fechando, cada braço num tempo
+      if (arm) arm.rotation.x = stepSpring(s, -1.35 + (Math.sin(t * 2.2 + side) > 0.6 ? -0.4 : 0.1), dt, ANIM.limb)
     }
   })
 

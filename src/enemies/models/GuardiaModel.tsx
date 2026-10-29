@@ -4,6 +4,8 @@ import * as THREE from 'three'
 import { lathe, psxBasic, psxStandard } from './psx'
 import { creatureTextures } from './textures'
 import type { Pose } from './pose'
+import { spring, stepSpring, turnLag } from './spring'
+import { ANIM } from './config'
 
 /**
  * A Guardiã (pés em y = 0): vestido longo com babados, corpete, gola,
@@ -69,35 +71,55 @@ export function GuardiaModel({ pose }: { pose: Pose }) {
     [],
   )
 
-  useFrame(({ clock }, dt) => {
+  const sp = useMemo(
+    () => ({
+      walk: spring(),
+      roll: spring(),
+      lean: spring(),
+      skirt: spring(),
+      headX: spring(0.42),
+      headZ: spring(),
+      armL: spring(0.05),
+      armR: spring(0.05),
+      turn: spring(),
+    }),
+    [],
+  )
+
+  useFrame(({ clock }, delta) => {
     const t = clock.elapsedTime
+    const dt = Math.min(delta, 0.05)
     const b = body.current
     if (!b) return
     const chase = pose.mode === 'chase'
-    const walk = pose.moving
-    // passo arrastado: balanço lateral e a saia ondulando
-    b.rotation.z = Math.sin(t * 2.4 * Math.max(walk, 0.3)) * 0.04 * (0.4 + walk)
+    const walk = stepSpring(sp.walk, Math.min(pose.moving, 2), dt, ANIM.soft)
+    turnLag(sp.turn, b, dt, ANIM.turn)
+    // passo arrastado: balanço lateral (com mola), a saia atrasa e ondula
+    const sway = Math.sin(t * 2.4 * Math.max(walk, 0.3)) * 0.04 * (0.4 + walk)
+    const shake = pose.stunned ? Math.sin(t * 45) * 0.07 : 0
+    b.rotation.z = stepSpring(sp.roll, sway, dt, ANIM.soft) + shake
+    b.rotation.x = stepSpring(sp.lean, chase ? 0.12 : walk * 0.05, dt, ANIM.soft)
     b.position.y = Math.abs(Math.sin(t * 2.4)) * 0.02 * walk
-    if (skirt.current) skirt.current.rotation.y = Math.sin(t * 1.7) * 0.06 * (0.3 + walk)
-    // atordoada: treme inteira
-    if (pose.stunned) b.rotation.z = Math.sin(t * 45) * 0.07
+    // a saia gira contra o giro do corpo (inércia do tecido)
+    if (skirt.current)
+      skirt.current.rotation.y = stepSpring(sp.skirt, Math.sin(t * 1.7) * 0.06 * (0.3 + walk) - sp.turn.v * 0.08, dt, ANIM.head)
 
     const h = head.current
     if (h) {
-      const tilt = chase ? -0.05 : pose.mode === 'alert' ? 0.15 : 0.42
-      h.rotation.x += (tilt - h.rotation.x) * Math.min(1, 5 * dt)
-      // caçando: tiques na cabeça
-      h.rotation.z = chase ? (Math.sin(t * 23) > 0.85 ? 0.25 : Math.sin(t * 3) * 0.05) : Math.sin(t * 0.8) * 0.04
+      h.rotation.x = stepSpring(sp.headX, chase ? -0.05 : pose.mode === 'alert' ? 0.15 : 0.42, dt, ANIM.head)
+      // caçando: tiques bruscos que a mola faz balançar
+      const tic = chase ? (Math.sin(t * 23) > 0.85 ? 0.35 : Math.sin(t * 3) * 0.05) : Math.sin(t * 0.8) * 0.04
+      h.rotation.z = stepSpring(sp.headZ, tic, dt, ANIM.snappy)
     }
     // braços: caídos e balançando; caçando, esticados para a frente
     const reach = chase ? -1.25 : pose.mode === 'alert' ? -0.25 : 0.05
-    for (const [arm, side] of [
-      [armL.current, -1],
-      [armR.current, 1],
+    for (const [arm, s, side] of [
+      [armL.current, sp.armL, -1],
+      [armR.current, sp.armR, 1],
     ] as const) {
       if (!arm) continue
       const swing = Math.sin(t * 2.4 + (side > 0 ? Math.PI : 0)) * 0.18 * walk
-      arm.rotation.x += (reach + swing - arm.rotation.x) * Math.min(1, 6 * dt)
+      arm.rotation.x = stepSpring(s, reach + swing, dt, ANIM.limb)
       arm.rotation.z = side * (chase ? 0.05 : 0.12)
     }
     m.eyes.color.set(chase ? '#ff3020' : pose.mode === 'alert' ? '#a04030' : '#2a1a14')

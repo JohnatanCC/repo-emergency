@@ -32,6 +32,15 @@ export type SoundId =
   | 'hit'
   | 'hiss'
   | 'murmur'
+  | 'scare'
+  | 'knock'
+  | 'musicbox'
+  | 'scrape'
+  | 'moan'
+  | 'stinger'
+  | 'assemble'
+  | 'revive'
+  | 'breath'
 
 export const AUDIO_DIR = `${import.meta.env.BASE_URL}audio/`
 
@@ -52,20 +61,34 @@ export const AUDIO = {
   steps: 0.5,
   doors: 0.8,
   items: 0.8,
-  ambience: 0.35,
-  heartbeat: 0.7,
+  ambience: 0.2,
+  heartbeat: 0.5,
   extractor: 0.6,
   /** Vento lá fora / abafado dentro da casa. */
-  windOutside: 0.5,
-  windInside: 0.35,
-  crickets: 0.35,
-  drip: 0.5,
-  clock: 0.45,
-  thunder: 0.7,
+  windOutside: 0.3,
+  windInside: 0.12,
+  crickets: 0.16,
+  drip: 0.28,
+  clock: 0.22,
+  thunder: 0.45,
+  /** Respiração ofegante (correndo, cansado ou com medo). */
+  breath: 0.35,
+  /** Acorde quando uma criatura começa a caçar. */
+  stinger: 0.4,
   /** Guardiã. */
   guardia: 0.9,
   /** Sombra (respiração ao se mover). */
   sombra: 0.8,
   /** Possessor (murmúrio do objeto e a figura liberta). */
   possessor: 0.85,
+}
+
+/** Separação dentro × fora e eventos distantes (AudioDirector). */
+export const AUDIO_ZONES = {
+  /** Som do outro lado (fora ouvido de dentro, ou o contrário): volume e abafamento. */
+  volume: 0.15,
+  muffle: 0.85,
+  /** Intervalo entre eventos distantes (s). */
+  eventMin: 18,
+  eventMax: 40,
 }

@@ -30,7 +30,7 @@ Conceito, mecânicas e ordem das versões: `ROADMAP.md`. Histórico: `CHANGELOG.
   - `aim()` o que a mira acertou (distância, se é interagível)
   - `guardia` estado da Guardiã (`state`, `seeing`, `sight` = motivo de ver/não ver, `pos`, `path`, `unsticks`);
     `guardia.tp(x, z)` teleporta e `guardia.goTo(x, z)` manda investigar um ponto (reproduzir casos)
-  - `sombra` estado da Sombra (`state`, `lit` = no feixe, `pos`, `path`, `unsticks`, `tp(x, z)`)
+  - `sombra` estado da (primeira) Sombra — há níveis com duas; `allCreatures()` lista todas (`state`, `lit` = no feixe, `pos`, `path`, `unsticks`, `tp(x, z)`)
   - `possessor` (`carrying`, `freed` = figuras soltas, `ghostState`, `ghostPos`); o item possuído tem `possessed: true`
     no store de itens (`items.getState().pickUp/drop` liberta a figura)
   - `coisa.list` as COISAS em cena (`id`, `state`, `x`, `z`); morrer (`player.getState().damage(100)`) cria uma
@@ -43,7 +43,18 @@ Conceito, mecânicas e ordem das versões: `ROADMAP.md`. Histórico: `CHANGELOG.
   - `play()` também passa da tela de título. Marcadores (`G`) e painel (`H`) começam desligados.
   - modelos das criaturas: `/?galeria`. A captura de tela do painel pode vir preta ou atrasada no WebGL;
     copie o quadro para um `<img>` (`canvas.toDataURL()`, a galeria usa `preserveDrawingBuffer`) e capture a imagem.
-  - forçar a fase: `game.getState().setPhase('hunted')` faz as entidades aparecerem
+  - mapa: Tab (`window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Tab' }))`); objetos vistos em
+    `mapInfo.seen` (`src/game/systems/mapInfo.ts`); na mira: `aimTarget.id` (`src/game/systems/aim.ts`)
+  - depois de editar um arquivo, o HMR pode trocar o `debugApi` e `window.__relicario` ficar com o antigo
+    (ex.: `stats()` devolve {}): recarregue a página
+  - desempenho: `stats()` desenha um quadro e devolve draw calls, triângulos, luzes e tempo
+  - imagem do jogo: `await tick(100)` e depois `document.querySelector('canvas').toDataURL()` num `<img>`
+    (em dev o canvas preserva o quadro). A captura de tela às vezes mostra o quadro anterior: capture duas vezes.
+  - jumpscare: `player.getState().scare('guardia' | 'sombra' | 'possessor')`; o Canvas dele só monta com o painel
+    rodando quadros (a 0 fps fica em 300×150 e preto)
+  - forçar a fase: `game.getState().setPhase('hunted')` faz as entidades aparecerem. Criaturas com `delay` contam a
+    partir de `enemyTimerStart + enemyDelay`: para vê-las, `game.setState({ enemyTimerStart: performance.now() - ms })`
+  - renascimento: `player.getState().startRevive()` / `endRevive()`; avance com `tick` (a cena usa o tempo do jogo)
   - `game` / `player` / `items` / `hiding` são os stores Zustand (ex.: `items.getState().pickUp(uid)`)
 - Se o Vite servir um módulo vazio depois de várias edições seguidas (erro "does not provide an export"),
   reinicie o servidor (`preview_stop` + `preview_start`).

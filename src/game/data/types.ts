@@ -100,6 +100,8 @@ export interface EnemySpawn {
   y: number
   /** 'start' = após a primeira porta; 'blackout' = reaparecimento após a extração */
   phase: 'start' | 'blackout'
+  /** Segundos a mais, depois do começo da fase, até aparecer (entrada escalonada). */
+  delay?: number
 }
 
 export interface LevelData {

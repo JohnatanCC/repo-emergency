@@ -46,23 +46,27 @@ function Grenade({ from, vel, onExplode }: { from: Vec3; vel: Vec3; onExplode: (
   )
 }
 
-/** Clarão da granada: luz forte que se apaga rápido. */
-function Flash({ at, onDone }: { at: Vec3; onDone: () => void }) {
+/**
+ * Clarão da granada: uma luz só, sempre montada, que acende e se apaga rápido.
+ * (Montar uma luz nova recompilaria os shaders bem na hora do clarão.)
+ */
+function Flash({ flash }: { flash: { current: { at: Vec3; life: number } } }) {
   const light = useRef<THREE.PointLight>(null)
-  const life = useRef(0.6)
   useFrame((_, dt) => {
-    life.current -= dt
-    if (light.current) light.current.intensity = 400 * Math.max(0, life.current / 0.6) ** 2
-    if (life.current <= 0) onDone()
+    const f = flash.current
+    f.life = Math.max(0, f.life - dt)
+    if (!light.current) return
+    light.current.position.set(...f.at)
+    light.current.intensity = 400 * (f.life / 0.6) ** 2
   })
-  return <pointLight ref={light} position={at} color="#fff6e0" intensity={400} distance={18} decay={1.4} />
+  return <pointLight ref={light} color="#fff6e0" intensity={0} distance={18} decay={1.4} />
 }
 
 export function Tools() {
   const camera = useThree((s) => s.camera)
   const { world, rapier } = useRapier()
   const [grenades, setGrenades] = useState<{ id: number; from: Vec3; vel: Vec3 }[]>([])
-  const [flashes, setFlashes] = useState<{ id: number; at: Vec3 }[]>([])
+  const flash = useRef<{ at: Vec3; life: number }>({ at: [0, 0, 0], life: 0 })
   const swing = useRef({ t: 0, cooldown: 0 })
   const bat = useRef<THREE.Group>(null)
   const tmp = useMemo(() => ({ dir: new THREE.Vector3() }), [])
@@ -84,7 +88,7 @@ export function Tools() {
       const p = c.pos()
       if (Math.hypot(p.x - at[0], p.z - at[2]) <= TOOL_FX.grenadeRadius) c.stun(TOOL_FX.grenadeStun)
     }
-    setFlashes((f) => [...f, { id: performance.now(), at: [at[0], at[1] + 0.5, at[2]] }])
+    flash.current = { at: [at[0], at[1] + 0.5, at[2]], life: 0.6 }
   }
 
   const use = () => {
@@ -189,9 +193,7 @@ export function Tools() {
           }}
         />
       ))}
-      {flashes.map((f) => (
-        <Flash key={f.id} at={f.at} onDone={() => setFlashes((list) => list.filter((x) => x.id !== f.id))} />
-      ))}
+      <Flash flash={flash} />
     </>
   )
 }

@@ -5,6 +5,8 @@ import { psxBasic, psxStandard, raggedLathe } from './psx'
 import { creatureTextures } from './textures'
 import { HEAD } from '../../items/catalog'
 import type { Pose } from './pose'
+import { spring, stepSpring, turnLag } from './spring'
+import { ANIM } from './config'
 
 /**
  * A COISA (pés em y = 0): espírito negro de fumaça, curvado e pequeno, com
@@ -49,18 +51,22 @@ export function CoisaModel({ pose }: { pose: Pose }) {
     [],
   )
 
-  useFrame(({ clock }) => {
+  const sp = useMemo(() => ({ run: spring(), lean: spring(0.35), hop: spring(), turn: spring() }), [])
+
+  useFrame(({ clock }, delta) => {
     const t = clock.elapsedTime
+    const dt = Math.min(delta, 0.05)
     const b = body.current
     if (!b) return
-    const run = pose.moving
+    const run = stepSpring(sp.run, pose.moving, dt, ANIM.snappy)
+    turnLag(sp.turn, b, dt, ANIM.turn)
     m.smoke.opacity = 0.82 + 0.1 * Math.sin(t * 7)
-    // curvada; correndo, mais baixa e balançando rápido
-    b.rotation.x = 0.35 + run * 0.15 + Math.sin(t * 3) * 0.04
-    b.position.y = Math.abs(Math.sin(t * (run > 0.2 ? 14 : 4))) * 0.04
-    b.rotation.z = pose.stunned ? Math.sin(t * 45) * 0.1 : 0
+    // curvada; correndo, mais baixa e quicando
+    b.rotation.x = stepSpring(sp.lean, 0.35 + Math.min(run, 2) * 0.15, dt, ANIM.soft) + Math.sin(t * 3) * 0.03
+    b.position.y = stepSpring(sp.hop, Math.abs(Math.sin(t * (run > 0.2 ? 14 : 4))) * (run > 0.2 ? 0.07 : 0.03), dt, ANIM.snappy)
+    b.rotation.z = (pose.stunned ? Math.sin(t * 45) * 0.1 : 0) - sp.turn.v * 0.05
     legs.current?.children.forEach((l, i) => {
-      l.rotation.x = run > 0.1 ? Math.sin(t * 16 + i * Math.PI) * 0.8 : 0
+      l.rotation.x = Math.sin(t * 16 + i * Math.PI) * 0.8 * Math.min(run, 1)
     })
   })
 

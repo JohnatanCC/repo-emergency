@@ -34,6 +34,7 @@ Clique na tela para travar o mouse (`Esc` solta).
 | `E` (mirando um item) | pegar: pequeno vai para o inventário, médio/grande para as mãos |
 | `1` `2` `3` · `Q` | escolher espaço do inventário · largar (mãos primeiro) |
 | clique esquerdo | usar a ferramenta do espaço escolhido (crucifixo, kit, granada, bastão) |
+| `Tab` (segurar) | mapa do contrato: extração e objetos já vistos |
 | `Enter` (pagamento / loja) | ir para a loja · começar o próximo contrato |
 
 ### Debug

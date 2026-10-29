@@ -2,6 +2,9 @@ import { create } from 'zustand'
 import { PLAYER } from './config'
 import type { Hint } from '../game/systems/interactables'
 
+/** Quem pode matar o investigador (define o jumpscare). */
+export type Killer = 'guardia' | 'sombra' | 'possessor'
+
 /**
  * Estado do investigador que o HUD mostra. Separado do gameStore porque a
  * estamina muda a cada frame enquanto corre: só quem lê isto redesenha.
@@ -23,7 +26,19 @@ interface PlayerState {
   battery: number
   /** Aviso rápido na tela (ex.: "nenhuma criatura na mira"). */
   toast: { text: string; at: number } | null
-  damage: (amount: number) => void
+  /** Último golpe de criatura: quem matou, se a vida zerar. */
+  lastHit: Killer | null
+  /** Quando levou o último dano (ms, performance.now). */
+  lastHitAt: number
+  /** Jumpscare em andamento (o id muda a cada morte). */
+  jumpscare: { by: Killer; id: number } | null
+  /** Renascendo no carro (cena do corpo sendo remontado): id da cena, ou null. */
+  reviving: number | null
+  startRevive: () => void
+  endRevive: () => void
+  damage: (amount: number, by?: Killer) => void
+  scare: (by: Killer) => void
+  clearScare: () => void
   setStamina: (stamina: number, exhausted: boolean) => void
   setCrouching: (crouching: boolean) => void
   setLocked: (locked: boolean) => void
@@ -46,7 +61,25 @@ export const usePlayerStore = create<PlayerState>((set) => ({
   flashlight: true,
   battery: 100,
   toast: null,
-  damage: (amount) => set((s) => ({ health: Math.max(0, Math.min(PLAYER.maxHealth, s.health - amount)) })),
+  lastHit: null,
+  lastHitAt: -1e9,
+  jumpscare: null,
+  reviving: null,
+  startRevive: () => set((s) => ({ reviving: (s.reviving ?? 0) + 1 })),
+  endRevive: () => set({ reviving: null }),
+  damage: (amount, by) =>
+    set((s) => {
+      const now = performance.now()
+      // golpe de criatura logo depois de outro não conta (dá tempo de fugir)
+      if (by && amount > 0 && (s.reviving !== null || now - s.lastHitAt < PLAYER.hitGrace * 1000)) return s
+      return {
+        health: Math.max(0, Math.min(PLAYER.maxHealth, s.health - amount)),
+        lastHit: by && amount > 0 ? by : s.lastHit,
+        lastHitAt: amount > 0 ? now : s.lastHitAt,
+      }
+    }),
+  scare: (by) => set((s) => ({ jumpscare: { by, id: (s.jumpscare?.id ?? 0) + 1 } })),
+  clearScare: () => set({ jumpscare: null }),
   setStamina: (stamina, exhausted) => set({ stamina, exhausted }),
   setCrouching: (crouching) => set({ crouching }),
   setLocked: (locked) => set({ locked }),
@@ -62,5 +95,6 @@ export const usePlayerStore = create<PlayerState>((set) => ({
       exhausted: false,
       battery: 100,
       respawnId: s.respawnId + 1,
+      lastHit: null,
     })),
 }))

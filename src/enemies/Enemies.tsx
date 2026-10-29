@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { LevelData, Room } from '../game/data/types'
 import type { BuiltLevel } from '../world/buildLevel'
 import { useGameStore } from '../game/stores/gameStore'
@@ -28,11 +28,32 @@ export function Enemies({ level, built }: { level: LevelData; built: BuiltLevel 
   const phase = useGameStore((s) => s.phase)
   const matchId = useGameStore((s) => s.matchId)
   const nav = useMemo(() => buildNavGrid(level, built, GUARDIA.radius, 0.25, GUARDIA.navMargin), [level, built])
-  const shadowNav = useMemo(() => buildNavGrid(level, built, SOMBRA.radius, 0.25, SOMBRA.navMargin, darkRooms), [level, built])
-  const shadowNavBlackout = useMemo(() => buildNavGrid(level, built, SOMBRA.radius, 0.25, SOMBRA.navMargin, blackoutRooms), [level, built])
+  // grades da Sombra só nos níveis que têm Sombra (montar a grade custa)
+  const hasSombra = level.enemySpawns.some((e) => e.enemy === 'sombra')
+  const shadowNav = useMemo(
+    () => (hasSombra ? buildNavGrid(level, built, SOMBRA.radius, 0.25, SOMBRA.navMargin, darkRooms) : null),
+    [level, built, hasSombra],
+  )
+  const shadowNavBlackout = useMemo(
+    () => (hasSombra ? buildNavGrid(level, built, SOMBRA.radius, 0.25, SOMBRA.navMargin, blackoutRooms) : null),
+    [level, built, hasSombra],
+  )
   const coisaNav = useMemo(() => buildNavGrid(level, built, COISA.radius, 0.25, COISA.navMargin, houseRooms), [level, built])
 
   const wave = phase === 'hunted' ? 'start' : phase === 'blackout' ? 'blackout' : null
+  const enemyTimerStart = useGameStore((s) => s.enemyTimerStart)
+  // entrada escalonada (`delay` de cada ponto): conta a partir do começo da caçada.
+  // No apagão todos voltam juntos.
+  const [elapsed, setElapsed] = useState(0)
+  useEffect(() => {
+    setElapsed(0)
+    if (wave !== 'start' || enemyTimerStart === null) return
+    const huntStart = enemyTimerStart + level.enemyDelay * 1000
+    const id = setInterval(() => setElapsed(Math.floor((performance.now() - huntStart) / 1000)), 1000)
+    return () => clearInterval(id)
+  }, [wave, enemyTimerStart, level.enemyDelay])
+  // com mais de uma Sombra, só a primeira aparece no debug (window.__relicario.sombra)
+  const firstSombra = level.enemySpawns.find((e) => e.phase === wave && e.enemy === 'sombra')?.id
   return (
     <>
       {/* o objeto possuído e A COISA agem em qualquer fase (até antes da 1ª porta) */}
@@ -40,13 +61,21 @@ export function Enemies({ level, built }: { level: LevelData; built: BuiltLevel 
       <Coisas nav={coisaNav} />
       {wave &&
         level.enemySpawns
-          .filter((e) => e.phase === wave)
+          .filter((e) => e.phase === wave && (wave === 'blackout' || (e.delay ?? 0) <= elapsed))
           .map((e) => {
             const [x, , z] = built.toWorld(e.x, e.y)
             const key = `${matchId}-${e.id}`
             if (e.enemy === 'guardia')
               return <Guardia key={key} level={level} built={built} nav={nav} spawn={{ x, z }} hunting={wave === 'blackout'} />
-            if (e.enemy === 'sombra') return <Sombra key={key} nav={wave === 'blackout' ? shadowNavBlackout : shadowNav} spawn={{ x, z }} />
+            if (e.enemy === 'sombra' && shadowNav && shadowNavBlackout)
+              return (
+                <Sombra
+                  key={key}
+                  nav={wave === 'blackout' ? shadowNavBlackout : shadowNav}
+                  spawn={{ x, z }}
+                  primary={e.id === firstSombra}
+                />
+              )
             return null
           })}
     </>

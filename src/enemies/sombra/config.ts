@@ -9,7 +9,7 @@ export const SOMBRA = {
   mass: 70,
 
   /** Indo atrás do jogador dentro do território. */
-  speedHunt: 4.2,
+  speedHunt: 3.4,
   /** Esperando na beira da escuridão (jogador numa sala clara). */
   speedLurk: 2.5,
   /** Vagando (jogador longe ou escondido). */
@@ -25,7 +25,7 @@ export const SOMBRA = {
 
   /** Encostar nela (ou ela em você). */
   touch: 0.85,
-  damage: 60,
+  damage: 35,
   /** Depois de acertar some por este tempo e reaparece longe. */
   vanishTime: 5,
   reappearMinDist: 12,

@@ -107,8 +107,6 @@ export const church04: LevelData = {
 
   enemySpawns: [
     { id: 'e-guardia', enemy: 'guardia', x: 560, y: 200, phase: 'start' },
-    { id: 'e-sombra', enemy: 'sombra', x: 650, y: 260, phase: 'start' },
     { id: 'eb-guardia', enemy: 'guardia', x: 240, y: 300, phase: 'blackout' },
-    { id: 'eb-sombra', enemy: 'sombra', x: 410, y: 180, phase: 'blackout' },
   ],
 }

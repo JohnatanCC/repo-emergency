@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
-import * as THREE from 'three'
+import { useEffect, useRef } from 'react'
 import {
   BallCollider,
   CuboidCollider,
@@ -17,7 +16,8 @@ import { audio } from '../game/audio/engine'
 import { AUDIO } from '../game/audio/sounds'
 import { registerInteractable } from '../game/systems/interactables'
 import { useGameStore } from '../game/stores/gameStore'
-import { CARRY, RELIC_GLOW, type ItemDef } from './catalog'
+import { CARRY, type ItemDef } from './catalog'
+import { ItemModel } from './models'
 import { isBroken, useItemStore, type ItemInstance } from './itemStore'
 import { itemBodies } from './bodies'
 import { usePlayerStore } from '../player/playerStore'
@@ -27,26 +27,9 @@ export function itemLabel(item: ItemInstance) {
   return `${item.def.name}${isBroken(item) ? ' (quebrado)' : ''} · $${item.value}`
 }
 
-/** Malha do item (no mundo e nas mãos). Relíquias brilham de leve; quebrado fica escuro. */
-export function ItemMesh({ def, broken }: { def: ItemDef; broken: boolean }) {
-  const material = useMemo(() => {
-    const relic = def.tag === 'relic'
-    return new THREE.MeshStandardMaterial({
-      color: broken ? new THREE.Color(def.color).multiplyScalar(0.35) : def.color,
-      roughness: 0.6,
-      metalness: def.color === '#b8bcc4' || def.color === '#c9a64a' || def.color === '#b08d3a' ? 0.5 : 0.1,
-      emissive: relic && !broken ? RELIC_GLOW.color : '#000000',
-      emissiveIntensity: relic && !broken ? RELIC_GLOW.intensity : 0,
-    })
-  }, [def, broken])
-  const [a, b, c] = def.dims
-  return (
-    <mesh material={material} castShadow receiveShadow>
-      {def.shape === 'box' && <boxGeometry args={[a, b, c]} />}
-      {def.shape === 'cylinder' && <cylinderGeometry args={[a, a * 0.85, b, 10]} />}
-      {def.shape === 'sphere' && <sphereGeometry args={[a, 10, 8]} />}
-    </mesh>
-  )
+/** Malha do item (no mundo e nas mãos): modelo próprio de cada objeto (models.tsx). */
+export function ItemMesh({ def, broken, uid }: { def: ItemDef; broken: boolean; uid?: string }) {
+  return <ItemModel def={def} broken={broken} uid={uid} />
 }
 
 function ItemCollider({ def, colliderRef }: { def: ItemDef; colliderRef: React.RefObject<RapierCollider> }) {
@@ -92,6 +75,7 @@ function WorldItem({ item }: { item: ItemInstance }) {
     if (!c) return
     return registerInteractable(c.handle, {
       kind: 'item',
+      highlight: uid,
       label: () => {
         const s = useItemStore.getState()
         const it = s.items[uid]
@@ -149,7 +133,7 @@ function WorldItem({ item }: { item: ItemInstance }) {
       onCollisionEnter={onImpact}
     >
       <ItemCollider def={item.def} colliderRef={collider} />
-      <ItemMesh def={item.def} broken={isBroken(item)} />
+      <ItemMesh def={item.def} broken={isBroken(item)} uid={item.uid} />
     </RigidBody>
   )
 }

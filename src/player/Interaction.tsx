@@ -4,6 +4,7 @@ import { useRapier } from '@react-three/rapier'
 import * as THREE from 'three'
 import { AIM_GROUPS } from '../game/physics'
 import { getInteractable, type Hint, type Interactable } from '../game/systems/interactables'
+import { aimTarget } from '../game/systems/aim'
 import { useItemStore } from '../items/itemStore'
 import { isPaused, useGameStore } from '../game/stores/gameStore'
 import { PLAYER } from './config'
@@ -49,6 +50,7 @@ export function Interaction() {
     }
     debugApi.aim = () => aim
     target.current = found
+    aimTarget.id = found?.highlight ?? null
     const hint = inWardrobe ? { text: 'sair do armário', ok: true } : found ? hintFor(found) : null
     if (hint?.text !== player.hint?.text || hint?.ok !== player.hint?.ok) player.setHint(hint)
   })

@@ -3,6 +3,8 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { psxBasic, raggedLathe } from './psx'
 import type { Pose } from './pose'
+import { spring, stepSpring, turnLag } from './spring'
+import { ANIM } from './config'
 
 /**
  * A Sombra (pés em y = 0): silhueta preta, esguia e irregular — ombros
@@ -51,22 +53,32 @@ export function SombraModel({ pose }: { pose: Pose }) {
     [],
   )
 
-  useFrame(({ clock }) => {
+  const sp = useMemo(
+    () => ({ run: spring(), lean: spring(), roll: spring(), head: spring(), armL: spring(), armR: spring(), turn: spring() }),
+    [],
+  )
+
+  useFrame(({ clock }, delta) => {
     const t = clock.elapsedTime
+    const dt = Math.min(delta, 0.05)
     const b = body.current
     if (!b) return
-    const run = Math.min(pose.moving, 1.6)
-    // avançando: inclina para a frente; no feixe congela (e treme)
-    b.rotation.x = pose.lit ? 0 : run * 0.28
+    const run = stepSpring(sp.run, pose.lit ? 0 : Math.min(pose.moving, 1.6), dt, ANIM.snappy)
+    turnLag(sp.turn, b, dt, ANIM.turn)
+    // avançando: inclina para a frente; no feixe trava de uma vez (mola rápida: tranco e tremor)
+    b.rotation.x = stepSpring(sp.lean, pose.lit ? -0.08 : run * 0.28, dt, pose.lit ? ANIM.snappy : ANIM.soft)
     b.position.x = pose.lit || pose.stunned ? Math.sin(t * 60) * 0.01 : 0
-    b.rotation.z = pose.lit ? 0 : Math.sin(t * 1.7) * 0.05
-    if (head.current) head.current.rotation.z = pose.lit ? Math.sin(t * 31) * 0.08 : Math.sin(t * 0.9) * 0.15
-    for (const [arm, side] of [
-      [armL.current, -1],
-      [armR.current, 1],
+    b.rotation.z = stepSpring(sp.roll, pose.lit ? 0 : Math.sin(t * 1.7) * 0.05, dt, ANIM.soft)
+    if (head.current)
+      head.current.rotation.z =
+        stepSpring(sp.head, pose.lit ? 0.25 : Math.sin(t * 0.9) * 0.15, dt, ANIM.head) + (pose.lit ? Math.sin(t * 31) * 0.05 : 0)
+    for (const [arm, s, side] of [
+      [armL.current, sp.armL, -1],
+      [armR.current, sp.armR, 1],
     ] as const) {
       if (!arm) continue
-      arm.rotation.x = pose.lit ? -0.2 : -run * 0.5 + Math.sin(t * 6 * run + side) * 0.3 * run
+      // no feixe, os braços sobem para cobrir o rosto
+      arm.rotation.x = stepSpring(s, pose.lit ? -2.2 : -run * 0.5 + Math.sin(t * 6 * run + side) * 0.3 * run, dt, ANIM.limb)
     }
     // fumaça: ondula e some/aparece
     const w = wisps.current

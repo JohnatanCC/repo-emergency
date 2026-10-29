@@ -162,7 +162,7 @@ function Ghost({ nav, spawn, onDone }: { nav: NavGrid; spawn: P2; onDone: () => 
     if (!inWardrobe && dPlayer < POSSESSOR.touch && b.cooldown <= 0) {
       b.cooldown = POSSESSOR.hitCooldown
       audio.play('hit', { pos: [p.x, 1.2, p.z], volume: AUDIO.possessor, rate: 1.3 })
-      usePlayerStore.getState().damage(POSSESSOR.damage)
+      usePlayerStore.getState().damage(POSSESSOR.damage, 'possessor')
     }
 
     walkResume(b, nav)

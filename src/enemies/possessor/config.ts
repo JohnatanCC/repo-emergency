@@ -15,13 +15,13 @@ export const POSSESSOR = {
   /** Liberto (objeto largado): persegue por este tempo e depois volta para o objeto. */
   chaseTime: 15,
   /** Um pouco mais devagar que o jogador andando (3 m/s): andando você se afasta devagar; correndo, foge. */
-  speed: 2.6,
+  speed: 2.3,
   radius: 0.3,
   height: 1.7,
   /** Flutua um pouco acima do chão. */
   hover: 0.35,
   touch: 0.8,
-  damage: 25,
+  damage: 15,
   hitCooldown: 2,
   /** Depois de acertar, fica parada este tempo. */
   hitPause: 1,

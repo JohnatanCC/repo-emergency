@@ -168,9 +168,7 @@ export const mansion01: LevelData = {
   ],
 
   enemySpawns: [
-    { id: 'e-sombra', enemy: 'sombra', x: 565, y: 230, phase: 'start' },
     { id: 'e-guardia', enemy: 'guardia', x: 590, y: 470, phase: 'start' },
-    { id: 'eb-sombra', enemy: 'sombra', x: 230, y: 125, phase: 'blackout' },
     { id: 'eb-guardia', enemy: 'guardia', x: 160, y: 260, phase: 'blackout' },
   ],
 }

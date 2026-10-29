@@ -212,20 +212,189 @@ function seamless(x: Float32Array, sr: number, fade = 0.5) {
   return out
 }
 
-/** Ambiência da casa: ruído grave e dois tons que batem devagar. */
+/**
+ * Ambiência da casa (loop de 16 s): respiração grave da estrutura, dois tons
+ * que batem devagar e, de tempos em tempos, uma ressonância metálica que incha
+ * e some, como um cano vibrando longe.
+ */
 export const drone: Synth = (sr) =>
   variants(1, (r) => {
-    const dur = 8.5
+    const dur = 16
     const n = Math.floor(sr * dur)
-    const x = noise(n, r)
-    lowpass(x, 0.01)
-    lowpass(x, 0.02)
-    normalize(x)
+    const room = noise(n, r)
+    lowpass(room, 0.008)
+    lowpass(room, 0.02)
+    normalize(room)
+    const ring = bandpass(noise(n, r), sr, 182, 40)
+    normalize(ring)
+    const air = bandpass(noise(n, r), sr, 900, 2)
+    normalize(air)
+    const x = new Float32Array(n)
     for (let i = 0; i < n; i++) {
       const t = i / sr
-      x[i] = x[i] * 0.7 + 0.18 * Math.sin(TAU * 41 * t) + 0.12 * Math.sin(TAU * 41.5 * t) + 0.06 * Math.sin(TAU * 82.25 * t)
+      // ciclos inteiros em 16 s: emenda sem estalo
+      const breath = 0.55 + 0.45 * Math.sin((TAU * t) / 8 - 1)
+      const swell = Math.max(0, Math.sin((TAU * t) / 16)) ** 6
+      x[i] =
+        room[i] * 0.6 * breath +
+        0.16 * Math.sin(TAU * 36 * t) +
+        0.12 * Math.sin(TAU * 36.5 * t) +
+        0.05 * Math.sin(TAU * 54.25 * t) +
+        ring[i] * 0.35 * swell +
+        air[i] * 0.05 * breath
     }
     return normalize(seamless(x, sr), 0.5)
+  })
+
+/** Batidas secas numa parede ou porta, com espaços irregulares. */
+export const knock: Synth = (sr) =>
+  variants(3, (r) => {
+    const parts: [Float32Array, number, number][] = []
+    let t = 0.05
+    const count = 2 + Math.floor(r() * 3)
+    for (let k = 0; k < count; k++) {
+      const click = noise(Math.floor(sr * 0.04), r)
+      bandpass(click, sr, 900 + r() * 400, 2)
+      for (let i = 0; i < click.length; i++) click[i] *= Math.exp((-i / sr) * 90)
+      const off = Math.floor(t * sr)
+      parts.push([thump(sr, 0.3, 160, 80, 28), 1, off], [normalize(click), 0.5, off])
+      t += k === count - 2 ? 0.55 + r() * 0.4 : 0.2 + r() * 0.12
+    }
+    return normalize(mix(...parts), 0.9)
+  })
+
+/** Caixinha de música distante e desafinada: uma frase lenta em modo menor. */
+export const musicbox: Synth = (sr) =>
+  variants(2, (r) => {
+    const scale = [0, 2, 3, 7, 8, 12, 14, 15]
+    const dur = 5.5
+    const n = Math.floor(sr * dur)
+    const x = new Float32Array(n)
+    let t = 0.1
+    const base = 660 + r() * 60
+    while (t < dur - 1.2) {
+      const note = scale[Math.floor(r() * scale.length)]
+      const f = base * Math.pow(2, note / 12)
+      const s0 = Math.floor(t * sr)
+      const len = Math.floor(sr * 1.4)
+      for (let i = 0; i < len && s0 + i < n; i++) {
+        const tt = i / sr
+        // corda gasta: o tom escorrega para baixo ao longo da frase
+        const warble = 1 - 0.035 * (t / dur) + 0.004 * Math.sin(TAU * 5 * tt)
+        const env = Math.exp(-tt * 3.5)
+        x[s0 + i] += (Math.sin(TAU * f * warble * tt) + 0.3 * Math.sin(TAU * f * 2.01 * warble * tt)) * env
+      }
+      t += 0.32 + r() * 0.45
+    }
+    // eco de sala
+    const d = Math.floor(sr * 0.23)
+    for (let i = d; i < n; i++) x[i] += x[i - d] * 0.35
+    return normalize(x, 0.6)
+  })
+
+/** Algo pesado sendo arrastado (um móvel em outra sala). */
+export const scrape: Synth = (sr) =>
+  variants(2, (r) => {
+    const dur = 1.4 + r() * 0.8
+    const n = Math.floor(sr * dur)
+    const out = new Float32Array(n)
+    const src = noise(n, r)
+    const step = Math.floor(sr * 0.04)
+    for (let s0 = 0; s0 < n; s0 += step) {
+      const t = s0 / sr
+      out.set(bandpass(src.slice(s0, s0 + step), sr, 260 + 160 * Math.sin(t * 5) + r() * 60, 6), s0)
+    }
+    for (let i = 0; i < n; i++) {
+      const t = i / sr
+      // trepida: agarra e solta
+      out[i] *= Math.sin((Math.PI * t) / dur) * (Math.sin(t * 38) > 0 ? 1 : 0.4)
+    }
+    return normalize(out, 0.7)
+  })
+
+/** Gemido grave sem palavras, com o tom caindo. */
+export const moan: Synth = (sr) =>
+  variants(2, (r) => {
+    const dur = 2.6
+    const n = Math.floor(sr * dur)
+    const voice = new Float32Array(n)
+    let ph = 0
+    const f0 = 105 + r() * 25
+    for (let i = 0; i < n; i++) {
+      const t = i / sr
+      ph += (f0 * (1 - 0.22 * (t / dur)) * (1 + 0.012 * Math.sin(TAU * 4.5 * t))) / sr
+      voice[i] = (ph % 1) * 2 - 1
+    }
+    // vogal fechada: duas formantes
+    const a = bandpass(Float32Array.from(voice), sr, 420, 6)
+    const b = bandpass(Float32Array.from(voice), sr, 780, 8)
+    const breath = bandpass(noise(n, r), sr, 1400, 1.2)
+    const out = new Float32Array(n)
+    for (let i = 0; i < n; i++) {
+      const t = i / sr
+      const env = Math.min(1, t * 2.5) * Math.min(1, (dur - t) * 1.5)
+      out[i] = (a[i] + b[i] * 0.6 * (1 - t / dur) + breath[i] * 0.04) * env
+    }
+    return normalize(out, 0.7)
+  })
+
+/** Acorde de cordas raspadas e dissonantes: entra quando uma criatura começa a caçar. */
+export const stinger: Synth = (sr) =>
+  variants(2, (r) => {
+    const dur = 1.8
+    const n = Math.floor(sr * dur)
+    const x = new Float32Array(n)
+    const freqs = [220, 233, 311, 466, 494].map((f) => f * (1 + (r() - 0.5) * 0.01))
+    const ph = freqs.map(() => r())
+    for (let i = 0; i < n; i++) {
+      const t = i / sr
+      const env = Math.min(1, t * 25) * Math.exp(-t * 1.3)
+      let v = 0
+      freqs.forEach((f, k) => {
+        ph[k] += (f * (1 + 0.006 * Math.sin(TAU * (5 + k) * t))) / sr
+        v += (ph[k] % 1) * 2 - 1
+      })
+      x[i] = v * env
+    }
+    // arco raspando: ruído na faixa das cordas
+    const bow = bandpass(noise(n, r), sr, 1600, 3)
+    for (let i = 0; i < n; i++) bow[i] *= Math.min(1, (i / sr) * 25) * Math.exp((-i / sr) * 2)
+    lowpass(x, 0.25)
+    return normalize(mix([normalize(x), 0.8], [normalize(bow), 0.35]), 0.85)
+  })
+
+/** Renascer: uma parte do corpo encaixando (estalo úmido e osso). */
+export const assemble: Synth = (sr) =>
+  variants(3, (r) => {
+    const crack = noise(Math.floor(sr * 0.08), r)
+    bandpass(crack, sr, 2200 + r() * 1200, 1.5)
+    for (let i = 0; i < crack.length; i++) crack[i] *= Math.exp((-i / sr) * 60)
+    const wet = noise(Math.floor(sr * 0.25), r)
+    lowpass(wet, 0.05)
+    for (let i = 0; i < wet.length; i++) wet[i] *= Math.sin((Math.PI * i) / wet.length) ** 2
+    return normalize(mix([normalize(crack), 0.8], [normalize(wet), 0.5, Math.floor(sr * 0.02)], [thump(sr, 0.2, 130, 70, 25), 0.6]), 0.8)
+  })
+
+/** Renascer: sopro ao contrário que sobe até um acorde e corta. */
+export const revive: Synth = (sr) =>
+  variants(1, (r) => {
+    const dur = 3.4
+    const n = Math.floor(sr * dur)
+    const air = noise(n, r)
+    const out = new Float32Array(n)
+    const step = Math.floor(sr * 0.05)
+    for (let s0 = 0; s0 < n; s0 += step) {
+      const t = s0 / sr
+      out.set(bandpass(air.slice(s0, s0 + step), sr, 200 + 2600 * (t / dur) ** 2, 3), s0)
+    }
+    for (let i = 0; i < n; i++) {
+      const t = i / sr
+      const rise = (t / dur) ** 2.5
+      const cut = t > dur - 0.08 ? (dur - t) / 0.08 : 1
+      const chord = Math.sin(TAU * 110 * t) + 0.6 * Math.sin(TAU * 164.8 * t) + 0.4 * Math.sin(TAU * 220.5 * t)
+      out[i] = (out[i] * 0.7 + chord * 0.15) * rise * cut
+    }
+    return normalize(out, 0.8)
   })
 
 /** Zumbido do extrator (loop). */
@@ -477,4 +646,49 @@ export const hiss: Synth = (sr) =>
       air[i] = air[i] * breath * 0.8 + low[i] * 0.35
     }
     return normalize(air, 0.5)
+  })
+
+/** Jumpscare: estouro agudo e dissonante sobre um baque grave. */
+export const scare: Synth = (sr) =>
+  variants(1, (r) => {
+    const n = Math.floor(sr * 1.6)
+    const stab = new Float32Array(n)
+    // acorde de serras desafinadas, caindo de tom
+    const freqs = [311, 329, 466, 988, 1047]
+    const ph = freqs.map(() => 0)
+    for (let i = 0; i < n; i++) {
+      const t = i / sr
+      const env = Math.min(1, t * 80) * Math.exp(-t * 2.2)
+      let v = 0
+      freqs.forEach((f, k) => {
+        ph[k] += (f * (1 - 0.18 * Math.min(1, t)) * (1 + 0.01 * Math.sin(TAU * 11 * t + k))) / sr
+        v += (ph[k] % 1) * 2 - 1
+      })
+      stab[i] = v * env
+    }
+    const burst = noise(n, r)
+    bandpass(burst, sr, 3200, 0.8)
+    for (let i = 0; i < n; i++) burst[i] *= Math.min(1, (i / sr) * 100) * Math.exp((-i / sr) * 4)
+    return normalize(mix([normalize(stab), 0.7], [normalize(burst), 0.5], [thump(sr, 1.2, 90, 32, 3), 0.9]), 0.95)
+  })
+
+/** Respiração do investigador (loop de 3 s: inspira e expira duas vezes), pela boca, ofegante. */
+export const breath: Synth = (sr) =>
+  variants(1, (r) => {
+    const dur = 3
+    const n = Math.floor(sr * dur)
+    const air = bandpass(noise(n, r), sr, 1100, 1.4)
+    const low = bandpass(noise(n, r), sr, 380, 2)
+    normalize(air)
+    normalize(low)
+    const out = new Float32Array(n)
+    for (let i = 0; i < n; i++) {
+      const t = i / sr
+      // ciclo de 1,5 s: inspira curto (mais agudo), expira mais longo e grave
+      const c = (t % 1.5) / 1.5
+      const inhale = c < 0.35 ? Math.sin((Math.PI * c) / 0.35) : 0
+      const exhale = c >= 0.4 && c < 0.95 ? Math.sin((Math.PI * (c - 0.4)) / 0.55) : 0
+      out[i] = air[i] * inhale * 0.7 + (air[i] * 0.4 + low[i] * 0.6) * exhale
+    }
+    return normalize(out, 0.6)
   })

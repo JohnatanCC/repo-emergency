@@ -20,7 +20,8 @@ export default function App() {
         shadows
         className={debug.retro ? 'retro' : undefined}
         dpr={debug.retro ? RETRO_DPR : [1, 2]}
-        gl={{ antialias: !debug.retro }}
+        // dev: guarda o último quadro para dar para copiar o canvas nos testes (toDataURL)
+        gl={{ antialias: !debug.retro, preserveDrawingBuffer: import.meta.env.DEV }}
         camera={{ position: [-6, 26, 30], fov: 60, near: 0.05, far: 200 }}
       >
         <color attach="background" args={['#050403']} />

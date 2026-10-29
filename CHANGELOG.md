@@ -1,5 +1,62 @@
 # Changelog
 
+## 0.17.0 — Mapa do contrato · 2026-10-29
+
+### Adicionado
+- Mapa do contrato (`src/ui/MapPanel.tsx`, `MAP` em `src/ui/config.ts`): segurando Tab, o investigador levanta uma folha com a planta da casa — salas, portas, carro, ponto de extração (quadrado roxo), objetos já vistos (pontos amarelos, maiores para relíquias) e uma seta onde ele está, para onde olha.
+- "Visto" (`src/world/MapTracker.tsx`): objeto na frente da câmera, a até 14 m e sem parede no meio (ou pego na mão). O mapa limpa a cada partida.
+- Destaque na mira (`src/game/systems/aim.ts`, `HIGHLIGHT` em `catalog.ts`): o objeto que a mira acerta brilha quente, pulsando.
+- Menu novo (`src/ui/Menu.tsx`): tela de início com o carro ao fundo (Iniciar investigação, Configurações, Controles, Créditos) e pausa (Continuar, Configurações, Controles, Recomeçar contrato, Voltar ao início). Mouse ou setas/W/S + Enter; Esc volta.
+- Poeira do ambiente (`src/world/Dust.tsx`): partículas paradas no mundo, só numa caixa em volta do jogador (repetem no shader, sem custo por partícula). Quase invisíveis no escuro; brilham dentro do facho.
+
+### Alterado
+- Sombra só no Hospital (3) e na Mansão Profunda (5); os níveis sem Sombra não montam a grade dela.
+- A poeira deixou de seguir a lanterna.
+
+## 0.16.0 — Imersão e desempenho · 2026-10-29
+
+### Desempenho
+- Paredes, pisos e tetos (`Level.tsx`): uma textura e um material por tipo, com o UV de cada peça escalado para o tamanho dela; peças do mesmo tipo juntas numa malha. De 100–162 draw calls por nível para 6–13, e cada textura sobe uma vez só para a GPU.
+- Móveis (`StaticMerge.tsx`): as peças de todos os móveis viram uma malha por material, na tela e na sombra da lanterna.
+- Pool de luzes (`RoomLights.tsx`, `LIGHTING.pool`): toda lâmpada tem a bolinha acesa, mas só as 6 mais perto da câmera são luzes de verdade (antes eram todas). Trocar de lâmpada acende aos poucos.
+- Sem recompilar shaders no meio do jogo: lanterna e clarão da granada só mudam a intensidade (antes apareciam e sumiam), e `Prewarm.tsx` compila as criaturas junto com o nível.
+- Dev: `window.__relicario.stats()` (draw calls, triângulos, luzes, tempo de um quadro).
+
+### Imersão
+- Lanterna (`IMMERSION` em `src/player/config.ts`): balança na mão (mais andando), falha quando uma criatura está perto e mostra poeira flutuando no facho.
+- Respiração ofegante (som `breath`): cresce correndo, com a estamina baixa ou com perigo.
+- Câmera (`Immersion.tsx`): campo de visão abre um pouco correndo e fecha com a tensão (visão de túnel); inclina de leve ao andar de lado.
+
+## 0.15.0 — Renascer · 2026-10-29
+
+### Adicionado
+- Renascimento em cena (`src/world/Revive.tsx`, `REVIVE` em `src/player/config.ts`): depois do jumpscare, o C.R.O.S remonta o investigador no carro, parte por parte (pernas, quadril, tronco, braços, lanterna, pescoço, cabeça), com estalos e brilho roxo, e a câmera gira em volta até entrar nos olhos dele. Imune a dano durante a cena. Modelo do investigador em `src/player/InvestigatorModel.tsx`.
+- Sons novos (`synth.ts`): batidas na parede, arrasto, gemido, caixinha de música desafinada, acorde de cordas quando a caçada começa (`stinger`), estalo de montagem e sopro do renascimento. Ambiência da casa refeita (respiração grave, tons batendo, cano vibrando longe).
+- Eventos distantes no AudioDirector: de 18 a 40 s, algo bate, arrasta ou geme numa sala a 6–18 m.
+- `muffle` no motor de áudio (filtro passa-baixa por som) e `AUDIO_ZONES`.
+- `delay` nos pontos de nascimento das criaturas (entrada escalonada).
+- Vida volta devagar (2,5/s até 70) depois de 8 s sem dano; 1,5 s de imunidade depois de cada golpe de criatura.
+
+### Alterado
+- Balanceamento: Mansão e Orfanato voltam a uma Sombra, que só entra 60 s / 40 s depois do começo da caçada. Guardiã: dano 40 → 30, perseguição 3,3 → 3 m/s, +0,2 m/s por relíquia (era 0,35), vê a lanterna a 16 m (era 22), recupera 3 s após golpe. Sombra: dano 60 → 35, caça a 3,4 m/s (era 4,2). Possessor: dano 25 → 15, 2,3 m/s.
+- Áudio: sons de fora (grilos, vento, trovão) chegam baixos e abafados dentro de casa, e os de dentro abafados lá fora. Ambiência, vento, grilos, goteira, relógio, trovão e batimento mais baixos.
+- Na última vida o jumpscare aparece, mas não há renascimento.
+
+## 0.14.0 — Casa viva · 2026-10-29
+
+### Adicionado
+- Decoração gerada a partir da planta (`src/world/Decor.tsx`, números em `DECOR`): quadros (retrato, paisagem, natureza-morta), arandelas, rodapés, meia-cana no papel de parede, manchas de umidade, teias nos cantos, tapetes, papéis no chão, velas nas salas escuras, vigas nos corredores, lustres nas salas grandes e mato seco lá fora. Sem colisor, longe das portas e dos móveis altos; uma malha por material.
+- Modelos próprios para todos os objetos (`src/items/models.tsx`): sino, relicário, boneca, espelho velado, castiçal, relógio, taça, vaso, caixa de joias, quadro, gramofone, pilhas, cabeça e ferramentas. A física não muda (mesmo colisor).
+- Jumpscare (`src/ui/Jumpscare.tsx`, `JUMPSCARE` em `src/ui/config.ts`): morrer para a Guardiã, a Sombra ou o Possessor mostra o rosto dela avançando contra a tela, com um estouro de som (`scare`), e o sinal da fita cai.
+- Molas nas animações das criaturas (`src/enemies/models/spring.ts`, `ANIM`): cabeça, braços, inclinação e saia seguem o alvo com inércia; o corpo atrasa e passa um pouco ao virar.
+- `damage(valor, criatura)` guarda quem bateu por último (`lastHit`).
+
+### Alterado
+- Balanceamento: Mansão e Orfanato têm uma segunda Sombra (biblioteca B / dormitório B).
+- A Sombra aceita várias ao mesmo tempo (perigo e feixe por criatura, `setShadowLit`); `window.__relicario.sombra` é a primeira.
+- Móveis redesenhados: mesa com saia, toalha e castiçal; cadeira de ripas; armário com cornija e almofadas; estante com livros soltos; banheira de pés. Colisores agora são caixas fixas por tipo.
+- Dev: o canvas guarda o último quadro (`preserveDrawingBuffer`), para copiar a imagem nos testes.
+
 ## 0.13.0 — Terror retrô · 2026-10-29
 
 ### Adicionado

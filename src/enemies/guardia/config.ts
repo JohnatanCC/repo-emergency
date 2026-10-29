@@ -10,9 +10,9 @@ export const GUARDIA = {
 
   speedPatrol: 1.3,
   speedInvestigate: 2,
-  speedChase: 3.3,
+  speedChase: 3,
   /** Mais rápida a cada relíquia que o jogador carrega (inventário + mãos). */
-  speedPerRelic: 0.35,
+  speedPerRelic: 0.2,
   /** Quão rápido vira para onde anda (rad/s). */
   turnSpeed: 4,
 
@@ -22,7 +22,7 @@ export const GUARDIA = {
   sightDim: 10,
   sightDark: 6,
   /** Com a lanterna ligada ela vê de longe (a luz entrega). */
-  sightFlashlight: 22,
+  sightFlashlight: 16,
   /** Agachado: multiplica o alcance. */
   sightCrouch: 0.6,
   /** Embaixo da mesa só é visto de muito perto. */
@@ -41,9 +41,9 @@ export const GUARDIA = {
 
   /** Ataque. */
   reach: 1.3,
-  damage: 40,
+  damage: 30,
   /** Depois de acertar, fica parada um tempo (chance de fugir). */
-  recover: 2.2,
+  recover: 3,
   /** Durante o recover ela recua até esta distância do jogador. */
   backOffDistance: 3.5,
   backOffSpeed: 1.2,

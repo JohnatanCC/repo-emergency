@@ -23,6 +23,12 @@ export const PLAYER = {
   gravity: 9.81,
 
   maxHealth: 100,
+  /** Depois de um golpe de criatura, fica imune a outro por este tempo (s). */
+  hitGrace: 1.5,
+  /** Sem tomar dano por este tempo (s), a vida volta devagar até `regenCap`. */
+  regenDelay: 8,
+  regenPerSec: 2.5,
+  regenCap: 70,
   maxStamina: 100,
   /** Correr gasta por segundo. */
   staminaDrain: 20,
@@ -90,3 +96,44 @@ export const FLASHLIGHT = {
 
 /** Vidas por nível. Morrer custa uma; A COISA guarda a cabeça no local da morte (0.10.0). */
 export const LIVES = 3
+
+/** Renascimento no carro (world/Revive.tsx). Tempos em segundos, distâncias em metros, ângulos em radianos. */
+export const REVIVE = {
+  /** Intervalo entre uma parte e a próxima, e quanto cada uma leva para encaixar. */
+  partGap: 0.3,
+  partTime: 0.5,
+  /** Quão longe as partes começam. */
+  scatter: 0.9,
+  /** Câmera girando em volta: raio, altura e ângulo (0 = de frente para o corpo). */
+  radius: 1.7,
+  heightFrom: 0.9,
+  heightTo: 1.75,
+  orbitFrom: 0.9,
+  orbitTo: 2.6,
+  /** Pausa com o corpo pronto e tempo da câmera entrando nos olhos. */
+  hold: 0.35,
+  enter: 0.8,
+  light: 6,
+  volume: 0.8,
+}
+
+/** Imersão (Flashlight.tsx, Immersion.tsx). Ângulos em radianos. */
+export const IMMERSION = {
+  /** Balanço da lanterna na mão. */
+  handSway: 0.006,
+  /** A partir deste perigo (0–1) a lanterna começa a falhar. */
+  flickerFrom: 0.45,
+  /** Poeira do ambiente (world/Dust.tsx): quantas, tamanho da caixa em volta do jogador (m), tamanho do grão. */
+  dustCount: 700,
+  dustBox: [9, 3, 9] as [number, number, number],
+  dustSize: 0.026,
+  /** Brilho no escuro (quase nada) e dentro do facho. */
+  dustBase: 0.04,
+  dustBeam: 0.32,
+  /** Campo de visão: normal, a mais correndo, a menos com perigo máximo (graus). */
+  fov: 60,
+  fovRun: 4,
+  fovDanger: 8,
+  /** Inclinação da câmera ao andar de lado (rad por m/s). */
+  strafeRoll: 0.012,
+}

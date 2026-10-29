@@ -35,6 +35,15 @@ const SYNTHS = {
   hit: S.hit,
   hiss: S.hiss,
   murmur: S.murmur,
+  scare: S.scare,
+  knock: S.knock,
+  musicbox: S.musicbox,
+  scrape: S.scrape,
+  moan: S.moan,
+  stinger: S.stinger,
+  assemble: S.assemble,
+  revive: S.revive,
+  breath: S.breath,
 } as Record<SoundId, S.Synth>
 
 export const SOUND_IDS = Object.keys(SYNTHS) as SoundId[]
@@ -49,13 +58,20 @@ export interface PlayOptions {
   rate?: number
   /** Distância (m) com volume cheio; maior = som que preenche uma área. */
   ref?: number
+  /** 0–1: abafado (atrás de paredes). 1 = só o grave passa. */
+  muffle?: number
 }
+
+/** Frequência de corte do abafamento: 0 = som limpo, 1 = atrás de parede grossa. */
+const muffleFreq = (m: number) => 20000 * Math.pow(250 / 20000, Math.max(0, Math.min(1, m)))
 
 export interface LoopHandle {
   setVolume: (v: number, seconds?: number) => void
   setRate: (r: number) => void
   /** Move um som 3D (ex.: preso a uma entidade). */
   setPos: (p: Vec3) => void
+  /** Abafa (0–1), ex.: som de fora ouvido de dentro de casa. */
+  setMuffle: (m: number, seconds?: number) => void
   stop: () => void
 }
 
@@ -121,7 +137,10 @@ class AudioEngine {
     src.playbackRate.value = opts.rate ?? 1
     const gain = ctx.createGain()
     gain.gain.value = opts.volume ?? 1
-    src.connect(gain)
+    const filter = ctx.createBiquadFilter()
+    filter.type = 'lowpass'
+    filter.frequency.value = muffleFreq(opts.muffle ?? 0)
+    src.connect(filter).connect(gain)
     let panner: PannerNode | null = null
     if (opts.pos) {
       const p = (panner = ctx.createPanner())
@@ -136,7 +155,7 @@ class AudioEngine {
       gain.connect(p).connect(master)
     } else gain.connect(master)
     src.start()
-    return { ctx, src, gain, panner }
+    return { ctx, src, gain, panner, filter }
   }
 
   play(id: SoundId, opts: PlayOptions = {}) {
@@ -149,11 +168,12 @@ class AudioEngine {
     let volume = opts.volume ?? 1
     let rate = opts.rate ?? 1
     let pos = opts.pos
+    let muffle = opts.muffle ?? 0
     let stopped = false
     // arquivo ainda carregando: tenta de novo daqui a pouco
     const retry = setInterval(() => {
       if (node || stopped) return clearInterval(retry)
-      node = this.chain(id, { ...opts, volume, rate, pos }, true)
+      node = this.chain(id, { ...opts, volume, rate, pos, muffle }, true)
     }, 500)
     return {
       setVolume: (v, seconds = 0.3) => {
@@ -172,6 +192,10 @@ class AudioEngine {
         pn.positionX.setTargetAtTime(p[0], t, 0.05)
         pn.positionY.setTargetAtTime(p[1], t, 0.05)
         pn.positionZ.setTargetAtTime(p[2], t, 0.05)
+      },
+      setMuffle: (m, seconds = 0.5) => {
+        muffle = m
+        if (node) node.filter.frequency.setTargetAtTime(muffleFreq(m), node.ctx.currentTime, seconds / 3)
       },
       stop: () => {
         stopped = true

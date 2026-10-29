@@ -271,7 +271,7 @@ export function Guardia({
   const strike = () => {
     const pos: [number, number, number] = [b.pos.x, 1.4, b.pos.z]
     audio.play('hit', { pos, volume: AUDIO.guardia })
-    usePlayerStore.getState().damage(GUARDIA.damage)
+    usePlayerStore.getState().damage(GUARDIA.damage, 'guardia')
     b.cooldown = GUARDIA.recover
     setState('recover')
     b.timer = GUARDIA.recover

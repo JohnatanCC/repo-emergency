@@ -178,5 +178,36 @@ Cada uma conversa com uma mecânica do jogo, para que fugir de cada uma seja dif
 - Moldura de câmera VHS (REC, contador da fita, data), linhas de varredura e cor de fita gasta
 - Clarão vermelho ao tomar dano e borda pulsando com a vida baixa; HUD mostra só local e objetivo
 
+## ✅ 0.14.0 — Casa viva (balanceamento e cenário)
+- Níveis 1 e 2 com uma segunda Sombra (as salas escuras eram poucas e a única Sombra quase não aparecia)
+- Várias Sombras ao mesmo tempo: perigo e feixe por criatura; o debug segue a primeira
+- Decoração gerada pela planta (`src/world/Decor.tsx`): quadros, arandelas, rodapés, meia-cana, manchas, teias, tapetes, papéis, vigas, lustres, mato
+- Móveis redesenhados (pés torneados, cornijas, livros soltos), com colisores fixos por tipo
+- Modelos próprios para cada objeto (`src/items/models.tsx`), dentro do mesmo colisor
+- Animações das criaturas com molas (`src/enemies/models/spring.ts`): passam do ponto e voltam, o corpo atrasa nas curvas
+- Jumpscare ao morrer, com o rosto da criatura que matou e "sinal perdido" (`src/ui/Jumpscare.tsx`)
+
+## ✅ 0.15.0 — Renascer (balanceamento, sons e renascimento)
+- Níveis 1 e 2 voltam a ter uma Sombra só, que entra depois (60 s / 40 s): `delay` nos pontos de nascimento
+- Criaturas mais fracas e lentas; 1,5 s de imunidade depois de um golpe; a vida volta devagar até 70
+- Sons de fora não atravessam a casa (e vice-versa): abafamento por zona; ambiência mais baixa
+- Sons novos: ambiência da casa refeita, batidas, arrasto, gemido, caixinha de música, acorde de caçada
+- Renascimento em cena: o corpo é remontado parte por parte no carro e a câmera entra nos olhos
+
+## ✅ 0.16.0 — Imersão e desempenho
+- Cenário em lotes: uma textura e uma malha por tipo de parede/piso (100–162 → 6–13 draw calls por nível)
+- Móveis juntados numa malha por material (`StaticMerge`)
+- Pool de luzes: só as 6 lâmpadas mais perto viram luz de verdade
+- Sem engasgos: luzes não aparecem/somem (só intensidade) e os shaders das criaturas compilam junto com o nível
+- Lanterna que balança na mão, falha com criatura perto e mostra poeira no facho
+- Respiração ofegante, visão de túnel com a tensão e câmera inclinando ao andar de lado
+
+## ✅ 0.17.0 — Mapa do contrato
+- Mapa segurado na mão (Tab): planta da casa, carro, extração (quadrado roxo), objetos já vistos (pontos amarelos), você
+- Objetos na mira brilham
+- Tela de início e pausa refeitas (mouse ou teclado; configurações, controles, créditos; recomeçar, voltar ao início)
+- Poeira do ambiente perto do jogador, que brilha dentro do facho
+- Sombra só nos níveis 3 e 5
+
 ## ⬜ 1.0.0 — Polimento
 - Salvamento da campanha, balanceamento, sons definitivos

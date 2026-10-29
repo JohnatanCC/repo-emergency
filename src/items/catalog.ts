@@ -1,3 +1,4 @@
+import * as THREE from 'three'
 import type { ItemSize, ItemTag } from '../game/data/types'
 
 /**
@@ -223,3 +224,6 @@ export const CARRY = {
 
 /** Uma relíquia brilha de leve, para dar para achar no escuro. */
 export const RELIC_GLOW = { color: '#8a5cff', intensity: 0.35 }
+
+/** Destaque do objeto na mira: cor e força do brilho. */
+export const HIGHLIGHT = { color: new THREE.Color('#ffd28a'), intensity: 0.45 }

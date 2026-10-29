@@ -7,7 +7,7 @@ import * as THREE from 'three'
 import { ENEMY_GROUPS, SIGHT_GROUPS } from '../../game/physics'
 import { useGameStore } from '../../game/stores/gameStore'
 import { setDanger } from '../../game/systems/danger'
-import { beam } from '../../game/systems/beam'
+import { beam, setShadowLit } from '../../game/systems/beam'
 import { audio, type LoopHandle } from '../../game/audio/engine'
 import { AUDIO } from '../../game/audio/sounds'
 import { playerFeet } from '../../player/playerPos'
@@ -52,7 +52,18 @@ const UP = new THREE.Vector3(0, 1, 0)
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v))
 const dist = (a: P2, b: P2) => Math.hypot(a.x - b.x, a.z - b.z)
 
-export function Sombra({ nav, spawn }: { nav: NavGrid; spawn: P2 }) {
+export function Sombra({
+  nav,
+  spawn,
+  primary = true,
+}: {
+  nav: NavGrid
+  spawn: P2
+  /** A que aparece no debug (pode haver mais de uma). */ primary?: boolean
+}) {
+  const key = useRef(`sombra-${spawn.x.toFixed(1)}-${spawn.z.toFixed(1)}`).current
+  const extraDbg = useRef({ ...sombraDebug, pos: { x: 0, z: 0 } }).current
+  const dbg = primary ? sombraDebug : extraDbg
   const body = useRef<RapierRigidBody>(null)
   const collider = useRef<RapierCollider>(null)
   const controller = useRef<KinematicCharacterController>()
@@ -100,15 +111,15 @@ export function Sombra({ nav, spawn }: { nav: NavGrid; spawn: P2 }) {
   const sound = useRef<LoopHandle | null>(null)
   useEffect(() => {
     sound.current = audio.loop('hiss', { pos: [spawn.x, 1.5, spawn.z], volume: 0, ref: 2 })
-    sombraDebug.active = true
+    dbg.active = true
     const unregister = registerCreature({
-      id: `sombra-${spawn.x}-${spawn.z}`,
+      id: key,
       name: 'Sombra',
       colliderHandle: () => collider.current?.handle,
       pos: () => b.pos,
       stun: (seconds, knock) => applyStun(b, seconds, knock),
     })
-    sombraDebug.tp = (x, z) => {
+    dbg.tp = (x, z) => {
       body.current?.setTranslation({ x, y: HALF + R + 0.05, z }, true)
       b.pos = { x, z }
       setState('idle')
@@ -117,10 +128,10 @@ export function Sombra({ nav, spawn }: { nav: NavGrid; spawn: P2 }) {
     return () => {
       sound.current?.stop()
       unregister()
-      sombraDebug.active = false
-      sombraDebug.state = 'off'
-      beam.onShadow = false
-      setDanger('sombra', 0)
+      dbg.active = false
+      dbg.state = 'off'
+      setShadowLit(key, false)
+      setDanger(key, 0)
     }
   }, [])
 
@@ -173,19 +184,19 @@ export function Sombra({ nav, spawn }: { nav: NavGrid; spawn: P2 }) {
     const p = body_.translation()
     b.pos.x = p.x
     b.pos.z = p.z
-    sombraDebug.pos = { x: p.x, z: p.z }
+    dbg.pos = { x: p.x, z: p.z }
     if (!active) {
-      beam.onShadow = false
-      setDanger('sombra', 0)
+      setShadowLit(key, false)
+      setDanger(key, 0)
       sound.current?.setVolume(0)
       return
     }
 
     if (b.state === 'gone') {
-      sombraDebug.state = 'gone'
-      sombraDebug.lit = false
-      beam.onShadow = false
-      setDanger('sombra', 0)
+      dbg.state = 'gone'
+      dbg.lit = false
+      setShadowLit(key, false)
+      setDanger(key, 0)
       sound.current?.setVolume(0)
       if ((b.timer -= dt) <= 0) reappear()
       return
@@ -193,7 +204,7 @@ export function Sombra({ nav, spawn }: { nav: NavGrid; spawn: P2 }) {
 
     // ---- luz
     b.lit = inBeam()
-    beam.onShadow = b.lit
+    setShadowLit(key, b.lit)
 
     // ---- o jogador está ao alcance? (dentro do território ou perto da beira)
     const player: P2 = { x: playerFeet.x, z: playerFeet.z }
@@ -212,7 +223,7 @@ export function Sombra({ nav, spawn }: { nav: NavGrid; spawn: P2 }) {
     // encostou: dano alto e some (iluminada ou não)
     if (!hidden && dPlayer < SOMBRA.touch) {
       audio.play('hit', { pos: [p.x, 1.2, p.z], volume: AUDIO.sombra, rate: 0.7 })
-      usePlayerStore.getState().damage(SOMBRA.damage)
+      usePlayerStore.getState().damage(SOMBRA.damage, 'sombra')
       vanish()
       return
     }
@@ -267,14 +278,14 @@ export function Sombra({ nav, spawn }: { nav: NavGrid; spawn: P2 }) {
     body_.setNextKinematicTranslation({ x: p.x + m.x, y: p.y + m.y, z: p.z + m.z })
     body_.setNextKinematicRotation(new THREE.Quaternion().setFromAxisAngle(UP, b.yaw))
 
-    if (walkCheckStuck(b, nav, SOMBRA, speed > 0, dt, () => sombraDebug.unsticks++) === 'giveup') setState('wander')
+    if (walkCheckStuck(b, nav, SOMBRA, speed > 0, dt, () => dbg.unsticks++) === 'giveup') setState('wander')
 
     // respiração só quando se move
     sound.current?.setPos([p.x, 1.5, p.z])
     sound.current?.setVolume(b.moving ? AUDIO.sombra * (b.state === 'hunt' ? 1 : 0.6) : 0, 0.15)
 
     setDanger(
-      'sombra',
+      key,
       b.state === 'hunt'
         ? 0.5 + 0.5 * clamp01(1 - dPlayer / 10)
         : b.state === 'lurk'
@@ -282,10 +293,10 @@ export function Sombra({ nav, spawn }: { nav: NavGrid; spawn: P2 }) {
           : 0.2 * clamp01(1 - dPlayer / 12),
     )
 
-    sombraDebug.state = b.state
-    sombraDebug.lit = b.lit
-    sombraDebug.pos = { x: p.x, z: p.z }
-    sombraDebug.path = b.path
+    dbg.state = b.state
+    dbg.lit = b.lit
+    dbg.pos = { x: p.x, z: p.z }
+    dbg.path = b.path
   })
 
   // debug: rótulo
