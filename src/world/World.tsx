@@ -45,7 +45,7 @@ export function World({ level }: { level: LevelData }) {
       <Interaction />
       <ItemControls />
       {cameraMode === 'player' && <HeldItem />}
-      {cameraMode === 'player' && <Flashlight />}
+      {cameraMode === 'player' && <Flashlight built={built} />}
       <Enemies level={level} built={built} />
       <LevelFlow level={level} built={built} />
       <AudioDirector level={level} built={built} />

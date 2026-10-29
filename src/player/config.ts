@@ -77,6 +77,15 @@ export const FLASHLIGHT = {
   /** Luz fraca em volta, para ver o que está bem perto. */
   spill: 0.5,
   shadowMapSize: 1024,
+
+  /** Bateria (0–100): ligada gasta isto por segundo (~4 min de luz). */
+  drainPerSec: 100 / 240,
+  /** Com o feixe em cima da Sombra gasta este tanto de vezes mais rápido. */
+  shadowDrain: 4,
+  /** Recarga por segundo dentro do carro. */
+  rechargePerSec: 25,
+  /** Abaixo disto a luz enfraquece e pisca. */
+  lowAt: 25,
 }
 
 /** Vidas por nível. Morrer custa uma; A COISA guarda a cabeça no local da morte (0.10.0). */

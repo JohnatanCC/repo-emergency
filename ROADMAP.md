@@ -116,11 +116,15 @@ Cada uma conversa com uma mecânica do jogo, para que fugir de cada uma seja dif
 - Batimento cardíaco pela distância e pelo estado dela
 - Debug (`G`): estado em cima dela e caminho em vermelho; `window.__relicario.guardia` (estado, visão, caminho)
 
-### ⬜ 0.8.0 — A Sombra
-- Vive nas salas `dark`. **Só se move quando não está no feixe da lanterna**
-- Iluminada, congela, mas a lanterna descarrega mais rápido enquanto você a encara
-- Encostar = dano alto; não entra em salas `lit`
-- **Bateria da lanterna** (entra junto com a Sombra): gasta ligada, recarrega no carro; pilhas como item pequeno
+### ✅ 0.8.0 — A Sombra e a bateria
+- **Território**: só as salas escuras (grade de navegação filtrada); **no apagão, a casa inteira** menos carro e extrator
+- **Só se move fora do feixe da lanterna** (cone + alcance + linha de visão). Iluminada, congela e treme; a bateria gasta **4×**
+- Jogador no território: vai direto nele (4,2 m/s). Numa sala clara perto: **espera na beira da escuridão**. Longe ou escondido: vaga
+- **Encostar** (ela em você ou você nela): 60 de dano; depois ela se desfaz e reaparece longe
+- Silhueta preta que não reflete luz, olhos pálidos que acendem no feixe; respiração chiada só quando se move
+- **Bateria da lanterna**: ~4 min de luz, recarrega no carro; fraca (< 25%) enfraquece e pisca; zerada, apaga. Barra no HUD
+- **Pilhas**: 2 por partida em pontos de saque; `E` recarrega 50% na hora, sem ocupar o inventário
+- Movimento e destravamento das entidades num módulo comum (`src/enemies/walker.ts`); batimento usa o maior perigo entre elas
 
 ### ⬜ 0.9.0 — O Possessor
 - Entra em **um objeto de saque** aleatório por partida; o objeto parece normal

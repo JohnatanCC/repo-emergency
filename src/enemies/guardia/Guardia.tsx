@@ -9,7 +9,8 @@ import type { BuiltLevel } from '../../world/buildLevel'
 import { ENEMY_GROUPS, SIGHT_GROUPS } from '../../game/physics'
 import { useGameStore } from '../../game/stores/gameStore'
 import { onNoise } from '../../game/systems/noise'
-import { danger } from '../../game/systems/danger'
+import { setDanger } from '../../game/systems/danger'
+import { beam } from '../../game/systems/beam'
 import { audio, type LoopHandle } from '../../game/audio/engine'
 import { AUDIO } from '../../game/audio/sounds'
 import { playerFeet } from '../../player/playerPos'
@@ -17,8 +18,8 @@ import { usePlayerStore } from '../../player/playerStore'
 import { onHide, useHidingStore } from '../../player/hidingStore'
 import { isCarried, onFirstTaken, useItemStore } from '../../items/itemStore'
 import { leaveWardrobe, wardrobes } from '../../world/HidingSpots'
-import { doorHandles } from '../../world/Doors'
 import type { NavGrid, P2 } from '../nav'
+import { newWalkState, walkCheckStuck, walkResume, walkSteer, walkStop, walkTo } from '../walker'
 import { GUARDIA } from './config'
 
 /**
@@ -84,9 +85,9 @@ export function Guardia({
   const firstRespawnId = useRef(respawnId)
 
   const b = useRef({
+    // caminho, destino e destravamento (walker.ts)
+    ...newWalkState(spawn),
     state: 'patrol' as State,
-    path: [] as P2[],
-    target: null as P2 | null,
     timer: 0,
     now: 0,
     yaw: 0,
@@ -98,24 +99,12 @@ export function Guardia({
     lastSeenAt: -1e9,
     alertedAt: -1e9,
     repath: 0,
-    /** Menor distância já alcançada até o próximo ponto do caminho (para medir progresso). */
-    best: Infinity,
-    noProgress: 0,
-    /** Ponto de referência para "não saiu do lugar" (não zera ao recalcular o caminho). */
-    anchor: { x: spawn.x, z: spawn.z },
-    anchorTime: 0,
-    /** Tentativas seguidas de destravar (porta → desvio → desvio → desiste). */
-    unstick: 0,
-    unstickAt: { x: spawn.x, z: spawn.z },
-    /** Andando até um ponto de desvio; depois retoma o destino. */
-    detour: false,
     lastPos: { x: spawn.x, z: spawn.z },
     hideSpot: null as string | null,
     /** Chegou na origem da relíquia: depois segue o rastro até o jogador. */
     trail: false,
     stepTimer: 0,
     cooldown: 0,
-    pos: { x: spawn.x, z: spawn.z },
   }).current
 
   /** Onde ficar para checar cada esconderijo. */
@@ -136,23 +125,12 @@ export function Guardia({
     return map
   }, [level, built])
 
-  const go = (target: P2) => {
-    b.target = target
-    b.path = nav.findPath(b.pos, target)
-    b.best = Infinity
-    b.noProgress = 0
-    b.detour = false
-  }
+  const go = (target: P2) => walkTo(b, nav, target)
   const setState = (state: State, target?: P2) => {
     b.state = state
     b.timer = 0
     if (target) go(target)
-    else {
-      // sem destino novo: esquece o antigo (senão a patrulha "já chegou" e fica parada para sempre)
-      b.path = []
-      b.target = null
-      b.detour = false
-    }
+    else walkStop(b)
   }
   const investigate = (p: P2) => setState('investigate', p)
   const search = (around: P2) => {
@@ -193,7 +171,7 @@ export function Guardia({
       s.whisper?.stop()
       guardiaDebug.active = false
       guardiaDebug.state = 'off'
-      danger.level = 0
+      setDanger('guardia', 0)
     }
   }, [])
 
@@ -247,7 +225,8 @@ export function Guardia({
     const d = Math.hypot(playerFeet.x - b.pos.x, playerFeet.z - b.pos.z)
 
     let range: number = GUARDIA.sightLit
-    if (player.flashlight) range = GUARDIA.sightFlashlight
+    // lanterna acesa de verdade (ligada e com bateria) entrega o jogador
+    if (beam.lit) range = GUARDIA.sightFlashlight
     else {
       const light = built.roomAt(playerFeet.x, playerFeet.z)?.light ?? 'dark'
       range = light === 'lit' ? GUARDIA.sightLit : light === 'dark' ? GUARDIA.sightDark : GUARDIA.sightDim
@@ -276,40 +255,6 @@ export function Guardia({
     return clear
   }
 
-  /** Destrava em etapas: portas → desvio → desvio → desiste do destino. */
-  const unstick = (p: { x: number; z: number }) => {
-    b.unstick++
-    guardiaDebug.unsticks++
-    b.unstickAt = { x: p.x, z: p.z }
-    // 1) porta perto (fechada ou aberta atravessada): joga para longe dela, com estrondo
-    let door = false
-    for (const d of doorHandles.values()) {
-      if (Math.hypot(d.x - p.x, d.z - p.z) < GUARDIA.doorReach) {
-        d.force([p.x, 1, p.z])
-        door = true
-      }
-    }
-    if (b.unstick === 1 && door) return
-    // 2–3) passo de lado até um ponto livre perto e tenta de novo
-    if (b.unstick <= 3) {
-      for (let i = 0; i < 6; i++) {
-        const side = nav.randomPoint({ x: p.x, z: p.z, radius: GUARDIA.detourRadius })
-        if (!side || dist(side, b.pos) < 0.6) continue
-        const path = nav.findPath(b.pos, side)
-        if (path.length) {
-          b.path = path
-          b.detour = true
-          return
-        }
-      }
-    }
-    // 4) desiste: na perseguição recalcula; fora dela, outro destino
-    b.unstick = 0
-    if (b.state === 'chase') b.path = b.target ? nav.findPath(b.pos, b.target) : []
-    else if (b.state === 'search') b.path = []
-    else setState('patrol')
-  }
-
   const strike = () => {
     const pos: [number, number, number] = [b.pos.x, 1.4, b.pos.z]
     audio.play('hit', { pos, volume: AUDIO.guardia })
@@ -331,7 +276,7 @@ export function Guardia({
     b.pos.x = p.x
     b.pos.z = p.z
     if (!active) {
-      danger.level = 0
+      setDanger('guardia', 0)
       return
     }
     b.now += dt
@@ -355,11 +300,7 @@ export function Guardia({
     const dPlayer = dist(b.pos, player)
 
     // terminou o desvio: retoma o destino antes de decidir qualquer coisa
-    if (b.detour && b.path.length === 0) {
-      b.detour = false
-      if (b.target) b.path = nav.findPath(b.pos, b.target)
-      b.best = Infinity
-    }
+    walkResume(b, nav)
 
     // ---- decisões
     const arrived = b.path.length === 0
@@ -442,18 +383,7 @@ export function Guardia({
           : GUARDIA.speedPatrol
     const speed = b.state === 'idle' || b.state === 'recover' ? 0 : base + (b.state === 'patrol' ? 0 : relics * GUARDIA.speedPerRelic)
 
-    let mx = 0
-    let mz = 0
-    while (b.path.length && dist(b.pos, b.path[0]) < 0.25) {
-      b.path.shift()
-      b.best = Infinity
-    }
-    if (b.path.length && speed > 0) {
-      const n = b.path[0]
-      const d = dist(b.pos, n)
-      mx = ((n.x - b.pos.x) / d) * speed * dt
-      mz = ((n.z - b.pos.z) / d) * speed * dt
-    }
+    let { mx, mz } = walkSteer(b, speed, dt)
     // depois do golpe recua devagar, de frente para o jogador: janela para fugir
     if (b.state === 'recover' && dPlayer > 0.01 && dPlayer < GUARDIA.backOffDistance) {
       mx = ((b.pos.x - player.x) / dPlayer) * GUARDIA.backOffSpeed * dt
@@ -481,31 +411,12 @@ export function Guardia({
     b.lastPos.x = p.x
     b.lastPos.z = p.z
 
-    // travou: mede o progresso até o próximo ponto (pegar só "parada" deixava passar o deslizar na quina)
-    if (speed > 0 && b.path.length && b.state !== 'recover') {
-      const d = dist(b.pos, b.path[0])
-      if (d < b.best - 0.05) {
-        b.best = d
-        b.noProgress = 0
-      } else b.noProgress += dt
-      // e se não sai do lugar (vale também na perseguição, que recalcula o caminho toda hora)
-      if (dist(b.pos, b.anchor) > 0.4) {
-        b.anchor = { x: p.x, z: p.z }
-        b.anchorTime = 0
-      } else b.anchorTime += dt
-      if (b.noProgress > GUARDIA.stuckTime || b.anchorTime > GUARDIA.stuckTime * 1.5) {
-        b.noProgress = 0
-        b.anchorTime = 0
-        b.best = Infinity
-        unstick(p)
-      }
-    } else {
-      b.noProgress = 0
-      b.anchorTime = 0
-      b.anchor = { x: p.x, z: p.z }
+    // travou: destrava em etapas (walker.ts); se esgotou, na perseguição recalcula, fora dela outro destino
+    if (walkCheckStuck(b, nav, GUARDIA, speed > 0 && b.state !== 'recover', dt, () => guardiaDebug.unsticks++) === 'giveup') {
+      if (b.state === 'chase') b.path = b.target ? nav.findPath(b.pos, b.target) : []
+      else if (b.state === 'search') b.path = []
+      else setState('patrol')
     }
-    // andou bem depois do último destravamento: zera as tentativas
-    if (b.unstick && dist(b.pos, b.unstickAt) > 2) b.unstick = 0
 
     // passos arrastados e sussurro acompanhando
     if (moved > 0.001 && (b.stepTimer -= dt * (speed / GUARDIA.speedPatrol)) <= 0) {
@@ -517,8 +428,10 @@ export function Guardia({
     s.whisper?.setRate(b.state === 'chase' ? 1.35 : 1)
 
     // perigo (batimento cardíaco)
-    danger.level =
-      b.state === 'chase' ? 0.6 + 0.4 * clamp01(1 - dPlayer / 12) : clamp01(1 - dPlayer / 16) * (b.state === 'investigate' ? 0.55 : 0.35)
+    setDanger(
+      'guardia',
+      b.state === 'chase' ? 0.6 + 0.4 * clamp01(1 - dPlayer / 12) : clamp01(1 - dPlayer / 16) * (b.state === 'investigate' ? 0.55 : 0.35),
+    )
 
     guardiaDebug.state = b.state
     guardiaDebug.seeing = b.seeing

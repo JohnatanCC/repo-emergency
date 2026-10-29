@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import type { LevelData } from '../game/data/types'
 import type { BuiltLevel } from '../world/buildLevel'
-import { CARRY, ITEMS, type ItemDef } from './catalog'
+import { CARRY, ITEMS, SUPPLIES, SUPPLY_SPAWNS, type ItemDef } from './catalog'
 
 type Vec3 = [number, number, number]
 
@@ -12,7 +12,7 @@ type Vec3 = [number, number, number]
  *  - hands: nas mãos (um por vez; médio ou grande, ou pequeno com o inventário cheio)
  *  - extracted: o extrator levou
  */
-export type ItemPlace = 'world' | 'inventory' | 'hands' | 'extracted'
+export type ItemPlace = 'world' | 'inventory' | 'hands' | 'extracted' | 'used'
 
 export interface ItemInstance {
   uid: string
@@ -64,6 +64,8 @@ interface ItemState {
   impact: (uid: string, speed: number) => void
   /** O extrator levou estes itens. */
   extract: (uids: string[]) => void
+  /** Suprimento pego: some do mapa (o efeito é aplicado por quem chamou). */
+  consume: (uid: string) => ItemDef | null
 }
 
 function shuffle<T>(list: T[]): T[] {
@@ -109,11 +111,18 @@ export const useItemStore = create<ItemState>((set, get) => {
       const relicIds = new Set(relicSpots.slice(0, level.relicQuota + 1).map((s) => s.id))
       const relics = shuffle(ITEMS.filter((d) => d.tag === 'relic'))
       const loot = ITEMS.filter((d) => d.tag === 'loot')
+      // alguns pontos de saque viram pilhas
+      const supplyIds = new Set(
+        shuffle(level.itemSpawns.filter((s) => !relicIds.has(s.id) && s.accepts.includes('loot')))
+          .slice(0, SUPPLY_SPAWNS)
+          .map((s) => s.id),
+      )
       const items: Record<string, ItemInstance> = {}
       let r = 0
       for (const s of level.itemSpawns) {
         let def: ItemDef | undefined
         if (relicIds.has(s.id)) def = relics[r++ % relics.length]
+        else if (supplyIds.has(s.id)) def = pick(SUPPLIES)
         else if (s.accepts.includes('loot')) def = pick(loot)
         if (!def) continue
         const [x, , z] = built.toWorld(s.x, s.y)
@@ -202,5 +211,12 @@ export const useItemStore = create<ItemState>((set, get) => {
         for (const uid of uids) if (items[uid]) items[uid] = { ...items[uid], place: 'extracted' }
         return { items }
       }),
+
+    consume: (uid) => {
+      const it = get().items[uid]
+      if (!it || it.place !== 'world' || it.def.tag !== 'supply') return null
+      set((s) => ({ items: { ...s.items, [uid]: { ...it, place: 'used' } } }))
+      return it.def
+    },
   }
 })

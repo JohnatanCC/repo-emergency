@@ -8,7 +8,7 @@ Dá para roubar objetos da casa para vender, mas o inventário só tem 3 espaço
 Tudo vai para o **extrator mágico** (sala roxa): largue os itens lá dentro e, quando a meta de relíquias for cumprida, ele leva tudo de uma vez.
 Aí as luzes apagam e é voltar vivo para o carro para receber o pagamento.
 
-Versão atual: **0.7.0 — A Guardiã** · próximas etapas em [`ROADMAP.md`](./ROADMAP.md)
+Versão atual: **0.8.0 — A Sombra** · próximas etapas em [`ROADMAP.md`](./ROADMAP.md)
 
 ## Rodando
 
@@ -29,7 +29,7 @@ Clique na tela para travar o mouse (`Esc` solta).
 | `Shift` | correr |
 | `C` ou `Ctrl` (segurar) | agachar (cuidado: `Ctrl+W` fecha a aba do navegador) |
 | `E` · `Shift+E` | usar (abrir/fechar porta) · com força |
-| `F` | lanterna |
+| `F` | lanterna (gasta bateria; recarrega no carro ou com pilhas) |
 | `E` (mirando um armário) · `E` de novo | esconder no armário · sair |
 | `E` (mirando um item) | pegar: pequeno vai para o inventário, médio/grande para as mãos |
 | `1` `2` `3` · `Q` | escolher espaço do inventário · largar (mãos primeiro) |
@@ -62,7 +62,7 @@ src/
   world/                   gera e desenha o nível (greybox, luzes, móveis)
   player/                  0.1.0
   items/                   catálogo, itens físicos, inventário e mãos
-  enemies/                 entidades + grade de navegação (Guardiã; Sombra e Possessor depois)
+  enemies/                 entidades + grade de navegação + andar comum (Guardiã, Sombra; Possessor depois)
   fx/                      pós-processamento retrô
   ui/                      HUD e telas
 public/audio/              sons (só próprios ou com licença livre)

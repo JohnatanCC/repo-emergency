@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.8.0 — A Sombra · 2026-10-29
+
+### Adicionado
+- A Sombra (`src/enemies/sombra/`): vive nas salas escuras (no apagão, na casa inteira menos carro e extrator), só se move fora do feixe da lanterna, vai direto no jogador dentro do território, espera na beira da escuridão quando ele está numa sala clara e, ao encostar, tira 60 e reaparece longe. Silhueta preta com olhos que acendem no feixe; respiração chiada ao se mover.
+- Bateria da lanterna: ~4 min de luz, 4× mais rápido com o feixe na Sombra, recarga no carro, luz fraca e piscando abaixo de 25%, apaga zerada; barra no HUD.
+- Pilhas (suprimento): 2 por partida em pontos de saque; pegar recarrega 50% sem ocupar o inventário.
+- Grade de navegação com território (filtro de salas) e `nearestPoint`; `beam` (estado do feixe) e `setDanger` por fonte.
+- Debug: `window.__relicario.sombra` (estado, `lit`, `tp`).
+
+### Alterado
+- Andar e destravar das entidades extraídos para `src/enemies/walker.ts` (a Guardiã usa o mesmo módulo).
+- A Guardiã considera a lanterna acesa de verdade (ligada e com bateria) para te ver de longe.
+- Batimento cardíaco usa o maior perigo entre as entidades.
+
+### Corrigido
+- Itens que caem para fora do mapa voltam para onde nasceram.
+
 ## 0.7.0 — A Guardiã · 2026-10-28
 
 ### Adicionado

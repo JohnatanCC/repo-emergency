@@ -27,6 +27,7 @@ Conceito, mecânicas e ordem das versões: `ROADMAP.md`. Histórico: `CHANGELOG.
   - `aim()` o que a mira acertou (distância, se é interagível)
   - `guardia` estado da Guardiã (`state`, `seeing`, `sight` = motivo de ver/não ver, `pos`, `path`, `unsticks`);
     `guardia.tp(x, z)` teleporta e `guardia.goTo(x, z)` manda investigar um ponto (reproduzir casos)
+  - `sombra` estado da Sombra (`state`, `lit` = no feixe, `pos`, `path`, `unsticks`, `tp(x, z)`)
   - Para testar a IA, rode testes longos (minutos) **sem** barulhos artificiais: barulhos dão destinos novos e
     escondem travamentos. A ferramenta corta scripts com mais de 45 s: rode em segundo plano e leia depois.
   - forçar a fase: `game.getState().setPhase('hunted')` faz as entidades aparecerem

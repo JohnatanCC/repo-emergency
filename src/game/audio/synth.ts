@@ -451,3 +451,23 @@ export const hit: Synth = (sr) =>
     for (let i = 0; i < swish.length; i++) swish[i] *= Math.sin((Math.PI * i) / swish.length) ** 2
     return normalize(mix([normalize(swish), 0.5], [thump(sr, 0.4, 120, 50, 12), 1, Math.floor(sr * 0.15)]))
   })
+
+/** Sombra: respiração chiada (loop), só toca quando ela se move. */
+export const hiss: Synth = (sr) =>
+  variants(1, (r) => {
+    const dur = 4
+    const n = Math.floor(sr * dur)
+    const air = noise(n, r)
+    bandpass(air, sr, 1800, 1.2)
+    normalize(air)
+    const low = noise(n, r)
+    lowpass(low, 0.01)
+    normalize(low)
+    for (let i = 0; i < n; i++) {
+      const t = i / sr
+      // inspira (2 s) e expira (2 s), ciclos inteiros: emenda sem estalo
+      const breath = Math.abs(Math.sin((Math.PI * t) / 2)) ** 1.5
+      air[i] = air[i] * breath * 0.8 + low[i] * 0.35
+    }
+    return normalize(air, 0.5)
+  })

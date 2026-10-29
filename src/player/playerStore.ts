@@ -19,12 +19,16 @@ interface PlayerState {
   /** Dica da mira, ex.: "abrir porta" (null = nada na frente). */
   hint: Hint | null
   flashlight: boolean
+  /** Bateria da lanterna (0–100). */
+  battery: number
   damage: (amount: number) => void
   setStamina: (stamina: number, exhausted: boolean) => void
   setCrouching: (crouching: boolean) => void
   setLocked: (locked: boolean) => void
   setHint: (hint: Hint | null) => void
   toggleFlashlight: () => void
+  setBattery: (battery: number) => void
+  addBattery: (amount: number) => void
   respawn: () => void
 }
 
@@ -37,17 +41,21 @@ export const usePlayerStore = create<PlayerState>((set) => ({
   respawnId: 0,
   hint: null,
   flashlight: true,
+  battery: 100,
   damage: (amount) => set((s) => ({ health: Math.max(0, s.health - amount) })),
   setStamina: (stamina, exhausted) => set({ stamina, exhausted }),
   setCrouching: (crouching) => set({ crouching }),
   setLocked: (locked) => set({ locked }),
   setHint: (hint) => set({ hint }),
   toggleFlashlight: () => set((s) => ({ flashlight: !s.flashlight })),
+  setBattery: (battery) => set({ battery }),
+  addBattery: (amount) => set((s) => ({ battery: Math.min(100, s.battery + amount) })),
   respawn: () =>
     set((s) => ({
       health: PLAYER.maxHealth,
       stamina: PLAYER.maxStamina,
       exhausted: false,
+      battery: 100,
       respawnId: s.respawnId + 1,
     })),
 }))

@@ -33,6 +33,7 @@ const SYNTHS = {
   whisper: S.whisper,
   shriek: S.shriek,
   hit: S.hit,
+  hiss: S.hiss,
 } as Record<SoundId, S.Synth>
 
 export const SOUND_IDS = Object.keys(SYNTHS) as SoundId[]

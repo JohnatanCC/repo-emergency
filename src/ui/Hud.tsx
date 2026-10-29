@@ -7,7 +7,7 @@ import type { SoundId } from '../game/audio/sounds'
 import type { LevelData } from '../game/data/types'
 import { usePlayerStore } from '../player/playerStore'
 import { useHidingStore } from '../player/hidingStore'
-import { PLAYER } from '../player/config'
+import { FLASHLIGHT, PLAYER } from '../player/config'
 import { isBroken, isCarried, useItemStore, type ItemInstance } from '../items/itemStore'
 
 const TOGGLES: { key: string; flag: keyof DebugFlags; label: string }[] = [
@@ -185,6 +185,7 @@ function Vitals() {
   const health = usePlayerStore((s) => s.health)
   const stamina = usePlayerStore((s) => s.stamina)
   const exhausted = usePlayerStore((s) => s.exhausted)
+  const battery = usePlayerStore((s) => s.battery)
   const lives = useGameStore((s) => s.lives)
   return (
     <div className="hud-vitals">
@@ -194,6 +195,10 @@ function Vitals() {
       </div>
       <div className={`bar stamina${exhausted ? ' exhausted' : ''}`}>
         <div style={{ width: `${(stamina / PLAYER.maxStamina) * 100}%` }} />
+      </div>
+      {/* bateria da lanterna: fica vermelha quando fraca */}
+      <div className={`bar battery${battery < FLASHLIGHT.lowAt ? ' low' : ''}`}>
+        <div style={{ width: `${battery}%` }} />
       </div>
     </div>
   )

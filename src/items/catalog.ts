@@ -14,7 +14,8 @@ export type ItemShape = 'box' | 'cylinder' | 'sphere'
 export interface ItemDef {
   id: string
   name: string
-  tag: ItemTag
+  /** relic / loot vêm do sorteio; supply = suprimento que é usado ao pegar (não vai para o inventário). */
+  tag: ItemTag | 'supply'
   size: ItemSize
   /** Valor inteiro, em dinheiro. */
   value: number
@@ -26,6 +27,8 @@ export interface ItemDef {
   /** Dimensões em metros: box [l, a, p] · cylinder [raio, altura] · sphere [raio]. */
   dims: number[]
   color: string
+  /** Suprimento: quanto de bateria da lanterna devolve ao pegar (0–100). */
+  battery?: number
 }
 
 export const ITEMS: ItemDef[] = [
@@ -164,6 +167,27 @@ export const ITEMS: ItemDef[] = [
     color: '#3a2a1a',
   },
 ]
+
+/** Suprimentos: usados na hora em que são pegos. */
+export const SUPPLIES: ItemDef[] = [
+  {
+    id: 'pilhas',
+    name: 'Pilhas',
+    tag: 'supply',
+    size: 'small',
+    value: 0,
+    fragility: 0,
+    mass: 0.3,
+    // pacote de pilhas: caixa (um cilindro de 3 cm atravessava o chão)
+    shape: 'box',
+    dims: [0.12, 0.06, 0.08],
+    color: '#c9a020',
+    battery: 50,
+  },
+]
+
+/** Quantos pontos de saque viram pilhas a cada partida. */
+export const SUPPLY_SPAWNS = 2
 
 /** Regras de carregar e de dano. */
 export const CARRY = {

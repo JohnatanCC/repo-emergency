@@ -20,6 +20,7 @@ import { useGameStore } from '../game/stores/gameStore'
 import { CARRY, RELIC_GLOW, type ItemDef } from './catalog'
 import { isBroken, useItemStore, type ItemInstance } from './itemStore'
 import { itemBodies } from './bodies'
+import { usePlayerStore } from '../player/playerStore'
 
 /** Nome com valor, para dicas e HUD. */
 export function itemLabel(item: ItemInstance) {
@@ -64,8 +65,17 @@ function WorldItem({ item }: { item: ItemInstance }) {
 
   // velocidade antes do passo: é a do momento do impacto
   useBeforePhysicsStep(() => {
-    const v = body.current?.linvel()
-    if (v) st.speed = Math.hypot(v.x, v.y, v.z)
+    const b = body.current
+    if (!b) return
+    const v = b.linvel()
+    st.speed = Math.hypot(v.x, v.y, v.z)
+    // caiu para fora do mapa (atravessou o chão): volta para onde nasceu
+    if (b.translation().y < -3) {
+      const [x, , z] = item.origin
+      b.setTranslation({ x, y: 1.2, z }, true)
+      b.setLinvel({ x: 0, y: 0, z: 0 }, true)
+      b.setAngvel({ x: 0, y: 0, z: 0 }, true)
+    }
   })
 
   useEffect(() => {
@@ -86,10 +96,19 @@ function WorldItem({ item }: { item: ItemInstance }) {
         const s = useItemStore.getState()
         const it = s.items[uid]
         if (!it) return { text: '', ok: false }
+        if (it.def.tag === 'supply') return { text: `pegar ${it.def.name} (+${it.def.battery}% bateria)`, ok: true }
         const go = s.wouldGo(uid)
         return go ? { text: `pegar ${itemLabel(it)}`, ok: true } : { text: `${itemLabel(it)} — mãos ocupadas`, ok: false }
       },
       use: () => {
+        // suprimento: usa na hora (não ocupa espaço)
+        const supply = useItemStore.getState().consume(uid)
+        if (supply) {
+          usePlayerStore.getState().addBattery(supply.battery ?? 0)
+          audio.play('click', { volume: 0.6 })
+          audio.play('rustle', { volume: 0.5 })
+          return
+        }
         if (useItemStore.getState().pickUp(uid)) audio.play('rustle', { volume: 0.6 })
       },
     })

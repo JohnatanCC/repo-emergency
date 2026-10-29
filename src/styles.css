@@ -74,6 +74,15 @@ canvas.retro {
 .hud .bar.stamina.exhausted > div {
   background: #6a5a3a;
 }
+.hud .bar.battery {
+  height: 3px;
+}
+.hud .bar.battery > div {
+  background: #d8c060;
+}
+.hud .bar.battery.low > div {
+  background: #c0503a;
+}
 
 /* Dentro do armário: escuro com a fresta vertical no meio */
 .hud-wardrobe {

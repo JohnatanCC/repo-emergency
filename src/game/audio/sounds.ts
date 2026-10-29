@@ -30,6 +30,7 @@ export type SoundId =
   | 'whisper'
   | 'shriek'
   | 'hit'
+  | 'hiss'
 
 export const AUDIO_DIR = `${import.meta.env.BASE_URL}audio/`
 
@@ -62,4 +63,6 @@ export const AUDIO = {
   thunder: 0.7,
   /** Guardiã. */
   guardia: 0.9,
+  /** Sombra (respiração ao se mover). */
+  sombra: 0.8,
 }

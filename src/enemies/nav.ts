@@ -1,4 +1,4 @@
-import type { LevelData, Prop } from '../game/data/types'
+import type { LevelData, Prop, Room } from '../game/data/types'
 import type { BuiltLevel } from '../world/buildLevel'
 import { WALL_THICKNESS } from '../world/buildLevel'
 
@@ -43,13 +43,23 @@ export interface NavGrid {
   isWalkable: (x: number, z: number) => boolean
   /** Linha reta livre entre dois pontos? */
   clear: (a: P2, b: P2) => boolean
+  /** Ponto livre mais próximo de `p`, até `maxDist` metros (null se não houver). */
+  nearestPoint: (p: P2, maxDist: number) => P2 | null
 }
 
 /**
  * `radius`: raio do corpo. `margin`: folga extra longe de paredes e móveis (não
- * vale nos vãos de porta, que precisam continuar passáveis).
+ * vale nos vãos de porta, que precisam continuar passáveis). `rooms`: só estas
+ * salas entram (território); um vão só entra se as duas salas dele entram.
  */
-export function buildNavGrid(level: LevelData, built: BuiltLevel, radius: number, cell = 0.25, margin = 0.1): NavGrid {
+export function buildNavGrid(
+  level: LevelData,
+  built: BuiltLevel,
+  radius: number,
+  cell = 0.25,
+  margin = 0.1,
+  rooms: (room: Room) => boolean = () => true,
+): NavGrid {
   const s = level.scale
   const corners = level.rooms.flatMap((r) => [built.toWorld(r.x, r.y), built.toWorld(r.x + r.w, r.y + r.h)])
   const minX = Math.min(...corners.map((c) => c[0]))
@@ -76,6 +86,7 @@ export function buildNavGrid(level: LevelData, built: BuiltLevel, radius: number
   // interior das salas
   const inset = WALL_THICKNESS + radius + margin
   for (const r of level.rooms) {
+    if (!rooms(r)) continue
     const [x0, , z0] = built.toWorld(r.x, r.y)
     const [x1, , z1] = built.toWorld(r.x + r.w, r.y + r.h)
     fillRect(x0 + inset, z0 + inset, x1 - inset, z1 - inset, 1)
@@ -87,6 +98,12 @@ export function buildNavGrid(level: LevelData, built: BuiltLevel, radius: number
     const [ax, , az] = built.toWorld(o.x, o.y)
     const [bx, , bz] = built.toWorld(o.x + o.w, o.y + o.h)
     const across = WALL_THICKNESS + inset + cell
+    // salas dos dois lados do vão
+    const [mx, , mz] = built.toWorld(o.x + o.w / 2, o.y + o.h / 2)
+    const sides = horizontal
+      ? [built.roomAt(mx, mz - 0.6), built.roomAt(mx, mz + 0.6)]
+      : [built.roomAt(mx - 0.6, mz), built.roomAt(mx + 0.6, mz)]
+    if (sides.some((r) => r && !rooms(r))) continue
     if (horizontal) {
       const mid = (az + bz) / 2
       fillRect(ax + radius, mid - across, bx - radius, mid + across, 1)
@@ -129,10 +146,10 @@ export function buildNavGrid(level: LevelData, built: BuiltLevel, radius: number
   }
 
   /** Célula livre mais próxima (busca em anéis). */
-  const nearest = (x: number, z: number) => {
+  const nearest = (x: number, z: number, rings = 12) => {
     const i0 = Math.floor((x - minX) / cell)
     const j0 = Math.floor((z - minZ) / cell)
-    for (let d = 0; d < 12; d++) {
+    for (let d = 0; d < rings; d++) {
       let best = -1
       let bestDist = Infinity
       for (let j = j0 - d; j <= j0 + d; j++)
@@ -271,5 +288,10 @@ export function buildNavGrid(level: LevelData, built: BuiltLevel, radius: number
     return null
   }
 
-  return { cell, cols, rows, walkable, findPath, randomPoint, isWalkable, clear }
+  const nearestPoint = (p: P2, maxDist: number): P2 | null => {
+    const k = nearest(p.x, p.z, Math.ceil(maxDist / cell))
+    return k < 0 ? null : { x: cx(k % cols), z: cz(Math.floor(k / cols)) }
+  }
+
+  return { cell, cols, rows, walkable, findPath, randomPoint, isWalkable, clear, nearestPoint }
 }
