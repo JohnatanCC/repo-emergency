@@ -12,6 +12,9 @@ Conceito, mecânicas e ordem das versões: `ROADMAP.md`. Histórico: `CHANGELOG.
 
 ## Arquitetura
 - `src/game/data/` — níveis como dados (planta 2D, 1 u = 0,08 m). `buildLevel.ts` transforma em greybox.
+  Níveis novos usam `room()`/`link()` (`levels/plan.ts`). Ao criar ou mudar um mapa, valide com a grade de navegação
+  (`buildNavGrid` + `findPath` do carro até cada sala, item, criatura e armário) antes de testar jogando.
+  Trocar de nível no teste: `game.setState({ levelIndex: n })` + `game.getState().restart()` + `player.getState().respawn()`.
 - `src/game/stores/gameStore.ts` — fase, vidas, debug. `src/player/playerStore.ts` — vida/estamina/HUD (muda todo frame; só o HUD assina).
 - `src/game/physics.ts` — grupos de colisão. O mundo fixo é `WORLD`; portas não colidem com o mundo.
 - `src/game/systems/` — sistemas sem React (ruído, interação).

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { VERSION, VERSION_NAME } from '../game/version'
-import { isPaused, payout, penalty, useGameStore, type DebugFlags } from '../game/stores/gameStore'
+import { isPaused, nextLevel, payout, penalty, useGameStore, type DebugFlags } from '../game/stores/gameStore'
+import { getLevel } from '../game/data/levels'
 import { EXTRACTION } from '../game/config'
 import { TOOLS } from '../game/shop'
 import { audio, SOUND_IDS } from '../game/audio/engine'
@@ -71,6 +72,7 @@ function Banner() {
 function Shop() {
   const money = useGameStore((s) => s.money)
   const equipment = useGameStore((s) => s.equipment)
+  const next = getLevel(nextLevel(useGameStore((s) => s.levelIndex)))
   const buy = (id: (typeof TOOLS)[number]['id']) => {
     if (useGameStore.getState().buy(id)) audio.play('click', { volume: 0.5 })
   }
@@ -78,6 +80,9 @@ function Shop() {
     <div className="hud-shop">
       <h2>LOJA DO C.R.O.S</h2>
       <div className="money">saldo ${money}</div>
+      <div className="next">
+        próximo contrato: {next.name} · meta {next.relicQuota} relíquias
+      </div>
       {TOOLS.map((t, i) => (
         <button key={t.id} className="tool" disabled={money < t.price} onClick={() => buy(t.id)}>
           <kbd>{i + 1}</kbd>

@@ -159,9 +159,14 @@ Cada uma conversa com uma mecânica do jogo, para que fugir de cada uma seja dif
 - Valem para todas as criaturas: Guardiã, Sombra, a figura do Possessor e A COISA (presa, dá para alcançar)
 - 💡 Ideias para depois: mochila +1 espaço, lanterna melhor, detector de relíquias
 
-## ⬜ 0.12.0 — Novos locais assombrados (níveis 2–5)
-- Um mapa fixo por nível, cada vez maior e mais escuro
-- Metas de relíquias maiores e ajuste de dificuldade
+## ✅ 0.12.0 — Novos locais assombrados (níveis 2–5)
+- **2 · Orfanato Santa Luzia**: refeitório, dois dormitórios escuros entre corredores, capela, sala da diretora — meta 3, timer 18 s
+- **3 · Hospital de Isolamento**: recepção e um corredor longo e escuro com enfermarias e centro cirúrgico — meta 3, timer 16 s
+- **4 · Igreja e Cemitério**: adro e cemitério ao ar livre, nave, sacristia, capela lateral, cripta — meta 4, timer 15 s
+- **5 · Mansão Profunda**: galerias norte e sul, biblioteca, jantar, quarto, escritório, cozinha, adega, estufa, capela — meta 5, timer 12 s
+- Cada contrato cumprido avança um local (o último se repete); a loja mostra o próximo; fim de jogo recomeça no mesmo
+- `link()` em `src/game/data/levels/plan.ts`: porta no meio da parede comum entre salas vizinhas (erro se não forem vizinhas)
+- Todos os mapas validados pela grade de navegação (carro → todas as salas, itens, criaturas e armários)
 
 ## ⬜ 1.0.0 — Polimento
 - Modelos e texturas definitivos, menu, configurações, salvamento, balanceamento

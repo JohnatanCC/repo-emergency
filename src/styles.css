@@ -232,6 +232,9 @@ canvas.retro {
 }
 .hud-shop .money {
   color: #9fd17a;
+}
+.hud-shop .next {
+  color: #c9b98f;
   margin-bottom: 6px;
 }
 .hud-shop .tool {

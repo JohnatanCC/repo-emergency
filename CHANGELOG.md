@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.12.0 — Novos locais assombrados · 2026-10-29
+
+### Adicionado
+- Quatro locais novos: Orfanato Santa Luzia (meta 3), Hospital de Isolamento (meta 3), Igreja e Cemitério (meta 4) e Mansão Profunda (meta 5), cada um maior e mais escuro.
+- Progressão: cada contrato cumprido leva ao próximo local (o último se repete); a loja mostra o próximo contrato.
+- `room()` / `link()` (`src/game/data/levels/plan.ts`) para desenhar níveis sem errar a posição das portas.
+
 ## 0.11.0 — Loja do C.R.O.S · 2026-10-29
 
 ### Adicionado

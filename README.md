@@ -8,7 +8,7 @@ Dá para roubar objetos da casa para vender, mas o inventário só tem 3 espaço
 Tudo vai para o **extrator mágico** (sala roxa): largue os itens lá dentro e, quando a meta de relíquias for cumprida, ele leva tudo de uma vez.
 Aí as luzes apagam e é voltar vivo para o carro para receber o pagamento.
 
-Versão atual: **0.11.0 — Loja do C.R.O.S** · próximas etapas em [`ROADMAP.md`](./ROADMAP.md)
+Versão atual: **0.12.0 — Novos locais** · próximas etapas em [`ROADMAP.md`](./ROADMAP.md)
 
 ## Rodando
 
@@ -57,7 +57,7 @@ Clique na tela para travar o mouse (`Esc` solta).
 src/
   game/
     data/types.ts          formato dos níveis
-    data/levels/           um arquivo por nível (mansion-01.ts …)
+    data/levels/           um arquivo por nível (mansion-01.ts … deep-manor-05.ts) + plan.ts
     stores/gameStore.ts    estado global (fase, debug)
     audio/sounds.ts        manifesto de sons
     systems/               ruído, spawn, extração… (próximas versões)
@@ -70,10 +70,17 @@ src/
 public/audio/              sons (só próprios ou com licença livre)
 ```
 
+## Locais assombrados
+
+Um por contrato, em ordem (o último se repete): Mansão (1), Orfanato Santa Luzia (2), Hospital de Isolamento (3),
+Igreja e Cemitério (4), Mansão Profunda (5). Cada um em `src/game/data/levels/`.
+
 ## Editando o mapa
 
 O mapa usa as mesmas coordenadas da planta 2D (1 unidade = 0.08 m).
-Em `mansion-01.ts`:
+Nos níveis novos, `room()` e `link()` (`src/game/data/levels/plan.ts`) ajudam: `link('D3', salaA, salaB)` põe a porta no
+meio da parede que as duas salas dividem e dá erro se elas não encostarem.
+Em cada arquivo de nível:
 
 - **rooms**: retângulos `x, y, w, h`, com tipo de luz (`lit`, `dim`, `dark`, `moon`), piso e parede.
 - **openings**: retângulo fino em cima da parede compartilhada (`door` ou `passage`), igual às portas vermelhas do desenho.

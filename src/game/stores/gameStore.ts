@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { LIVES } from '../../player/config'
 import { POSSESSOR } from '../../enemies/possessor/config'
 import { toolInfo, type ToolId } from '../shop'
+import { LEVELS } from '../data/levels'
 
 /**
  * Fases de um nível:
@@ -108,6 +109,11 @@ export function isPaused(phase: GamePhase) {
   return phase === 'gameover' || phase === 'results' || phase === 'shop'
 }
 
+/** Índice do próximo local assombrado (o último se repete). */
+export function nextLevel(index: number) {
+  return Math.min(index + 1, LEVELS.length - 1)
+}
+
 /** Pagamento: o C.R.O.S paga as relíquias, o saque é vendido por fora. */
 export function payout(r: ExtractorContents) {
   return r.relicValue + r.lootValue - penalty(r)
@@ -169,7 +175,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ money: s.money - price, equipment: { ...s.equipment, [id]: (s.equipment[id] ?? 0) + 1 } })
     return true
   },
-  nextContract: () => set((s) => freshMatch(s.matchId)),
+  // contrato cumprido: próximo local (o último se repete)
+  nextContract: () => set((s) => ({ ...freshMatch(s.matchId), levelIndex: nextLevel(s.levelIndex) })),
   takeEquipment: () => {
     const ids = Object.entries(get().equipment).flatMap(([id, n]) => Array(n ?? 0).fill(id as ToolId))
     set({ equipment: {} })
