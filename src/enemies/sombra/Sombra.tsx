@@ -17,8 +17,10 @@ import { FLASHLIGHT } from '../../player/config'
 import type { NavGrid, P2 } from '../nav'
 import { applyStun, stunFields, stunStep } from '../stun'
 import { registerCreature } from '../../game/systems/creatures'
+import { setChasing } from '../../game/systems/chase'
 import { newWalkState, walkCheckStuck, walkResume, walkSteer, walkStop, walkTo } from '../walker'
 import { SOMBRA } from './config'
+import { doorHandles } from '../../world/Doors'
 import { SombraModel } from '../models/SombraModel'
 import { newPose } from '../models/pose'
 
@@ -56,9 +58,16 @@ export function Sombra({
   nav,
   spawn,
   primary = true,
+  damage = SOMBRA.damage,
+  lockTime = 0,
+  chaseMusic = false,
 }: {
   nav: NavGrid
   spawn: P2
+  damage?: number
+  /** Segundos que continua caçando depois de o jogador sair do território (indo até a beira mais perto dele). */
+  lockTime?: number
+  chaseMusic?: boolean
   /** A que aparece no debug (pode haver mais de uma). */ primary?: boolean
 }) {
   const key = useRef(`sombra-${spawn.x.toFixed(1)}-${spawn.z.toFixed(1)}`).current
@@ -78,6 +87,9 @@ export function Sombra({
     ...newWalkState(spawn),
     ...stunFields(),
     state: 'wander' as State,
+    burstT: Math.random() * 10,
+    /** Tempo que ainda marca o alvo (s). */
+    lockLeft: 0,
     timer: 0,
     repath: 0,
     yaw: 0,
@@ -132,6 +144,7 @@ export function Sombra({
       dbg.state = 'off'
       setShadowLit(key, false)
       setDanger(key, 0)
+      setChasing(key, false)
     }
   }, [])
 
@@ -223,19 +236,26 @@ export function Sombra({
     // encostou: dano alto e some (iluminada ou não)
     if (!hidden && dPlayer < SOMBRA.touch) {
       audio.play('hit', { pos: [p.x, 1.2, p.z], volume: AUDIO.sombra, rate: 0.7 })
-      usePlayerStore.getState().damage(SOMBRA.damage, 'sombra')
+      usePlayerStore.getState().damage(damage, 'sombra')
       vanish()
       return
     }
 
     walkResume(b, nav)
+    b.lockLeft = Math.max(0, b.lockLeft - dt)
     if ((b.repath -= dt) <= 0) {
       b.repath = SOMBRA.repath
       const inside = !hidden && nav.nearestPoint(player, 0.6)
       const edge = !hidden && !inside && nav.nearestPoint(player, SOMBRA.lurkReach)
       if (inside) {
         b.state = 'hunt'
+        b.lockLeft = lockTime
         go(player)
+      } else if (b.lockLeft > 0 && !hidden) {
+        // alvo marcado: continua caçando, até a beira do território mais perto do jogador
+        b.state = 'hunt'
+        const near = nav.nearestPoint(player, 40)
+        if (near) go(near)
       } else if (edge) {
         b.state = 'lurk'
         if (!b.target || dist(b.target, edge) > 0.5) go(edge)
@@ -257,10 +277,19 @@ export function Sombra({
     // ---- movimento: congela no feixe
     const base =
       b.state === 'hunt' ? SOMBRA.speedHunt : b.state === 'lurk' ? SOMBRA.speedLurk : b.state === 'wander' ? SOMBRA.speedWander : 0
-    const speed = b.lit ? 0 : base
+    // caçando anda aos trancos: dispara, quase para, dispara de novo
+    b.burstT += dt * SOMBRA.burst.speed
+    const burst = Math.max(0, Math.sin(b.burstT) * Math.sin(b.burstT * 0.37 + 1))
+    const huntK = b.state === 'hunt' ? SOMBRA.burst.min + (SOMBRA.burst.max - SOMBRA.burst.min) * burst : 1
+    const speed = b.lit ? 0 : base * huntK
+    pose.mode = b.state === 'hunt' ? 'chase' : 'calm'
+    // perto de porta: se curva para passar
+    let door = 99
+    for (const d of doorHandles.values()) door = Math.min(door, Math.hypot(d.x - b.pos.x, d.z - b.pos.z))
+    pose.nearDoor = Math.max(0, Math.min(1, (SOMBRA.duckDoor - door) / (SOMBRA.duckDoor * 0.5)))
     const { mx, mz } = walkSteer(b, speed, dt)
     b.moving = mx !== 0 || mz !== 0
-    pose.moving = b.moving ? speed / SOMBRA.speedWander : 0
+    pose.moving = b.moving ? speed / SOMBRA.speedWander / (b.state === 'hunt' ? 2 : 1) : 0
 
     const look =
       b.state === 'hunt' || b.state === 'lurk' || b.lit
@@ -297,6 +326,7 @@ export function Sombra({
     dbg.lit = b.lit
     dbg.pos = { x: p.x, z: p.z }
     dbg.path = b.path
+    setChasing(key, chaseMusic && b.state === 'hunt')
   })
 
   // debug: rótulo

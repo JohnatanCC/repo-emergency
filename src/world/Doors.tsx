@@ -68,7 +68,28 @@ function wrap(a: number) {
   return Math.atan2(Math.sin(a), Math.cos(a))
 }
 
-function Door({ opening, level, built }: { opening: Opening; level: LevelData; built: BuiltLevel }) {
+/** Direção ao longo da porta (local +x) para um giro em Y. */
+const alongOf = (yaw: number): [number, number] => [Math.cos(yaw), -Math.sin(yaw)]
+
+/**
+ * Uma folha de porta. `flip`: a dobradiça fica na outra ponta (a folha da
+ * direita de uma porta dupla). `casingEnd`: desenha o batente da ponta oposta
+ * à dobradiça (portas duplas não têm batente no meio).
+ */
+function Door({
+  opening,
+  level,
+  built,
+  flip = false,
+  casingEnd = true,
+}: {
+  opening: Opening
+  level: LevelData
+  built: BuiltLevel
+  flip?: boolean
+  casingEnd?: boolean
+}) {
+  const doorHeight = opening.height ?? DOOR_HEIGHT
   const frame = useRef<RapierRigidBody>(null)
   const door = useRef<RapierRigidBody>(null)
   const collider = useRef<RapierCollider>(null)
@@ -80,12 +101,17 @@ function Door({ opening, level, built }: { opening: Opening; level: LevelData; b
     const len = (horizontal ? opening.w : opening.h) * s
     // a folha ocupa o vão inteiro, menos a folga dos dois lados
     const width = len - 2 * DOOR.clearance
-    const start = horizontal ? built.toWorld(opening.x, opening.y + opening.h / 2) : built.toWorld(opening.x + opening.w / 2, opening.y)
-    const hinge: [number, number, number] = horizontal ? [start[0] + DOOR.clearance, 0, start[2]] : [start[0], 0, start[2] + DOOR.clearance]
-    // local +x aponta ao longo da abertura
-    const yaw0 = horizontal ? 0 : -Math.PI / 2
-    return { len, width, height: DOOR_HEIGHT - 2 * DOOR.clearance, start, hinge, yaw0 }
-  }, [opening, level, built])
+    const begin = horizontal ? built.toWorld(opening.x, opening.y + opening.h / 2) : built.toWorld(opening.x + opening.w / 2, opening.y)
+    const end = horizontal
+      ? built.toWorld(opening.x + opening.w, opening.y + opening.h / 2)
+      : built.toWorld(opening.x + opening.w / 2, opening.y + opening.h)
+    // local +x aponta ao longo da abertura, saindo da dobradiça
+    const yaw0 = (horizontal ? 0 : -Math.PI / 2) + (flip ? Math.PI : 0)
+    const start = flip ? end : begin
+    const [ax, az] = alongOf(yaw0)
+    const hinge: [number, number, number] = [start[0] + ax * DOOR.clearance, 0, start[2] + az * DOOR.clearance]
+    return { len, width, height: doorHeight - 2 * DOOR.clearance, start, hinge, yaw0 }
+  }, [opening, level, built, flip, doorHeight])
 
   const joint = useRevoluteJoint(frame, door, [
     [0, 0, 0],
@@ -144,7 +170,7 @@ function Door({ opening, level, built }: { opening: Opening; level: LevelData; b
       // com força o rangido é curto e alto; a batida (se fechar) vem da detecção abaixo
       audio.play('creak', { pos: [x, 1.2, z], volume: AUDIO.doors * (hard ? 1 : 0.7), rate: hard ? 1.7 : 0.9 + Math.random() * 0.2 })
     }
-    const along = g.yaw0 === 0 ? [1, 0] : [0, 1]
+    const along = alongOf(g.yaw0)
     doorHandles.set(opening.id, {
       x: g.start[0] + (along[0] * g.len) / 2,
       z: g.start[2] + (along[1] * g.len) / 2,
@@ -219,13 +245,15 @@ function Door({ opening, level, built }: { opening: Opening; level: LevelData; b
     <>
       <group position={[g.start[0], 0, g.start[2]]} rotation={[0, g.yaw0, 0]}>
         {/* entra 1 cm no vão para cobrir a ponta da parede */}
-        <mesh position={[-(c - 0.01) / 2, (DOOR_HEIGHT + c) / 2, 0]} material={mats.trim} castShadow receiveShadow>
-          <boxGeometry args={[c + 0.01, DOOR_HEIGHT + c, depth]} />
+        <mesh position={[-(c - 0.01) / 2, (doorHeight + c) / 2, 0]} material={mats.trim} castShadow receiveShadow>
+          <boxGeometry args={[c + 0.01, doorHeight + c, depth]} />
         </mesh>
-        <mesh position={[g.len + (c - 0.01) / 2, (DOOR_HEIGHT + c) / 2, 0]} material={mats.trim} castShadow receiveShadow>
-          <boxGeometry args={[c + 0.01, DOOR_HEIGHT + c, depth]} />
-        </mesh>
-        <mesh position={[g.len / 2, DOOR_HEIGHT + (c - 0.01) / 2, 0]} material={mats.trim} castShadow receiveShadow>
+        {casingEnd && (
+          <mesh position={[g.len + (c - 0.01) / 2, (doorHeight + c) / 2, 0]} material={mats.trim} castShadow receiveShadow>
+            <boxGeometry args={[c + 0.01, doorHeight + c, depth]} />
+          </mesh>
+        )}
+        <mesh position={[g.len / 2, doorHeight + (c - 0.01) / 2, 0]} material={mats.trim} castShadow receiveShadow>
           <boxGeometry args={[g.len + 2 * c, c + 0.01, depth]} />
         </mesh>
       </group>
@@ -265,9 +293,19 @@ export function Doors({ level, built }: { level: LevelData; built: BuiltLevel })
     <>
       {built.openings
         .filter((o) => o.kind === 'door')
-        .map((o) => (
-          <Door key={o.id} opening={o} level={level} built={built} />
-        ))}
+        .flatMap((o) => {
+          if (!o.double) return [<Door key={o.id} opening={o} level={level} built={built} />]
+          // porta dupla: duas folhas, cada uma com metade do vão, dobradiças nas pontas
+          const horizontal = o.w >= o.h
+          const a = horizontal ? { ...o, id: `${o.id}-a`, w: o.w / 2 } : { ...o, id: `${o.id}-a`, h: o.h / 2 }
+          const b = horizontal
+            ? { ...o, id: `${o.id}-b`, x: o.x + o.w / 2, w: o.w / 2 }
+            : { ...o, id: `${o.id}-b`, y: o.y + o.h / 2, h: o.h / 2 }
+          return [
+            <Door key={a.id} opening={a} level={level} built={built} casingEnd={false} />,
+            <Door key={b.id} opening={b} level={level} built={built} flip casingEnd={false} />,
+          ]
+        })}
     </>
   )
 }

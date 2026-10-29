@@ -2,9 +2,10 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { VERSION, VERSION_NAME } from '../game/version'
 import { useGameStore } from '../game/stores/gameStore'
 import { getLevel } from '../game/data/levels'
-import { audio } from '../game/audio/engine'
+import { uiSound } from './uiSound'
 import { usePlayerStore } from '../player/playerStore'
 import { Settings, useTitleStore } from './Screens'
+import { Bestiary } from './Bestiary'
 
 /**
  * Menus do jogo: tela de início e pausa. Os dois usam a mesma lista (mouse ou
@@ -25,9 +26,7 @@ interface Item {
   note?: string
 }
 
-type Panel = 'main' | 'settings' | 'controls' | 'credits'
-
-const tick = () => audio.play('click', { volume: 0.25, rate: 1.6 })
+type Panel = 'main' | 'settings' | 'controls' | 'credits' | 'bestiary'
 
 function MenuList({ items, onBack }: { items: Item[]; onBack?: () => void }) {
   const [index, setIndex] = useState(0)
@@ -35,15 +34,20 @@ function MenuList({ items, onBack }: { items: Item[]; onBack?: () => void }) {
     const onKey = (e: KeyboardEvent) => {
       if (e.code === 'ArrowDown' || e.code === 'KeyS') {
         setIndex((i) => (i + 1) % items.length)
-        tick()
+        uiSound.move()
       } else if (e.code === 'ArrowUp' || e.code === 'KeyW') {
         setIndex((i) => (i - 1 + items.length) % items.length)
-        tick()
+        uiSound.move()
       } else if (e.code === 'Enter' || e.code === 'Space') {
         e.preventDefault()
-        audio.play('click', { volume: 0.5 })
+        // voltar tem som próprio
+        if (items[index]?.label === 'voltar') uiSound.back()
+        else uiSound.select()
         items[index]?.action()
-      } else if (e.code === 'Escape' && onBack) onBack()
+      } else if (e.code === 'Escape' && onBack) {
+        uiSound.back()
+        onBack()
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -56,12 +60,13 @@ function MenuList({ items, onBack }: { items: Item[]; onBack?: () => void }) {
           key={it.label}
           className={i === index ? 'selected' : ''}
           onMouseEnter={() => {
-            if (i !== index) tick()
+            if (i !== index) uiSound.move()
             setIndex(i)
           }}
           onClick={(e) => {
             e.stopPropagation()
-            audio.play('click', { volume: 0.5 })
+            if (it.label === 'voltar') uiSound.back()
+            else uiSound.select()
             it.action()
           }}
         >
@@ -129,6 +134,8 @@ function Credits() {
 
 function Panels({ panel, setPanel, main }: { panel: Panel; setPanel: (p: Panel) => void; main: ReactNode }) {
   const back = () => setPanel('main')
+  // o caderno ocupa a tela toda e tem a própria navegação
+  if (panel === 'bestiary') return <Bestiary onBack={back} />
   if (panel === 'settings')
     return (
       <SubPanel title="Configurações" onBack={back}>
@@ -166,6 +173,7 @@ export function MainMenu() {
         lockCanvas()
       },
     },
+    { label: 'Bestiário', note: 'caderno de campo', action: () => setPanel('bestiary') },
     { label: 'Configurações', action: () => setPanel('settings') },
     { label: 'Controles', action: () => setPanel('controls') },
     { label: 'Créditos', action: () => setPanel('credits') },

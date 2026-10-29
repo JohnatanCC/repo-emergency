@@ -41,6 +41,8 @@ export const WALL_THICKNESS = 0.15
 /** Toda porta tem o mesmo tamanho (m), centralizada no vão desenhado na planta. */
 export const DOOR_WIDTH = 1.0
 export const DOOR_HEIGHT = 2.2
+/** Porta da frente da casa: dupla, mais larga e mais alta (m). */
+export const FRONT_DOOR = { width: 2.0, height: 2.7 }
 const OUTDOOR_WALL_FACTOR = 1.9
 
 type Interval = [number, number]
@@ -65,7 +67,7 @@ function subtract(range: Interval, cuts: Interval[]): Interval[] {
 /** Encolhe uma porta para DOOR_WIDTH, mantendo o centro. Passagens ficam como estão. */
 export function standardOpening(o: Opening, scale: number): Opening {
   if (o.kind !== 'door') return o
-  const len = DOOR_WIDTH / scale
+  const len = (o.double ? FRONT_DOOR.width : DOOR_WIDTH) / scale
   return o.w >= o.h ? { ...o, x: o.x + (o.w - len) / 2, w: len } : { ...o, y: o.y + (o.h - len) / 2, h: len }
 }
 
@@ -76,8 +78,8 @@ function openingsOnEdge(
   line: number,
   from: number,
   to: number,
-): { cut: Interval; kind: Opening['kind'] }[] {
-  const result: { cut: Interval; kind: Opening['kind'] }[] = []
+): { cut: Interval; kind: Opening['kind']; height: number }[] {
+  const result: { cut: Interval; kind: Opening['kind']; height: number }[] = []
   for (const o of openings) {
     const isHorizontal = o.w >= o.h
     if (isHorizontal !== horizontal) continue
@@ -85,12 +87,12 @@ function openingsOnEdge(
       if (line < o.y - 0.5 || line > o.y + o.h + 0.5) continue
       const a = Math.max(from, o.x)
       const b = Math.min(to, o.x + o.w)
-      if (b > a) result.push({ cut: [a, b], kind: o.kind })
+      if (b > a) result.push({ cut: [a, b], kind: o.kind, height: o.height ?? DOOR_HEIGHT })
     } else {
       if (line < o.x - 0.5 || line > o.x + o.w + 0.5) continue
       const a = Math.max(from, o.y)
       const b = Math.min(to, o.y + o.h)
-      if (b > a) result.push({ cut: [a, b], kind: o.kind })
+      if (b > a) result.push({ cut: [a, b], kind: o.kind, height: o.height ?? DOOR_HEIGHT })
     }
   }
   return result
@@ -154,11 +156,12 @@ export function buildLevel(level: LevelData): BuiltLevel {
         })
       }
 
-      segments.forEach(([a, b], si) => pushBox(`w-${room.id}-${ei}-${si}`, a, b, 0, H, room.wall))
+      const wall = room.wallSides?.[(['n', 's', 'w', 'e'] as const)[ei]] ?? room.wall
+      segments.forEach(([a, b], si) => pushBox(`w-${room.id}-${ei}-${si}`, a, b, 0, H, wall))
 
       // Verga acima das aberturas (portas e passagens internas)
-      cuts.forEach(({ cut: [a, b] }, ci) => {
-        pushBox(`l-${room.id}-${ei}-${ci}`, a, b, DOOR_HEIGHT, H, outdoor ? room.wall : 'lintel')
+      cuts.forEach(({ cut: [a, b], height }, ci) => {
+        pushBox(`l-${room.id}-${ei}-${ci}`, a, b, height, H, outdoor ? wall : 'lintel')
       })
     })
   }

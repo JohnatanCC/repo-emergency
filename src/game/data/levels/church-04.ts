@@ -108,5 +108,8 @@ export const church04: LevelData = {
   enemySpawns: [
     { id: 'e-guardia', enemy: 'guardia', x: 560, y: 200, phase: 'start' },
     { id: 'eb-guardia', enemy: 'guardia', x: 240, y: 300, phase: 'blackout' },
+    // o Espectro: vaga pela casa atravessando paredes; aparece na cripta pouco depois da Guardiã
+    { id: 'e-espectro', enemy: 'espectro', x: 660, y: 260, phase: 'start', delay: 20 },
+    { id: 'eb-espectro', enemy: 'espectro', x: 555, y: 195, phase: 'blackout' },
   ],
 }

@@ -9,7 +9,8 @@
 export type LightLevel = 'lit' | 'dim' | 'dark' | 'moon'
 
 export type FloorType = 'metal' | 'wood' | 'checker' | 'tile' | 'grass' | 'carpet'
-export type WallType = 'metal' | 'wallpaper' | 'panel' | 'brick' | 'tile'
+/** none = parede invisível (só colisor): a barreira do lado de fora, escondida na névoa. */
+export type WallType = 'metal' | 'wallpaper' | 'panel' | 'brick' | 'tile' | 'none'
 
 /** drip = goteira · clock = relógio de pêndulo · crickets = grilos */
 export type AmbientSound = 'drip' | 'clock' | 'crickets'
@@ -32,6 +33,8 @@ export interface Room extends Rect {
   wall: WallType
   /** Sons de ambiente que saem desta sala (posicionais). */
   ambient?: AmbientSound[]
+  /** Parede diferente num lado (n = y menor, s = y maior, w = x menor, e = x maior). */
+  wallSides?: Partial<Record<'n' | 's' | 'w' | 'e', WallType>>
 }
 
 /**
@@ -45,9 +48,28 @@ export interface Opening extends Rect {
   kind: 'door' | 'passage'
   /** A porta que inicia o timer de spawn dos monstros. */
   firstDoor?: boolean
+  /** Porta dupla (duas folhas abrindo do meio), mais larga (FRONT_DOOR). */
+  double?: boolean
+  /** Altura do vão em metros (padrão DOOR_HEIGHT). */
+  height?: number
 }
 
-export type PropType = 'shelf' | 'table' | 'chair' | 'wardrobe' | 'bathtub' | 'bench' | 'monitor'
+export type PropType =
+  | 'shelf'
+  | 'table'
+  | 'chair'
+  | 'wardrobe'
+  | 'bathtub'
+  | 'bench'
+  | 'monitor'
+  // lado de fora e caminhão (data/levels/exterior.ts)
+  | 'tree'
+  | 'bush'
+  | 'statue'
+  | 'lamppost'
+  | 'fountain'
+  | 'column'
+  | 'rack'
 
 export interface Prop {
   id: string
@@ -91,7 +113,7 @@ export interface ItemSpawn {
 }
 
 /** Entidades da casa (detalhes no ROADMAP.md). */
-export type EnemyId = 'guardia' | 'sombra' | 'possessor'
+export type EnemyId = 'guardia' | 'sombra' | 'possessor' | 'espectro'
 
 export interface EnemySpawn {
   id: string
@@ -102,6 +124,12 @@ export interface EnemySpawn {
   phase: 'start' | 'blackout'
   /** Segundos a mais, depois do começo da fase, até aparecer (entrada escalonada). */
   delay?: number
+  /** Dano por golpe (padrão: o do config da criatura). */
+  damage?: number
+  /** Marca o alvo: depois de perder de vista, continua indo atrás do jogador por estes segundos; depois patrulha. */
+  lockTime?: number
+  /** Toca a música de perseguição enquanto o jogador for o alvo. */
+  chaseMusic?: boolean
 }
 
 export interface LevelData {

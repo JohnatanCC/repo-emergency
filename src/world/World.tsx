@@ -19,6 +19,7 @@ import { Prewarm } from './Prewarm'
 import { Immersion } from '../player/Immersion'
 import { Dust } from './Dust'
 import { MapTracker } from './MapTracker'
+import { Exterior, FogController } from './Exterior'
 import { RoomLights } from './RoomLights'
 import { Gizmos } from './Gizmos'
 import { EditorCamera } from './EditorCamera'
@@ -45,6 +46,8 @@ export function World({ level }: { level: LevelData }) {
       <Level built={built} wallHeight={level.wallHeight} />
       <Props level={level} built={built} />
       <Decor level={level} built={built} />
+      <Exterior level={level} built={built} />
+      <FogController built={built} />
       {/* partida nova: portas voltam fechadas */}
       <Doors key={matchId} level={level} built={built} />
       <Items level={level} built={built} />

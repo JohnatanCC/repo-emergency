@@ -22,6 +22,8 @@ export const POSSESSOR = {
   hover: 0.35,
   touch: 0.8,
   damage: 15,
+  /** O toque possui o investigador por este tempo: anda devagar, a câmera é puxada, a lanterna falha. */
+  possessTime: 3.5,
   hitCooldown: 2,
   /** Depois de acertar, fica parada este tempo. */
   hitPause: 1,

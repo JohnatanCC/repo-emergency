@@ -39,6 +39,8 @@ function grit(ctx: CanvasRenderingContext2D, amount: number, seed: number) {
 type Painter = (ctx: CanvasRenderingContext2D) => void
 
 const painters: Record<TextureKey, Painter> = {
+  // parede invisível: nunca é desenhada (Level.tsx pula)
+  none: () => {},
   checker: (c) => {
     for (let y = 0; y < 2; y++)
       for (let x = 0; x < 2; x++) {

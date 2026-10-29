@@ -16,6 +16,7 @@ import { applyStun, stunFields, stunStep } from '../stun'
 import { registerCreature } from '../../game/systems/creatures'
 import { newWalkState, walkCheckStuck, walkResume, walkSteer, walkStop, walkTo } from '../walker'
 import { COISA } from './config'
+import { emitNoise } from '../../game/systems/noise'
 import { CoisaModel } from '../models/CoisaModel'
 import { newPose } from '../models/pose'
 
@@ -52,6 +53,7 @@ function Coisa({ id, nav, spawn, onCaught }: { id: string; nav: NavGrid; spawn: 
     grounded: false,
     caught: false,
     stepTimer: 0,
+    callTimer: 0,
     /** Para medir a velocidade do jogador. */
     lastPlayer: { x: playerFeet.x, z: playerFeet.z },
     playerSpeed: 0,
@@ -181,6 +183,12 @@ function Coisa({ id, nav, spawn, onCaught }: { id: string; nav: NavGrid; spawn: 
     if (walkCheckStuck(b, nav, COISA, mx !== 0 || mz !== 0, dt) === 'giveup') walkStop(b)
 
     // passinhos apressados quando foge
+    // fugindo, chama: o sussurro é barulho de verdade (a Guardiã vem ver)
+    if (b.state === 'flee' && (b.callTimer -= dt) <= 0) {
+      b.callTimer = COISA.callEvery
+      emitNoise({ pos: [p.x, 1, p.z], radius: COISA.callNoise, type: 'item' })
+      audio.play('murmur', { pos: [p.x, 1, p.z], volume: AUDIO.possessor * 0.7, rate: 1.35 })
+    }
     if (b.state === 'flee' && (mx || mz) && (b.stepTimer -= dt) <= 0) {
       b.stepTimer = 0.22
       audio.play('step-wood', { pos: [p.x, 0.1, p.z], volume: 0.35, rate: 1.6 + Math.random() * 0.2 })

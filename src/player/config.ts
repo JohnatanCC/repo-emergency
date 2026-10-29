@@ -105,9 +105,9 @@ export const REVIVE = {
   /** Quão longe as partes começam. */
   scatter: 0.9,
   /** Câmera girando em volta: raio, altura e ângulo (0 = de frente para o corpo). */
-  radius: 1.7,
+  radius: 1.1,
   heightFrom: 0.9,
-  heightTo: 1.75,
+  heightTo: 1.65,
   orbitFrom: 0.9,
   orbitTo: 2.6,
   /** Pausa com o corpo pronto e tempo da câmera entrando nos olhos. */

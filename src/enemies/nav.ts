@@ -26,6 +26,20 @@ function propSize(p: Prop, scale: number): [number, number] | null {
       return [1.6, 0.75]
     case 'bench':
       return [1.4, 0.45]
+    case 'tree':
+      return [0.5, 0.5]
+    case 'bush':
+      return [1.1, 1.1]
+    case 'statue':
+      return [0.9, 0.9]
+    case 'lamppost':
+      return [0.25, 0.25]
+    case 'fountain':
+      return [3.2, 3.2]
+    case 'column':
+      return [0.45, 0.45]
+    case 'rack':
+      return [(p.w ?? 30) * scale, 0.45]
     default:
       return null
   }

@@ -29,6 +29,8 @@ canvas.retro {
   /* acima dos rótulos de debug do mapa (drei Html usa z-index altíssimo) */
   z-index: 16777272;
   padding: 16px;
+  /* nada no HUD pode rolar a página */
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -47,43 +49,73 @@ canvas.retro {
   margin-top: 8px;
 }
 
-/* Vida, estamina e vidas: discretos, no canto inferior esquerdo */
+/* Vida, estamina, bateria e vidas: números grandes no canto superior esquerdo */
 .hud-vitals {
-  width: 180px;
+  position: absolute;
+  left: 18px;
+  top: 14px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0;
+  line-height: 1;
+}
+.hud-vitals .stat {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.hud-vitals .stat i {
+  font-style: normal;
+  width: 26px;
+  text-align: center;
+  font-size: 30px;
+}
+.hud-vitals .stat b {
+  font-weight: normal;
+  font-size: 46px;
+  min-width: 64px;
+}
+.hud-vitals .stat span {
+  font-size: 22px;
+  opacity: 0.6;
+}
+.hud-vitals .health {
+  color: #9fd17a;
+}
+.hud-vitals .stamina {
+  color: #e8c060;
+}
+.hud-vitals .battery {
+  color: #8ab4d8;
+}
+.hud-vitals .battery b {
+  font-size: 34px;
+}
+.hud-vitals .stat.low {
+  color: #e0503a;
+  animation: blink 0.9s infinite steps(1);
+}
+.hud-vitals .stamina.low {
+  animation: none;
+  opacity: 0.6;
 }
 .hud-lives {
-  font-size: 18px;
-  letter-spacing: 3px;
-  color: #c9b98f;
+  margin-top: 4px;
+  font-size: 24px;
+  letter-spacing: 4px;
 }
-.hud .bar {
-  height: 5px;
-  background: rgba(20, 16, 10, 0.7);
-  border: 1px solid #3a3020;
+.hud-lives i {
+  font-style: normal;
+  color: #3a2a24;
 }
-.hud .bar > div {
-  height: 100%;
+.hud-lives i.on {
+  color: #c8403a;
 }
-.hud .bar.health > div {
-  background: #a8433a;
-}
-.hud .bar.stamina > div {
-  background: #c9b98f;
-}
-.hud .bar.stamina.exhausted > div {
-  background: #6a5a3a;
-}
-.hud .bar.battery {
-  height: 3px;
-}
-.hud .bar.battery > div {
-  background: #d8c060;
-}
-.hud .bar.battery.low > div {
-  background: #c0503a;
+/* o painel de teste (H) fica abaixo dos números */
+.hud-top {
+  position: absolute;
+  left: 16px;
+  top: 190px;
 }
 
 /* Dentro do armário: escuro com a fresta vertical no meio */
@@ -105,8 +137,8 @@ canvas.retro {
 }
 .hud-hide {
   position: absolute;
-  left: 16px;
-  bottom: 64px;
+  left: 18px;
+  bottom: 18px;
   font-size: 18px;
   color: #3fc1a5;
 }
@@ -123,16 +155,16 @@ canvas.retro {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  font-size: 17px;
+  gap: 6px;
+  font-size: 21px;
 }
 .hud-inventory .slots {
   display: flex;
-  gap: 6px;
+  gap: 8px;
 }
 .hud-inventory .slot {
-  width: 150px;
-  padding: 2px 6px;
+  width: 190px;
+  padding: 6px 8px;
   background: rgba(10, 8, 6, 0.6);
   border: 1px solid #3a3020;
   display: flex;
@@ -142,7 +174,9 @@ canvas.retro {
   overflow: hidden;
 }
 .hud-inventory .slot.selected {
-  border-color: #c9b98f;
+  border-color: #e8d7a8;
+  background: rgba(40, 32, 20, 0.75);
+  box-shadow: 0 0 8px rgba(232, 215, 168, 0.25);
 }
 .hud-inventory small {
   margin-left: auto;
@@ -428,16 +462,56 @@ canvas.retro {
   cursor: pointer;
 }
 
-/* Objetivo no canto superior esquerdo */
-.hud-objective .place {
-  font-size: 26px;
-  letter-spacing: 2px;
-  color: #e8d7a8;
-  text-transform: uppercase;
+/* Meta, dinheiro e local: canto superior direito */
+.hud-objective {
+  position: absolute;
+  right: 18px;
+  top: 12px;
+  text-align: right;
+  line-height: 1;
+}
+.hud-objective .count {
+  color: #e8904a;
+}
+.hud-objective .count b {
+  font-weight: normal;
+  font-size: 60px;
+}
+.hud-objective .count span {
+  font-size: 34px;
+  opacity: 0.75;
+}
+.hud-objective .count.met {
+  color: #b99aff;
 }
 .hud-objective .goal {
-  font-size: 19px;
-  color: #a8987a;
+  font-size: 20px;
+  color: #c8a070;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+.hud-objective .goal.urgent {
+  color: #e0503a;
+  animation: blink 1.2s infinite steps(1);
+}
+.hud-objective .money {
+  margin-top: 8px;
+  font-size: 20px;
+  color: #9fd17a;
+}
+.hud-objective .money b {
+  font-weight: normal;
+  font-size: 32px;
+}
+.hud-objective .money span {
+  color: #7a8a5a;
+}
+.hud-objective .place {
+  margin-top: 4px;
+  font-size: 18px;
+  letter-spacing: 2px;
+  color: #8a7a5a;
+  text-transform: uppercase;
 }
 
 /* Telas cheias: título e pausa */
@@ -562,7 +636,7 @@ canvas.retro {
 }
 .vhs .rec {
   position: absolute;
-  top: 0;
+  bottom: 56px;
   right: 0;
 }
 .vhs .rec i {
@@ -572,7 +646,7 @@ canvas.retro {
 }
 .vhs .tape {
   position: absolute;
-  top: 28px;
+  bottom: 30px;
   right: 0;
   display: flex;
   gap: 12px;
@@ -866,4 +940,193 @@ canvas.retro {
 .map-legend .arrow {
   color: #b02a1a;
   font-size: 12px;
+}
+
+/* Bestiário: caderno de campo aberto sobre a mesa */
+.bestiary {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px;
+  background: radial-gradient(ellipse at center, rgba(30, 20, 10, 0.92), rgba(0, 0, 0, 0.98) 75%);
+  pointer-events: auto;
+}
+.book {
+  display: flex;
+  width: min(1040px, 100%);
+  height: min(620px, calc(100vh - 110px));
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.9),
+    0 0 0 6px #2a1a10,
+    0 0 0 8px #120a06;
+  animation: page-turn 0.35s ease-out;
+  text-shadow: none;
+}
+@keyframes page-turn {
+  from {
+    opacity: 0.2;
+    transform: perspective(1400px) rotateY(-8deg) translateX(10px);
+  }
+}
+.book .page {
+  flex: 1;
+  min-width: 0;
+  padding: 22px 26px;
+  color: #2a1c10;
+  background: radial-gradient(ellipse at 30% 20%, rgba(255, 250, 230, 0.35), transparent 60%), linear-gradient(180deg, #d8ccaa, #c2b08a);
+  overflow-y: auto;
+}
+.book .page.left {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  /* dobra no meio do caderno */
+  box-shadow: inset -24px 0 30px -18px rgba(60, 40, 20, 0.7);
+}
+.book .page.right {
+  box-shadow: inset 24px 0 30px -18px rgba(60, 40, 20, 0.7);
+}
+.book .plate {
+  flex: 1;
+  min-height: 0;
+  border: 2px solid #3a2a18;
+  outline: 1px solid #8a7050;
+  outline-offset: 4px;
+  background: #1a140c;
+  /* "fotografia" colada: um pouco torta */
+  transform: rotate(-1deg);
+}
+.book .plate canvas {
+  display: block;
+}
+.book .caption {
+  font-size: 18px;
+  text-align: center;
+  color: #5a4228;
+}
+.book h3 {
+  font-weight: normal;
+  font-size: 40px;
+  letter-spacing: 3px;
+  border-bottom: 2px solid #3a2a18;
+  line-height: 1;
+}
+.book h4 {
+  font-weight: normal;
+  font-size: 20px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #6a3018;
+  margin-top: 10px;
+}
+.book p,
+.book li {
+  font-size: 19px;
+  line-height: 1.15;
+}
+.book ul {
+  padding-left: 18px;
+}
+.book .tier {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 6px;
+  font-size: 22px;
+  color: #6a1a10;
+}
+.book .tier b {
+  font-weight: normal;
+  font-size: 34px;
+}
+.book .tier .skulls {
+  letter-spacing: 3px;
+}
+.book .tier small {
+  width: 100%;
+  font-size: 17px;
+  color: #5a4228;
+}
+.book .folio {
+  margin-top: 12px;
+  text-align: right;
+  font-size: 16px;
+  color: #6a5238;
+}
+.book-nav {
+  display: flex;
+  gap: 18px;
+}
+.book-nav button {
+  font-family: inherit;
+  font-size: 22px;
+  background: none;
+  color: #e8d7a8;
+  border: 1px solid #5a4a30;
+  padding: 2px 16px;
+  cursor: pointer;
+}
+.book-nav button:hover {
+  background: #1a140d;
+}
+@media (max-width: 720px) {
+  .book {
+    flex-direction: column;
+    height: auto;
+    max-height: calc(100vh - 90px);
+    overflow-y: auto;
+  }
+  .book .plate {
+    min-height: 220px;
+  }
+}
+
+/* Possuído pelo Possessor: verde, borda pulsando e a imagem "escorrendo" */
+.possessed-fx {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 30%, rgba(40, 120, 90, 0.55)),
+    repeating-linear-gradient(0deg, rgba(120, 220, 170, 0.06) 0 2px, transparent 2px 6px);
+  mix-blend-mode: screen;
+  animation:
+    possessed-pulse 0.7s ease-in-out infinite,
+    possessed-in 0.3s ease-out;
+}
+@keyframes possessed-pulse {
+  50% {
+    opacity: 0.55;
+    transform: translateX(3px) scale(1.01);
+  }
+}
+@keyframes possessed-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Espectro encarando: o chiado sobe devagar durante os 5 s */
+.jumpscare .static.stare {
+  animation:
+    static 0.12s infinite steps(2),
+    stare-static 5s ease-in forwards;
+}
+@keyframes stare-static {
+  from {
+    opacity: 0.05;
+  }
+  to {
+    opacity: 0.45;
+  }
+}
+
+/* Começou mas o mouse ainda não travou: só um aviso, nada de pausa */
+.enter-prompt {
+  background: rgba(0, 0, 0, 0.35);
+  cursor: pointer;
 }

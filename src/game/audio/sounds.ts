@@ -41,6 +41,15 @@ export type SoundId =
   | 'assemble'
   | 'revive'
   | 'breath'
+  | 'chase'
+  | 'menuTheme'
+  | 'uiMove'
+  | 'uiSelect'
+  | 'uiBack'
+  | 'pageTurn'
+  | 'espectroHum'
+  | 'espectroChase'
+  | 'espectroScream'
 
 export const AUDIO_DIR = `${import.meta.env.BASE_URL}audio/`
 
@@ -73,6 +82,15 @@ export const AUDIO = {
   thunder: 0.45,
   /** Respiração ofegante (correndo, cansado ou com medo). */
   breath: 0.35,
+  /** Música do menu (início; mais baixa na pausa) e sons da interface. */
+  menuMusic: 0.45,
+  menuMusicPause: 0.18,
+  ui: 0.5,
+  /** O Espectro: cantarolar (vagando), lamento (perseguindo) e grito. */
+  espectro: 0.8,
+  espectroChase: 0.6,
+  /** Música de perseguição (criaturas com chaseMusic). */
+  chase: 0.5,
   /** Acorde quando uma criatura começa a caçar. */
   stinger: 0.4,
   /** Guardiã. */

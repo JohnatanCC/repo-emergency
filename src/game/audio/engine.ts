@@ -44,6 +44,15 @@ const SYNTHS = {
   assemble: S.assemble,
   revive: S.revive,
   breath: S.breath,
+  chase: S.chase,
+  menuTheme: S.menuTheme,
+  uiMove: S.uiMove,
+  uiSelect: S.uiSelect,
+  uiBack: S.uiBack,
+  pageTurn: S.pageTurn,
+  espectroHum: S.espectroHum,
+  espectroChase: S.espectroChase,
+  espectroScream: S.espectroScream,
 } as Record<SoundId, S.Synth>
 
 export const SOUND_IDS = Object.keys(SYNTHS) as SoundId[]

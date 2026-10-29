@@ -692,3 +692,332 @@ export const breath: Synth = (sr) =>
     }
     return normalize(out, 0.6)
   })
+
+/**
+ * Música de perseguição (loop de 6,4 s: 4 compassos a 150 bpm): bumbo em cada
+ * tempo, baixo martelando em ré menor, tique metálico no contratempo, um
+ * acorde rasgado no começo de cada compasso e um sopro subindo no último.
+ */
+export const chase: Synth = (sr) =>
+  variants(1, (r) => {
+    const beat = 0.4
+    const dur = beat * 16
+    const n = Math.floor(sr * dur)
+    const out = new Float32Array(n)
+    const at = (t: number) => Math.floor(t * sr)
+    const put = (x: Float32Array, start: number, g: number) => {
+      for (let i = 0; i < x.length && start + i < n; i++) out[start + i] += x[i] * g
+    }
+    // bumbo
+    for (let k = 0; k < 16; k++) put(thump(sr, 0.3, 120, 42, 16), at(k * beat), 0.9)
+    // baixo em colcheias: ré ré fá ré mi♭ ré dó ré
+    const bassLine = [73.4, 73.4, 87.3, 73.4, 77.8, 73.4, 65.4, 73.4]
+    for (let k = 0; k < 32; k++) {
+      const f0 = bassLine[k % 8]
+      const len = Math.floor(sr * beat * 0.5)
+      const x = new Float32Array(len)
+      let ph = 0
+      for (let i = 0; i < len; i++) {
+        ph += f0 / sr
+        x[i] = ((ph % 1) * 2 - 1) * Math.exp((-i / sr) * 9)
+      }
+      lowpass(x, 0.08)
+      put(x, at((k * beat) / 2), 0.7)
+    }
+    // tique metálico no contratempo
+    for (let k = 0; k < 16; k++) {
+      const x = noise(Math.floor(sr * 0.05), r)
+      bandpass(x, sr, 6500, 3)
+      for (let i = 0; i < x.length; i++) x[i] *= Math.exp((-i / sr) * 70)
+      put(x, at(k * beat + beat / 2), 0.35)
+    }
+    // acorde rasgado (ré, mi♭, lá) no começo de cada compasso
+    for (let bar = 0; bar < 4; bar++) {
+      const len = Math.floor(sr * 0.9)
+      const x = new Float32Array(len)
+      const freqs = [293.7, 311.1, 440, 587.3]
+      const ph = freqs.map(() => r())
+      for (let i = 0; i < len; i++) {
+        const t = i / sr
+        let v = 0
+        freqs.forEach((fq, j) => {
+          ph[j] += (fq * (1 + 0.004 * Math.sin(TAU * 6 * t + j))) / sr
+          v += (ph[j] % 1) * 2 - 1
+        })
+        x[i] = v * Math.min(1, t * 60) * Math.exp(-t * 3.2)
+      }
+      lowpass(x, 0.3)
+      put(x, at(bar * beat * 4), 0.28)
+    }
+    // sopro subindo no último compasso (prepara a volta do loop)
+    const riseLen = Math.floor(sr * beat * 4)
+    const rise = noise(riseLen, r)
+    bandpass(rise, sr, 1800, 1.5)
+    for (let i = 0; i < riseLen; i++) rise[i] *= (i / riseLen) ** 2 * 0.9
+    put(rise, n - riseLen, 0.3)
+    return normalize(out, 0.8)
+  })
+
+/**
+ * Música do menu (loop de 32 s): uma caixinha/celesta tocando arpejos lentos em
+ * lá menor (lá m – fá – ré m – mi, duas voltas, a segunda uma oitava acima),
+ * sobre um acolchoado grave que respira, com a fita gasta (o tom oscila) e o
+ * chiado de um disco velho. Tudo escrito "em volta" do fim: emenda sem corte.
+ */
+export const menuTheme: Synth = (sr) =>
+  variants(1, (r) => {
+    const dur = 32
+    const n = Math.floor(sr * dur)
+    const out = new Float32Array(n)
+    // escreve com volta: o que passa do fim cai no começo (loop perfeito)
+    const add = (i: number, v: number) => {
+      out[((i % n) + n) % n] += v
+    }
+    const hz = (midi: number) => 440 * Math.pow(2, (midi - 69) / 12)
+    // fita gasta: o tom inteiro oscila devagar (ciclos inteiros em 32 s), calculado uma vez por amostra
+    const wowAt = new Float32Array(n)
+    for (let i = 0; i < n; i++) wowAt[i] = 1 + 0.004 * Math.sin((TAU * i * 4) / n) + 0.0015 * Math.sin((TAU * i * 23) / n)
+    const wow = (t: number) => wowAt[((Math.floor(t * sr) % n) + n) % n]
+    // seno por tabela (são milhões de amostras: Math.sin travaria a tela de início)
+    const TABLE = 4096
+    const sine = new Float32Array(TABLE)
+    for (let i = 0; i < TABLE; i++) sine[i] = Math.sin((TAU * i) / TABLE)
+    const fsin = (cycles: number) => sine[Math.floor((cycles - Math.floor(cycles)) * TABLE)]
+
+    // acordes: [fundamental grave, notas do arpejo]
+    const chords: [number, number[]][] = [
+      [45, [57, 60, 64, 69, 64, 60]], // lá menor
+      [41, [53, 57, 60, 65, 60, 57]], // fá
+      [38, [50, 53, 57, 62, 57, 53]], // ré menor
+      [40, [52, 56, 59, 64, 59, 56]], // mi (sol sustenido: a tensão que volta ao lá)
+    ]
+    const chordLen = 4
+    for (let k = 0; k < 8; k++) {
+      const [root, arp] = chords[k % 4]
+      const t0 = k * chordLen
+      const up = k >= 4 ? 12 : 0
+      // acolchoado: fundamental e quinta, entrando e saindo devagar (cruza com o próximo)
+      const padLen = Math.floor(sr * (chordLen + 1.5))
+      for (let i = 0; i < padLen; i++) {
+        const t = i / sr
+        const env = Math.sin((Math.PI * t) / (chordLen + 1.5)) ** 2
+        const tt = t0 + t
+        const c = hz(root) * wow(tt) * tt
+        // fundamental, ela desafinada, quinta e oitava
+        const v = fsin(c) * 0.5 + fsin(c * 1.003) * 0.3 + fsin(c * 1.4983) * 0.25 + fsin(c * 2) * 0.12
+        add(Math.floor((t0 - 0.75) * sr) + i, v * env * 0.22)
+      }
+      // celesta: uma nota a cada 2/3 s, com um atraso humano pequeno
+      arp.forEach((m, j) => {
+        const start = t0 + j * (chordLen / arp.length) + (r() - 0.5) * 0.03
+        const f = hz(m + up)
+        const len = Math.floor(sr * 2.2)
+        const s0 = Math.floor(start * sr)
+        const vel = 0.55 + r() * 0.25 - (j % 2) * 0.1
+        // decaimentos multiplicativos (um Math.exp por nota, não por amostra)
+        const k1 = Math.exp(-2.2 / sr)
+        const k2 = Math.exp(-6 / sr)
+        const k3 = Math.exp(-10 / sr)
+        let e1 = 1
+        let e2 = 1
+        let e3 = 1
+        for (let i = 0; i < len; i++) {
+          const t = i / sr
+          const idx = (((s0 + i) % n) + n) % n
+          const c = f * wowAt[idx] * t
+          // sino: fundamental + parciais agudos inarmônicos que somem rápido
+          const v = fsin(c) + 0.35 * fsin(c * 2.76) * e2 + 0.15 * fsin(c * 5.4) * e3
+          out[idx] += v * e1 * Math.min(1, t * 400) * vel * 0.3
+          e1 *= k1
+          e2 *= k2
+          e3 *= k3
+        }
+      })
+    }
+    // eco de sala vazia
+    const d = Math.floor(sr * 0.37)
+    for (let i = 0; i < n; i++) out[(i + d) % n] += out[i] * 0.28
+    // disco velho: chiado abafado e estalos
+    const hiss = noise(n, r)
+    lowpass(hiss, 0.15)
+    normalize(hiss)
+    for (let i = 0; i < n; i++) out[i] += hiss[i] * 0.025
+    for (let k = 0; k < 90; k++) {
+      const at = Math.floor(r() * n)
+      const amp = 0.05 + r() * 0.12
+      for (let i = 0; i < 40; i++) add(at + i, (r() * 2 - 1) * amp * Math.exp(-i / 8))
+    }
+    return normalize(out, 0.7)
+  })
+
+/** Menu: passar o cursor por uma opção (tique seco de máquina de escrever). */
+export const uiMove: Synth = (sr) =>
+  variants(3, (r) => {
+    const n = Math.floor(sr * 0.06)
+    const x = noise(n, r)
+    bandpass(x, sr, 2600 + r() * 600, 2.5)
+    for (let i = 0; i < n; i++) x[i] *= Math.exp((-i / sr) * 110)
+    return normalize(mix([x, 1], [thump(sr, 0.04, 900, 400, 120), 0.25]), 0.6)
+  })
+
+/** Menu: escolher (estalo de interruptor velho + um sino grave curto). */
+export const uiSelect: Synth = (sr) =>
+  variants(1, (r) => {
+    const n = Math.floor(sr * 0.9)
+    const clack = noise(Math.floor(sr * 0.05), r)
+    bandpass(clack, sr, 1500, 1.5)
+    for (let i = 0; i < clack.length; i++) clack[i] *= Math.exp((-i / sr) * 70)
+    const bell = new Float32Array(n)
+    for (let i = 0; i < n; i++) {
+      const t = i / sr
+      bell[i] =
+        (Math.sin(TAU * 220 * t) + 0.4 * Math.sin(TAU * 220 * 2.76 * t) * Math.exp(-t * 5)) * Math.exp(-t * 4) * Math.min(1, t * 500)
+    }
+    return normalize(mix([normalize(clack), 0.9], [thump(sr, 0.12, 180, 90, 30), 0.5], [bell, 0.45, Math.floor(sr * 0.02)]), 0.75)
+  })
+
+/** Menu: voltar (dois tiques descendo). */
+export const uiBack: Synth = (sr) =>
+  variants(1, (r) => {
+    const tickAt = (freq: number) => {
+      const x = noise(Math.floor(sr * 0.05), r)
+      bandpass(x, sr, freq, 2.5)
+      for (let i = 0; i < x.length; i++) x[i] *= Math.exp((-i / sr) * 90)
+      return normalize(x)
+    }
+    return normalize(mix([tickAt(2400), 0.8], [tickAt(1500), 0.7, Math.floor(sr * 0.07)]), 0.6)
+  })
+
+/** Bestiário: virar a página do caderno (papel arrastando e assentando). */
+export const pageTurn: Synth = (sr) =>
+  variants(2, (r) => {
+    const dur = 0.45
+    const n = Math.floor(sr * dur)
+    const out = new Float32Array(n)
+    const src = noise(n, r)
+    const step = Math.floor(sr * 0.03)
+    for (let s0 = 0; s0 < n; s0 += step) {
+      const t = s0 / sr
+      out.set(bandpass(src.slice(s0, s0 + step), sr, 3500 - 2400 * (t / dur), 1.2), s0)
+    }
+    for (let i = 0; i < n; i++) {
+      const t = i / sr
+      out[i] *= Math.sin((Math.PI * t) / dur) ** 1.5 * (0.7 + 0.3 * Math.sin(t * 90 + r()))
+    }
+    return normalize(mix([out, 1], [thump(sr, 0.1, 200, 120, 40), 0.25, Math.floor(sr * 0.36)]), 0.55)
+  })
+
+/** Voz sintética: dente-de-serra passando por duas formantes (vogal). */
+function voice(sr: number, n: number, f0: (t: number) => number, formants: [number, number], breathy: number, r: () => number) {
+  const src = new Float32Array(n)
+  let ph = 0
+  for (let i = 0; i < n; i++) {
+    ph += f0(i / sr) / sr
+    src[i] = (ph % 1) * 2 - 1
+  }
+  const a = bandpass(Float32Array.from(src), sr, formants[0], 5)
+  const b = bandpass(Float32Array.from(src), sr, formants[1], 7)
+  const air = bandpass(noise(n, r), sr, 2200, 1.5)
+  const out = new Float32Array(n)
+  for (let i = 0; i < n; i++) out[i] = a[i] + b[i] * 0.6 + air[i] * breathy
+  return normalize(out)
+}
+
+/**
+ * O Espectro vagando (loop de 9,6 s, posicional): uma menina cantarolando de
+ * boca fechada uma canção de ninar desafinada, longe, com eco.
+ */
+export const espectroHum: Synth = (sr) =>
+  variants(1, (r) => {
+    const dur = 9.6
+    const n = Math.floor(sr * dur)
+    // si menor, frase lenta; a última nota volta para a primeira (loop)
+    const notes = [71, 74, 73, 71, 69, 71, 66, 0, 71, 74, 76, 74, 73, 69, 71, 0]
+    const step = dur / notes.length
+    const hz = (m: number) => 440 * Math.pow(2, (m - 69) / 12)
+    const f0 = (t: number) => {
+      const k = Math.floor(t / step) % notes.length
+      const m = notes[k] || notes[(k + notes.length - 1) % notes.length]
+      // desafina devagar e treme (vibrato)
+      return hz(m) * (1 - 0.012 * Math.sin((Math.PI * 2 * t) / dur)) * (1 + 0.006 * Math.sin(TAU * 5.2 * t))
+    }
+    // "mmm": formantes baixas, quase sem ar
+    const v = voice(sr, n, f0, [320, 900], 0.05, r)
+    for (let i = 0; i < n; i++) {
+      const t = i / sr
+      const k = Math.floor(t / step) % notes.length
+      const inNote = (t % step) / step
+      // pausas nas notas 0 e cada nota entra e sai suave
+      const env = notes[k] === 0 ? 0 : Math.sin(Math.PI * Math.min(1, inNote * 1.1)) ** 0.6
+      v[i] *= env
+    }
+    lowpass(v, 0.25)
+    // eco de corredor (com volta: emenda no loop)
+    const out = Float32Array.from(v)
+    for (const [d, g] of [
+      [0.31, 0.35],
+      [0.62, 0.18],
+    ] as [number, number][]) {
+      const off = Math.floor(sr * d)
+      for (let i = 0; i < n; i++) out[(i + off) % n] += v[i] * g
+    }
+    return normalize(out, 0.55)
+  })
+
+/**
+ * O Espectro perseguindo (loop de 6 s): lamentos vocais dissonantes que sobem
+ * e descem, respiração entrecortada e um pulso grave, cada vez mais perto.
+ */
+export const espectroChase: Synth = (sr) =>
+  variants(1, (r) => {
+    const dur = 6
+    const n = Math.floor(sr * dur)
+    const out = new Float32Array(n)
+    // três vozes em "aaa", afastadas meio tom, deslizando
+    const wails: [number, number, number][] = [
+      [440, 0, 0.9],
+      [466, 1.3, 0.7],
+      [622, 2.6, 0.5],
+    ]
+    for (const [base, phase, g] of wails) {
+      const f0 = (t: number) => base * (1 + 0.18 * Math.sin((TAU * t) / dur + phase) + 0.01 * Math.sin(TAU * 6 * t))
+      const v = voice(sr, n, f0, [800, 1200], 0.25, r)
+      for (let i = 0; i < n; i++) {
+        const t = i / sr
+        out[i] += v[i] * g * (0.5 + 0.5 * Math.sin((TAU * 2 * t) / dur + phase)) ** 2
+      }
+    }
+    // pulso grave como um coração que não é seu
+    for (let k = 0; k < 8; k++) {
+      const x = thump(sr, 0.5, 55, 30, 8)
+      const at = Math.floor((k * dur * sr) / 8)
+      for (let i = 0; i < x.length; i++) out[(at + i) % n] += x[i] * 1.4
+    }
+    // respiração entrecortada
+    const breath = bandpass(noise(n, r), sr, 1500, 1)
+    normalize(breath)
+    for (let i = 0; i < n; i++) {
+      const t = i / sr
+      out[i] += breath[i] * 0.25 * Math.max(0, Math.sin(TAU * 1.5 * t)) ** 4
+    }
+    return normalize(seamless(out, sr, 0.3), 0.75)
+  })
+
+/** O Espectro abrindo a boca: grito rasgado que desce de tom, com estalo de mandíbula. */
+export const espectroScream: Synth = (sr) =>
+  variants(1, (r) => {
+    const dur = 1.9
+    const n = Math.floor(sr * dur)
+    const f0 = (t: number) => 900 * Math.exp(-t * 0.7) * (1 + 0.04 * Math.sin(TAU * 13 * t)) + 120
+    const v = voice(sr, n, f0, [950, 2400], 0.6, r)
+    // distorção: corta os picos (voz estourada)
+    for (let i = 0; i < n; i++) {
+      const t = i / sr
+      const x = v[i] * 2.5
+      v[i] = (x / (1 + Math.abs(x))) * Math.min(1, t * 30) * Math.exp(-t * 0.9)
+    }
+    const crack = noise(Math.floor(sr * 0.08), r)
+    bandpass(crack, sr, 1800, 1.2)
+    for (let i = 0; i < crack.length; i++) crack[i] *= Math.exp((-i / sr) * 50)
+    return normalize(mix([v, 1], [normalize(crack), 0.7], [thump(sr, 0.5, 90, 35, 6), 0.6]), 0.95)
+  })

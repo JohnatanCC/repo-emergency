@@ -35,6 +35,10 @@ export const RETRO_FX = {
   /** Linhas de varredura: densidade e força. */
   scanDensity: 1.4,
   scanOpacity: 0.18,
+  /** Textura que entorta com a câmera (mapeamento afim do PS1) nas paredes e pisos. */
+  affine: true,
+  /** Tamanho dos pedaços (m) em que paredes e pisos são divididos: menor = entorta menos. */
+  affineCell: 1.2,
 }
 
 /** Decoração gerada a partir da planta (world/Decor.tsx). Distâncias em metros. */
@@ -59,4 +63,15 @@ export const DECOR = {
   chandelierArea: 35,
   grassPerM2: 0.6,
   grassMax: 220,
+}
+
+/** Névoa (world/Exterior.tsx): dentro da casa e do lado de fora (densa, esconde a barreira). */
+export const FOG = {
+  inside: { color: '#050403', near: 18, far: 60 },
+  outside: { color: '#181b20', near: 2.5, far: 17 },
+  /** Velocidade da troca ao entrar/sair. */
+  blend: 1.5,
+  /** Placas de névoa rasteira no jardim. */
+  mistPatches: 70,
+  mistOpacity: 0.09,
 }

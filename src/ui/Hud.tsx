@@ -9,10 +9,12 @@ import type { SoundId } from '../game/audio/sounds'
 import type { LevelData } from '../game/data/types'
 import { usePlayerStore } from '../player/playerStore'
 import { useHidingStore } from '../player/hidingStore'
-import { FLASHLIGHT, PLAYER } from '../player/config'
+import { FLASHLIGHT, LIVES, PLAYER } from '../player/config'
 import { DamageFeedback, useTitleStore, VhsOverlay } from './Screens'
-import { MainMenu, PauseMenu } from './Menu'
+import { lockCanvas, MainMenu, PauseMenu } from './Menu'
 import { MapPanel } from './MapPanel'
+import { MenuMusic } from './MenuMusic'
+import { uiSound } from './uiSound'
 import { Jumpscare } from './Jumpscare'
 import { hasPossessor, isBroken, isCarried, useItemStore, type ItemInstance } from '../items/itemStore'
 
@@ -22,6 +24,9 @@ const TOGGLES: { key: string; flag: keyof DebugFlags; label: string }[] = [
   { key: 'r', flag: 'retro', label: 'Filtro retrô' },
   { key: 'n', flag: 'fog', label: 'Neblina' },
 ]
+
+/** Quantos corações aparecem (vidas do começo da partida). */
+const LIVES_SHOWN = LIVES
 
 /** Dano da tecla K, para testar morte e renascimento. */
 const DEBUG_DAMAGE = 25
@@ -53,21 +58,30 @@ function ExtractorCount({ quota }: { quota: number }) {
   )
 }
 
-/** O que fazer agora, no canto: local e meta do contrato. */
+/** Canto superior direito: a meta do contrato em destaque, o dinheiro e o local. */
 function Objective({ level }: { level: LevelData }) {
   const relics = useGameStore((s) => s.extractor.inside.relics)
   const status = useGameStore((s) => s.extractor.status)
   const phase = useGameStore((s) => s.phase)
-  const goal =
-    status === 'done' || phase === 'blackout'
-      ? 'volte ao carro'
-      : status === 'charging'
-        ? 'aguarde a extração'
-        : `relíquias no extrator ${relics}/${level.relicQuota}`
+  const money = useGameStore((s) => s.money)
+  const items = useItemStore((s) => s.items)
+  const carried = Object.values(items)
+    .filter(isCarried)
+    .reduce((sum, it) => sum + it.value, 0)
+  const done = status === 'done' || phase === 'blackout'
+  const goal = done ? 'volte ao caminhão' : status === 'charging' ? 'aguarde a extração' : 'relíquias no extrator'
   return (
     <div className="hud-objective">
+      <div className={`count${relics >= level.relicQuota ? ' met' : ''}`}>
+        <b>{relics}</b>
+        <span>/{level.relicQuota}</span>
+      </div>
+      <div className={`goal${done ? ' urgent' : ''}`}>{goal}</div>
+      <div className="money">
+        <b>${carried}</b>
+        <span> carregando · saldo ${money}</span>
+      </div>
       <div className="place">{level.name}</div>
-      <div className="goal">▸ {goal}</div>
     </div>
   )
 }
@@ -97,7 +111,7 @@ function Shop() {
   const equipment = useGameStore((s) => s.equipment)
   const next = getLevel(nextLevel(useGameStore((s) => s.levelIndex)))
   const buy = (id: (typeof TOOLS)[number]['id']) => {
-    if (useGameStore.getState().buy(id)) audio.play('click', { volume: 0.5 })
+    if (useGameStore.getState().buy(id)) uiSound.select()
   }
   return (
     <div className="hud-shop">
@@ -208,9 +222,6 @@ function Inventory() {
   const slots = useItemStore((s) => s.slots)
   const selected = useItemStore((s) => s.selected)
   const hands = useItemStore((s) => s.hands)
-  const carried = Object.values(items).filter(isCarried)
-  const total = carried.reduce((sum, it) => sum + it.value, 0)
-  const relics = carried.filter((it) => it.def.tag === 'relic' && !isBroken(it)).length
   return (
     <div className="hud-inventory">
       <div className="hands">
@@ -229,9 +240,6 @@ function Inventory() {
             <SlotItem item={uid ? items[uid] : undefined} />
           </div>
         ))}
-      </div>
-      <div className="total">
-        carregando ${total} · {relics} relíquia{relics === 1 ? '' : 's'}
       </div>
     </div>
   )
@@ -259,24 +267,37 @@ function WardrobeView() {
   return inside ? <div className="hud-wardrobe" /> : null
 }
 
+/** Canto superior esquerdo: vida, estamina, bateria da lanterna e vidas, em números grandes. */
 function Vitals() {
-  const health = usePlayerStore((s) => s.health)
-  const stamina = usePlayerStore((s) => s.stamina)
+  const health = usePlayerStore((s) => Math.round(s.health))
+  const stamina = usePlayerStore((s) => Math.round(s.stamina))
   const exhausted = usePlayerStore((s) => s.exhausted)
-  const battery = usePlayerStore((s) => s.battery)
+  const battery = usePlayerStore((s) => Math.round(s.battery))
   const lives = useGameStore((s) => s.lives)
   return (
     <div className="hud-vitals">
-      <div className="hud-lives">{'● '.repeat(Math.max(0, lives)).trim() || '—'}</div>
-      <div className="bar health">
-        <div style={{ width: `${(health / PLAYER.maxHealth) * 100}%` }} />
+      <div className={`stat health${health <= PLAYER.maxHealth * 0.3 ? ' low' : ''}`}>
+        <i>✚</i>
+        <b>{health}</b>
+        <span>/{PLAYER.maxHealth}</span>
       </div>
-      <div className={`bar stamina${exhausted ? ' exhausted' : ''}`}>
-        <div style={{ width: `${(stamina / PLAYER.maxStamina) * 100}%` }} />
+      <div className={`stat stamina${exhausted ? ' low' : ''}`}>
+        <i>ϟ</i>
+        <b>{stamina}</b>
+        <span>/{PLAYER.maxStamina}</span>
       </div>
       {/* bateria da lanterna: fica vermelha quando fraca */}
-      <div className={`bar battery${battery < FLASHLIGHT.lowAt ? ' low' : ''}`}>
-        <div style={{ width: `${battery}%` }} />
+      <div className={`stat battery${battery < FLASHLIGHT.lowAt ? ' low' : ''}`}>
+        <i>◐</i>
+        <b>{battery}</b>
+        <span>% luz</span>
+      </div>
+      <div className="hud-lives">
+        {Array.from({ length: LIVES_SHOWN }, (_, i) => (
+          <i key={i} className={i < lives ? 'on' : ''}>
+            ♥
+          </i>
+        ))}
       </div>
     </div>
   )
@@ -298,6 +319,12 @@ export function Hud({ level }: { level: LevelData }) {
   const [panel, setPanel] = useState(false)
   const started = useTitleStore((s) => s.started)
   const startTitle = useTitleStore((s) => s.start)
+  const entered = useTitleStore((s) => s.entered)
+  const enter = useTitleStore((s) => s.enter)
+  // travou o mouse depois do início: a partir daqui, soltar é pausa
+  useEffect(() => {
+    if (locked && started && !entered) enter()
+  }, [locked, started, entered, enter])
   // mouse travado por outro caminho (ex.: teste) também passa do título
   useEffect(() => {
     if (locked && !started) startTitle()
@@ -338,7 +365,7 @@ export function Hud({ level }: { level: LevelData }) {
         usePlayerStore.getState().respawn()
       } else if (game.phase === 'shop') {
         const n = Number(e.key)
-        if (n >= 1 && n <= TOOLS.length && game.buy(TOOLS[n - 1].id)) audio.play('click', { volume: 0.5 })
+        if (n >= 1 && n <= TOOLS.length && game.buy(TOOLS[n - 1].id)) uiSound.select()
       }
     }
     window.addEventListener('keydown', onKey)
@@ -349,8 +376,8 @@ export function Hud({ level }: { level: LevelData }) {
 
   return (
     <div className="hud">
+      {started && !isPaused(phase) && <Objective level={level} />}
       <div className="hud-top">
-        {started && !isPaused(phase) && <Objective level={level} />}
         {panel && !isPaused(phase) && (
           <div className="hud-sub">
             v{VERSION} · {VERSION_NAME} · fase: {phase}
@@ -478,7 +505,13 @@ export function Hud({ level }: { level: LevelData }) {
         </div>
       )}
       {playing && <Toast />}
-      {playing && started && !locked && <PauseMenu />}
+      {playing && started && entered && !locked && <PauseMenu />}
+      {playing && started && !entered && !locked && (
+        <div className="screen enter-prompt" onClick={lockCanvas}>
+          <div className="blink">— clique para entrar —</div>
+        </div>
+      )}
+      <MenuMusic mode={!started ? 'menu' : playing && !locked ? 'pause' : 'off'} />
       <Banner />
       {phase === 'results' && <Results />}
       {phase === 'shop' && <Shop />}

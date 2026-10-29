@@ -9,7 +9,9 @@ import { Sombra } from './sombra/Sombra'
 import { SOMBRA } from './sombra/config'
 import { Possessor } from './possessor/Possessor'
 import { Coisas } from './coisa/Coisa'
+import { Espectro } from './espectro/Espectro'
 import { COISA } from './coisa/config'
+import { EXTERIOR_ID } from '../game/data/levels/exterior'
 
 /**
  * Entidades do nível (dados: `enemySpawns`).
@@ -20,14 +22,16 @@ import { COISA } from './coisa/config'
 
 /** Território da Sombra: salas escuras; no apagão, tudo menos o carro e o extrator (que continuam acesos). */
 const darkRooms = (r: Room) => r.light === 'dark' && r.kind !== 'extraction'
-const blackoutRooms = (r: Room) => r.kind !== 'car' && r.kind !== 'extraction'
+const blackoutRooms = (r: Room) => r.kind !== 'car' && r.kind !== 'extraction' && r.id !== EXTERIOR_ID
+/** As criaturas não saem da casa: o jardim e o caminhão são zona segura. */
+const insideHouse = (r: Room) => r.id !== EXTERIOR_ID && r.kind !== 'car'
 /** A COISA anda pela casa toda, menos o carro (onde a cabeça é entregue) e o extrator. */
 const houseRooms = blackoutRooms
 
 export function Enemies({ level, built }: { level: LevelData; built: BuiltLevel }) {
   const phase = useGameStore((s) => s.phase)
   const matchId = useGameStore((s) => s.matchId)
-  const nav = useMemo(() => buildNavGrid(level, built, GUARDIA.radius, 0.25, GUARDIA.navMargin), [level, built])
+  const nav = useMemo(() => buildNavGrid(level, built, GUARDIA.radius, 0.25, GUARDIA.navMargin, insideHouse), [level, built])
   // grades da Sombra só nos níveis que têm Sombra (montar a grade custa)
   const hasSombra = level.enemySpawns.some((e) => e.enemy === 'sombra')
   const shadowNav = useMemo(
@@ -66,7 +70,20 @@ export function Enemies({ level, built }: { level: LevelData; built: BuiltLevel 
             const [x, , z] = built.toWorld(e.x, e.y)
             const key = `${matchId}-${e.id}`
             if (e.enemy === 'guardia')
-              return <Guardia key={key} level={level} built={built} nav={nav} spawn={{ x, z }} hunting={wave === 'blackout'} />
+              return (
+                <Guardia
+                  key={key}
+                  level={level}
+                  built={built}
+                  nav={nav}
+                  spawn={{ x, z }}
+                  hunting={wave === 'blackout'}
+                  damage={e.damage}
+                  lockTime={e.lockTime}
+                  chaseMusic={e.chaseMusic}
+                />
+              )
+            if (e.enemy === 'espectro') return <Espectro key={key} level={level} built={built} spawn={{ x, z }} />
             if (e.enemy === 'sombra' && shadowNav && shadowNavBlackout)
               return (
                 <Sombra
@@ -74,6 +91,9 @@ export function Enemies({ level, built }: { level: LevelData; built: BuiltLevel 
                   nav={wave === 'blackout' ? shadowNavBlackout : shadowNav}
                   spawn={{ x, z }}
                   primary={e.id === firstSombra}
+                  damage={e.damage}
+                  lockTime={e.lockTime}
+                  chaseMusic={e.chaseMusic}
                 />
               )
             return null

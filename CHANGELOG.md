@@ -1,5 +1,112 @@
 # Changelog
 
+## 0.22.0 — Acabamento · 2026-10-29
+
+### Adicionado
+- Textura "afim" do PlayStation nas paredes, pisos e tetos (`src/world/affine.ts`, `RETRO_FX.affine`): a textura é interpolada na tela sem correção de perspectiva e entorta levemente quando a câmera se move. Paredes e pisos são divididos em pedaços de ~1,2 m (`RETRO_FX.affineCell`) para o efeito ficar sutil.
+- Guardiã com cabelo de pano (`ClothHair`): duas cortinas caindo por cima do rosto e uma manta nas costas até a cintura, deslizando pelo peito e pelos ombros. Saem as mechas rígidas com mola.
+- Possessor com tiras de pano na cintura (`ClothHair` com o material translúcido dele): balançam, atrasam e são jogadas para trás quando ele avança.
+
+### Alterado
+- Cabelo fosco (material sem brilho especular) em todas as criaturas com `ClothHair`; aceita um material próprio.
+
+### Corrigido
+- Sombra: braços não atravessam mais o chão ao rastejar (quadril mais baixo, balanço do braço e cotovelo ajustados).
+- Guardiã: dedos não atravessam mais a saia parada (braços um pouco mais abertos).
+
+### Desempenho
+- Nível 5 com as criaturas ativas: ~480 draw calls, ~130 mil triângulos, ~7 ms de render por quadro.
+
+## 0.21.2 — Rosto do Espectro · 2026-10-29
+
+### Alterado
+- Espectro em tons de branco e cinza (pele, roupa, tiras, manchas; mãos pálidas com pontas sujas).
+- Rosto esculpido na própria cabeça (`src/enemies/models/espectroHead.ts`): esfera densa com órbitas afundadas, arcada, nariz fino, maçãs altas, bochechas fundas e queixo afinado; textura projetada de frente com olheiras, órbitas, escorrido preto, veias e a boca costurada. A cabeça é cortada na linha da boca: a mandíbula é a parte de baixo da mesma cabeça, girando numa dobradiça atrás da boca — a costura se rasga ao meio quando ela abre. Sai o plano de rosto colado na frente.
+- Franja presa na testa e mais curta: cobre a testa e parte de um olho, o rosto aparece entre as mechas.
+
+### Adicionado
+- Gosma preta em volta do Espectro (`FloatingGoo.tsx`): bolhas brilhantes orbitando em alturas diferentes, deformando como líquido e esticando em pingos; mais rápidas e espalhadas quando ela persegue. Gotas pretas caem do corpo.
+- Galeria: `&rosto` para ver o rosto de perto.
+
+## 0.21.1 — Cabelo de pano · 2026-10-29
+
+### Adicionado
+- Cabelo com física de tecido (`src/enemies/models/ClothHair.tsx`): cada mecha é uma malha de pontos ligados por molas (Verlet) — verticais seguram o comprimento, horizontais mantêm a mecha unida como pano, diagonais impedem que dobre. Presa no couro cabeludo, cai com a gravidade, atrasa quando a cabeça vira, é jogada para trás quando o corpo dispara, desliza por cima do rosto, do peito e dos ombros e balança numa brisa fraca. Simulada no mundo e desenhada na cena.
+- Espectro: cinco mantas de cabelo (franja em diagonal, laterais, costas até os ombros, mecha vermelha) no lugar das placas rígidas.
+
+### Alterado
+- Espectro mais parecido com a página do caderno: olheiras fundas em volta das duas órbitas, lábios costurados (os pontos somem quando a mandíbula cai), cinto com fivela, tiras compridas pendendo das mangas e da cintura.
+
+### Corrigido
+- Ao clicar em Iniciar investigação, o menu de pausa abria (o jogo começava antes de o mouse travar, e o navegador às vezes recusa a trava). Agora a pausa só vale depois que o mouse travou uma vez; antes disso aparece só "clique para entrar".
+
+## 0.21.0 — O Espectro · 2026-10-29
+
+### Adicionado
+- **O Espectro** (`src/enemies/espectro/`, `ESPECTRO` em `config.ts`), na Igreja (4) e na Mansão Profunda (5), TIER 3.
+  - Modelo (`EspectroModel.tsx`): jovem pálida e magra, de brilho fraco próprio, flutuando com as pernas pendendo; cabelo emo (franja em diagonal cobrindo metade do rosto, camadas espetadas, uma mecha vermelha); sem olhos — órbitas fundas escorrendo; roupa clara de tiras e fivela, tiras soltas nos punhos, mãos sujas de sangue.
+  - A boca: com a aproximação a mandíbula se solta e estica além do humano (os dentes só aparecem abrindo; fechada, os lábios são costurados); da metade em diante o peito se divide ao meio e abre como duas portas, mostrando a garganta com fileiras de dentes nas bordas.
+  - Animação: flutua balançando, cabeça inclinada, braços e pernas pendurados com atraso; percebendo, a cabeça endireita de um tranco e treme; perseguindo, deita para a frente com braços, pernas e cabelo para trás, e a imagem pula como fita com defeito.
+  - IA: vaga em linha reta pela casa atravessando paredes, portas e móveis (sem grade de navegação; o colisor é só um sensor para as ferramentas). A até 4,5 m do jogador — mesmo atrás de parede — para, vira, abre a boca e grita (1,3 s); depois persegue em linha reta, acelerando de 3,2 a 4,6 m/s. Alcançou: mata (100), puxando de dentro do armário se for preciso. O jogador saindo da casa a faz parar na fachada e encarar por 8 s. Crucifixo e granada a seguram.
+  - Sons próprios: cantarolar de canção de ninar desafinada enquanto vaga (posicional — o aviso de que está perto), lamento vocal dissonante com pulso grave enquanto persegue, grito rasgado ao abrir a boca.
+  - Jumpscare próprio (`JUMPSCARE.stare`): a câmera chega devagar e ela encara o jogador em silêncio por 5 s, só com o coração acelerando e o chiado subindo; então a boca abre, o peito se rasga e ela avança.
+- Bestiário: página do Espectro.
+- Galeria: `/?galeria=nome` mostra uma criatura só, de perto; botão de boca/bote.
+- Debug: `window.__relicario.espectro` (`state`, `pos`, `tp(x, z)`).
+
+## 0.20.0 — Caderno de campo · 2026-10-29
+
+### Alterado
+- **Guardiã** (`GuardiaModel.tsx`): alta e curvada, vestido longo de barra esfarrapada, mangas bufantes, gola de renda; braços com cotovelo passando dos joelhos e dedos de duas falanges que se curvam e têm espasmos; cabeça sempre caída sob uma cortina de mechas de cabelo que balançam atrasadas. Passo arrastado com quadril, saia e cabelo em molas; caçando curva mais e estica os braços.
+- **Bote da Guardiã** (`GUARDIA.reach/windup/hitRange`): começa a 1,9 m — ergue os braços com um grito curto, levanta a cabeça (o rosto aparece) e o golpe desce 0,45 s depois; erra se o jogador já saiu de 2,2 m. Durante o bote ela anda devagar.
+- **Sombra** (`SombraModel.tsx`): ~2,6 m, cabeça alongada sem rosto com dois pontos de luz, espinhos irregulares nos ombros que se arrepiam, braços enormes com três garras, pernas que afinam em ponta, fumaça preta que fica no ar. Vagando anda ereta com passos longos e espasmos; caçando cai de quatro (os braços viram patas); no feixe congela na pose em que estava; perto de portas se curva.
+- **Caça em arrancadas** (`SOMBRA.burst`): a velocidade oscila entre 0,55× e 1,5× — dispara, quase para, dispara.
+- **Possessor** (`PossessorModel.tsx`): tronco alongado, 12 tiras esfarrapadas abertas no lugar das pernas ondulando como pano na água, braços longos de três garras que abrem e fecham, grito (a mandíbula desce, a cabeça treme), rastro pálido.
+- **Possessão** (`POSSESSOR.possessTime`, `possession()` no playerStore): o toque possui por 3,5 s — o investigador anda a menos da metade, a câmera é puxada e inclina, a lanterna apaga e volta, a tela fica verde e pulsando.
+- **A COISA** (`CoisaModel.tsx`): corpo de fumaça curvado sobre pernas longas de joelho para trás, um olho aceso, a cabeça (com o pescoço ensanguentado) apertada contra o peito, rastro de fumaça roxa; parada olha em volta aos trancos, fugindo corre baixa e desajeitada.
+- **A COISA chama** (`COISA.callEvery/callNoise`): fugindo, sussurra alto a cada 2,5 s — barulho de 10 m que atrai a Guardiã.
+- Jumpscare: a Guardiã aparece no meio do bote, com o rosto à mostra; a Sombra de pé, a câmera olhando para cima.
+- Bestiário com as descrições novas.
+
+### Adicionado
+- `SmokeTrail` (`src/enemies/models/SmokeTrail.tsx`): rastro de partículas no mundo (fica para trás quando a criatura anda).
+- Pose: `attack` (bote) e `nearDoor` (perto de porta).
+
+## 0.19.1 — Trilha do menu · 2026-10-29
+
+### Adicionado
+- Música do menu (`menuTheme` em `synth.ts`, `src/ui/MenuMusic.tsx`): loop de 32 s — celesta desafinada em arpejos lentos de lá menor (lá m – fá – ré m – mi), acolchoado grave, fita gasta e chiado de disco velho. Cheia na tela de início e no bestiário, baixinha na pausa, some ao jogar. Gerada com tabela de senos (~0,4 s).
+- Sons da interface (`src/ui/uiSound.ts`): tique de máquina de escrever ao mover o cursor, estalo com sino grave ao escolher, dois tiques descendo ao voltar e papel virando no bestiário. A loja também usa o som de escolher.
+
+## 0.19.0 — Caçadores · 2026-10-29
+
+### Adicionado
+- Criaturas caçadoras (opções no ponto de nascimento: `damage`, `lockTime`, `chaseMusic`), usadas no Hospital: golpe de 50; ao perder o jogador de vista continuam indo atrás dele por 6 s (sabem onde ele está, a menos que se esconda) e depois voltam a patrulhar; a Sombra continua caçando até a beira do território mais perto.
+- Música de perseguição (`chase` em `synth.ts`, `src/game/systems/chase.ts`): loop de 150 bpm em ré menor — bumbo, baixo martelando, tique metálico, acorde rasgado e um sopro subindo. Entra quando uma caçadora te persegue e some devagar quando ninguém mais está atrás de você.
+- Bestiário (`src/ui/Bestiary.tsx`, menu de início): caderno de campo com uma página dupla por criatura — o modelo girando à luz de vela, nome em latim, TIER de letalidade (0–4, em caveiras), aparência, comportamento e como evitar. Setas ou A/D viram a página; Esc fecha.
+- Porta dupla (`double` e `height` nas aberturas, `FRONT_DOOR`): a porta da frente da casa tem duas folhas, 2 m de largura e 2,7 m de altura.
+
+### Alterado
+- HUD (`Hud.tsx`) maior e em números: vida (verde), estamina (amarelo), luz da lanterna (azul) e vidas (corações) no canto superior esquerdo; relíquias no extrator em destaque, dinheiro carregado, saldo e local no canto superior direito; inventário maior; moldura VHS no canto inferior direito.
+- Grade de ferro do jardim com colisão, em trechos: o vão da traseira do caminhão ficou livre (antes um trilho da grade atravessava a saída na altura dos olhos).
+- O embasamento da fachada é interrompido na porta.
+
+## 0.18.0 — Chegada · 2026-10-29
+
+### Adicionado
+- Lado de fora (`src/game/data/levels/exterior.ts`, aplicado a todos os níveis em `levels/index.ts`): o "carro" quadrado virou o baú de um caminhão do C.R.O.S, de ré para um jardim de 24 m na frente da casa, com a traseira aberta. A parede da casa é a fachada; os outros lados do jardim são barreira invisível (`WallType 'none'`) atrás de uma grade de ferro e da névoa.
+- O jogo começa dentro do baú, de frente para a casa. A porta da frente (de verdade) leva à entrada.
+- Prateleira de aço no baú (`rack`): os equipamentos comprados aparecem nas tábuas, 4 por tábua.
+- Jardim morto sorteado (sempre igual por nível), longe do caminho: árvores secas de galhos nus, arbustos secos, anjos de pedra com musgo (alguns sem cabeça), postes de ferro apagados ao longo do caminho, uma fonte seca e duas colunas na varanda (`src/world/OutdoorProps.tsx`).
+- `src/world/Exterior.tsx`: estrada com faixa sumindo na névoa, caminho de cascalho, grade de ferro com barras tortas e falhas, fachada com embasamento, cornija, telhado, chaminés, janelas em dois andares (algumas acesas, algumas tapadas com tábuas), varanda; caminhão com cabine, rodas, faróis, lanternas traseiras, portas abertas e o logo do C.R.O.S; névoa rasteira.
+- Névoa por lugar (`FOG` em `src/game/config.ts`): densa e azulada do lado de fora e no caminhão, a de sempre dentro da casa; o fundo acompanha.
+- `wallSides` nas salas (parede diferente por lado).
+
+### Alterado
+- Criaturas não saem da casa: o jardim e o caminhão ficam fora da navegação delas (zona segura).
+- O mapa ficou mais largo para o lado do jardim: coordenadas do mundo mudaram em x (z continua igual).
+- Renascimento: a câmera gira mais perto, para caber no baú.
+
 ## 0.17.0 — Mapa do contrato · 2026-10-29
 
 ### Adicionado

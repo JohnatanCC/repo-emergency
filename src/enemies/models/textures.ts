@@ -91,7 +91,77 @@ function build() {
     c.fillRect(7, 12, 2, 3) // nariz
   })
 
-  return { guardiaFace, dress, skin, ghostFace, headFace }
+  /** O Espectro: rosto pálido sem olhos — duas órbitas fundas escorrendo preto e vermelho. */
+  const espectroFace = canvasTexture(16, 20, (c) => {
+    c.fillStyle = '#dcd8e0'
+    c.beginPath()
+    c.ellipse(8, 10, 6.5, 9.5, 0, 0, Math.PI * 2)
+    c.fill()
+    // sombra das maçãs e do nariz
+    c.fillStyle = '#b8b2c0'
+    c.fillRect(3, 11, 2, 3)
+    c.fillRect(11, 11, 2, 3)
+    c.fillRect(7, 10, 2, 3)
+    // olheiras fundas, depois as órbitas vazias
+    c.fillStyle = '#6a5a74'
+    c.beginPath()
+    c.ellipse(5, 8, 3.2, 3.5, 0.2, 0, Math.PI * 2)
+    c.ellipse(11, 8, 3.2, 3.5, -0.2, 0, Math.PI * 2)
+    c.fill()
+    c.fillStyle = '#050304'
+    c.beginPath()
+    c.ellipse(5, 8, 2.2, 2.6, 0.2, 0, Math.PI * 2)
+    c.ellipse(11, 8, 2.2, 2.6, -0.2, 0, Math.PI * 2)
+    c.fill()
+    // escorrendo
+    c.fillStyle = '#2a0608'
+    c.fillRect(4, 10, 1, 6)
+    c.fillRect(6, 10, 1, 4)
+    c.fillRect(10, 10, 1, 5)
+    c.fillRect(12, 10, 1, 7)
+    c.fillStyle = '#6a0a0c'
+    c.fillRect(4, 15, 1, 2)
+    c.fillRect(12, 16, 1, 2)
+    // lábios costurados (a boca de verdade é a mandíbula, que cai)
+    c.fillStyle = '#3a2028'
+    c.fillRect(6, 17, 4, 1)
+  })
+
+  /** Garganta do Espectro (dentro da mandíbula e do peito): carne escura com anéis. */
+  const maw = canvasTexture(16, 32, (c) => {
+    c.fillStyle = '#4a0608'
+    c.fillRect(0, 0, 16, 32)
+    for (let y = 1; y < 32; y += 4) {
+      c.fillStyle = '#7a1410'
+      c.fillRect(0, y, 16, 1)
+      c.fillStyle = '#2a0204'
+      c.fillRect(0, y + 2, 16, 1)
+    }
+    c.fillStyle = '#120002'
+    c.fillRect(5, 0, 6, 32)
+  })
+
+  /** Roupa do Espectro: tecido claro e sujo, manchas escuras perto da barra. */
+  const gown = canvasTexture(16, 32, (c) => {
+    c.fillStyle = '#d8d8d8'
+    c.fillRect(0, 0, 16, 32)
+    c.fillStyle = '#b4b4b4'
+    for (let x = 0; x < 16; x += 4) c.fillRect(x, 0, 1, 32)
+    c.fillStyle = '#5a5a5a'
+    c.fillRect(2, 27, 3, 5)
+    c.fillRect(9, 25, 2, 7)
+    c.fillRect(13, 29, 2, 3)
+  })
+
+  /** Lábios costurados do Espectro: uma linha escura cortada por pontos. */
+  const stitches = canvasTexture(16, 6, (c) => {
+    c.fillStyle = '#3a1a22'
+    c.fillRect(1, 2, 14, 2)
+    c.fillStyle = '#1a0a0e'
+    for (let x = 2; x < 15; x += 3) c.fillRect(x, 0, 1, 6)
+  })
+
+  return { guardiaFace, dress, skin, ghostFace, headFace, espectroFace, maw, gown, stitches }
 }
 
 export function creatureTextures() {

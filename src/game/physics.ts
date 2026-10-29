@@ -18,6 +18,8 @@ export const PLAYER_GROUPS = interactionGroups(GROUP.PLAYER)
 export const ITEM_GROUPS = interactionGroups(GROUP.ITEM)
 /** Entidades batem em tudo (e empurram portas e itens). */
 export const ENEMY_GROUPS = interactionGroups(GROUP.ENEMY)
+/** O Espectro atravessa paredes: só existe para a mira das ferramentas (sensor, não bate em nada). */
+export const SPECTRAL_GROUPS = interactionGroups(GROUP.ENEMY, [GROUP.PLAYER])
 export const DOOR_GROUPS = interactionGroups(GROUP.DOOR, [GROUP.PLAYER, GROUP.ITEM, GROUP.ENEMY])
 /** Linha de visão das entidades: paredes, móveis e portas bloqueiam; itens e corpos não. */
 export const SIGHT_GROUPS = interactionGroups(GROUP.ITEM, [GROUP.WORLD, GROUP.DOOR])

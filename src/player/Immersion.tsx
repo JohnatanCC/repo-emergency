@@ -6,7 +6,7 @@ import { AUDIO } from '../game/audio/sounds'
 import { danger } from '../game/systems/danger'
 import { isPaused, useGameStore } from '../game/stores/gameStore'
 import { useHidingStore } from './hidingStore'
-import { usePlayerStore } from './playerStore'
+import { possession, usePlayerStore } from './playerStore'
 import { IMMERSION, PLAYER } from './config'
 import { spring, stepSpring } from '../enemies/models/spring'
 import { ANIM } from '../enemies/models/config'
@@ -67,9 +67,21 @@ export function Immersion() {
       st.roll.x = st.roll.v = 0
       return
     }
-    const roll = stepSpring(st.roll, THREE.MathUtils.clamp(-lateral * IMMERSION.strafeRoll, -0.05, 0.05), dt, ANIM.soft)
+    // possuído: algo puxa a cabeça para os lados e a imagem inclina
+    const p = possession()
+    const t = performance.now() / 1000
+    const roll = stepSpring(
+      st.roll,
+      THREE.MathUtils.clamp(-lateral * IMMERSION.strafeRoll, -0.05, 0.05) + p * Math.sin(t * 1.7) * 0.18,
+      dt,
+      ANIM.soft,
+    )
     tmp.e.setFromQuaternion(camera.quaternion, 'YXZ')
     tmp.e.z = roll
+    if (p > 0) {
+      tmp.e.y += Math.sin(t * 0.9) * p * dt * 0.9
+      tmp.e.x = THREE.MathUtils.clamp(tmp.e.x + Math.sin(t * 1.3 + 1) * p * dt * 0.5, -1.4, 1.4)
+    }
     camera.quaternion.setFromEuler(tmp.e)
   })
 

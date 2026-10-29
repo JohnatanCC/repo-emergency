@@ -8,6 +8,7 @@ import type { LevelData, Prop } from '../game/data/types'
 import type { BuiltLevel } from './buildLevel'
 import { getTexture } from './textures'
 import { StaticMerge } from './StaticMerge'
+import { OutdoorPropMesh, outdoorColliders, useOutdoorMats } from './OutdoorProps'
 
 /**
  * Móveis. A aparência é detalhada (molduras, pés torneados, livros soltos),
@@ -66,7 +67,7 @@ function colliders(prop: Prop, scale: number): Box[] {
     case 'bench':
       return [{ p: [0, 0.22, 0], h: [0.7, 0.22, 0.225] }]
     default:
-      return []
+      return outdoorColliders(prop, scale) ?? []
   }
 }
 
@@ -321,7 +322,21 @@ function Bench({ m }: { m: Mats }) {
   )
 }
 
-function PropMesh({ prop, m, scale, isOutdoor, seed }: { prop: Prop; m: Mats; scale: number; isOutdoor: boolean; seed: number }) {
+function PropMesh({
+  prop,
+  m,
+  om,
+  scale,
+  isOutdoor,
+  seed,
+}: {
+  prop: Prop
+  m: Mats
+  om: ReturnType<typeof useOutdoorMats>
+  scale: number
+  isOutdoor: boolean
+  seed: number
+}) {
   switch (prop.type) {
     case 'table':
       return <Table m={m} stone={isOutdoor} />
@@ -345,11 +360,14 @@ function PropMesh({ prop, m, scale, isOutdoor, seed }: { prop: Prop; m: Mats; sc
           <CarPanel />
         </>
       )
+    default:
+      return <OutdoorPropMesh prop={prop} m={om} scale={scale} seed={seed} />
   }
 }
 
 export function Props({ level, built }: { level: LevelData; built: BuiltLevel }) {
   const m = useMats()
+  const om = useOutdoorMats()
   const outdoorRooms = level.rooms.filter((r) => r.kind === 'outdoor')
 
   // as peças de todos os móveis viram uma malha por material (StaticMerge); fazem e recebem sombra
@@ -369,7 +387,7 @@ export function Props({ level, built }: { level: LevelData; built: BuiltLevel })
             {colliders(p, level.scale).map((c, k) => (
               <CuboidCollider key={k} position={c.p} args={c.h} collisionGroups={WORLD_GROUPS} />
             ))}
-            <PropMesh prop={p} m={m} scale={level.scale} isOutdoor={isOutdoor} seed={i * 7919 + 13} />
+            <PropMesh prop={p} m={m} om={om} scale={level.scale} isOutdoor={isOutdoor} seed={i * 7919 + 13} />
           </RigidBody>
         )
       })}

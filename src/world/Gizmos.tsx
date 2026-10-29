@@ -10,12 +10,14 @@ const ENEMY_COLOR: Record<EnemyId, string> = {
   possessor: '#d8c23a',
   sombra: '#8a6ae0',
   guardia: '#d23a3a',
+  espectro: '#e8e2f0',
 }
 
 const ENEMY_NAME: Record<EnemyId, string> = {
   possessor: 'Possessor',
   sombra: 'Sombra',
   guardia: 'Guardiã',
+  espectro: 'Espectro',
 }
 
 function Label({ text, color }: { text: string; color: string }) {

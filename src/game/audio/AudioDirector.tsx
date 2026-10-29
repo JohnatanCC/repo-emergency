@@ -5,6 +5,7 @@ import type { LevelData } from '../data/types'
 import type { BuiltLevel } from '../../world/buildLevel'
 import { useGameStore, type GamePhase } from '../stores/gameStore'
 import { danger } from '../systems/danger'
+import { isChased } from '../systems/chase'
 import { audio, type LoopHandle } from './engine'
 import { AUDIO, AUDIO_ZONES } from './sounds'
 
@@ -48,13 +49,14 @@ const isOutside = (r: { kind: string }) => r.kind === 'outdoor' || r.kind === 'c
 
 export function AudioDirector({ level, built }: { level: LevelData; built: BuiltLevel }) {
   const camera = useThree((s) => s.camera)
-  const loops = useRef<{ drone?: LoopHandle; wind?: LoopHandle; windIndoor?: LoopHandle }>({})
+  const loops = useRef<{ drone?: LoopHandle; wind?: LoopHandle; windIndoor?: LoopHandle; chase?: LoopHandle }>({})
   const fixed = useRef<{ e: { pos: Vec3; outside: boolean }; base: number; h: LoopHandle }[]>([])
   const st = useRef({
     phase: '' as GamePhase | '',
     outside: null as boolean | null,
     nextBeat: 0,
     nextEvent: 15,
+    chasing: false,
     nextStinger: 0,
     lastDanger: 0,
     nextThunder: 25,
@@ -80,6 +82,8 @@ export function AudioDirector({ level, built }: { level: LevelData; built: Built
     l.drone = audio.loop('drone', { volume: 0 })
     l.wind = audio.loop('wind', { volume: 0 })
     l.windIndoor = audio.loop('windIndoor', { volume: 0 })
+    l.chase = audio.loop('chase', { volume: 0 })
+    st.chasing = false
     // começam mudos: o volume certo depende de onde o jogador está (useFrame)
     fixed.current = emitters
       .filter((e) => e.sound !== 'drip')
@@ -96,6 +100,7 @@ export function AudioDirector({ level, built }: { level: LevelData; built: Built
       l.drone?.stop()
       l.wind?.stop()
       l.windIndoor?.stop()
+      l.chase?.stop()
       fixed.current.forEach((x) => x.h.stop())
       fixed.current = []
     }
@@ -169,6 +174,13 @@ export function AudioDirector({ level, built }: { level: LevelData; built: Built
         const zn = zone(isOutside(r))
         audio.play(ev.sound, { pos, volume: ev.volume * zn.v, muffle: Math.max(zn.m, 0.25), rate: 0.85 + Math.random() * 0.25, ref: 3 })
       }
+    }
+
+    // música de perseguição: entra rápido, sai devagar quando ninguém mais está no seu encalço
+    const chasing = isChased() && phase !== 'gameover'
+    if (chasing !== st.chasing) {
+      st.chasing = chasing
+      loops.current.chase?.setVolume(chasing ? AUDIO.chase : 0, chasing ? 0.4 : 2.5)
     }
 
     // a caçada começou (perigo subiu de repente): acorde de cordas

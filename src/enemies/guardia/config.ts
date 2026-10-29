@@ -39,8 +39,15 @@ export const GUARDIA = {
   idleMin: 1,
   idleMax: 2.5,
 
-  /** Ataque. */
-  reach: 1.3,
+  /**
+   * Ataque: com os braços longos ela começa o bote a `reach` de distância,
+   * ergue os braços por `windup` segundos (aviso) e desce: acerta se o jogador
+   * ainda estiver a até `hitRange`. Durante o bote anda a `windupSpeed` da velocidade.
+   */
+  reach: 1.9,
+  windup: 0.45,
+  hitRange: 2.2,
+  windupSpeed: 0.35,
   damage: 30,
   /** Depois de acertar, fica parada um tempo (chance de fugir). */
   recover: 3,

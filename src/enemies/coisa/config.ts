@@ -23,6 +23,10 @@ export const COISA = {
   fleeCandidates: 14,
   repath: 0.5,
 
+  /** Fugindo, sussurra alto de tempos em tempos: faz barulho que atrai as outras criaturas. */
+  callEvery: 2.5,
+  callNoise: 10,
+
   /** Encostar: ela solta a cabeça. */
   catchRadius: 1,
 

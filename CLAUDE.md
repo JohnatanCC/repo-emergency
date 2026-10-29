@@ -14,6 +14,8 @@ Conceito, mecânicas e ordem das versões: `ROADMAP.md`. Histórico: `CHANGELOG.
 - `src/game/data/` — níveis como dados (planta 2D, 1 u = 0,08 m). `buildLevel.ts` transforma em greybox.
   Níveis novos usam `room()`/`link()` (`levels/plan.ts`). Ao criar ou mudar um mapa, valide com a grade de navegação
   (`buildNavGrid` + `findPath` do carro até cada sala, item, criatura e armário) antes de testar jogando.
+  O lado de fora (caminhão, jardim, fachada) é gerado para todos os níveis em `levels/exterior.ts` a partir do
+  "carro" e da sala encostada nele; não desenhe isso nos níveis.
   Trocar de nível no teste: `game.setState({ levelIndex: n })` + `game.getState().restart()` + `player.getState().respawn()`.
 - `src/game/stores/gameStore.ts` — fase, vidas, debug. `src/player/playerStore.ts` — vida/estamina/HUD (muda todo frame; só o HUD assina).
 - `src/game/physics.ts` — grupos de colisão. O mundo fixo é `WORLD`; portas não colidem com o mundo.
@@ -35,7 +37,8 @@ Conceito, mecânicas e ordem das versões: `ROADMAP.md`. Histórico: `CHANGELOG.
     no store de itens (`items.getState().pickUp/drop` liberta a figura)
   - `coisa.list` as COISAS em cena (`id`, `state`, `x`, `z`); morrer (`player.getState().damage(100)`) cria uma
   - Cuidado com a geometria nos testes de perseguição: mesas e móveis travam o jogador; prefira corredores retos
-    (ex.: corredor sul, z ≈ 10, x de −11 a 11)
+    (ex.: corredor sul do nível 1, z ≈ 10, x de 1 a 23). O jogo começa no caminhão (x ≈ −33,5 no nível 1);
+    a porta da frente da casa fica em x ≈ −7
   - loja/ferramentas: `game.getState().buy(id)`, `useTool()` usa a ferramenta do espaço escolhido (`items.getState().select(i)`);
     `allCreatures()` em `src/game/systems/creatures.ts` dá `pos()` e `stun()` de cada criatura
   - Para testar a IA, rode testes longos (minutos) **sem** barulhos artificiais: barulhos dão destinos novos e
@@ -54,6 +57,11 @@ Conceito, mecânicas e ordem das versões: `ROADMAP.md`. Histórico: `CHANGELOG.
     rodando quadros (a 0 fps fica em 300×150 e preto)
   - forçar a fase: `game.getState().setPhase('hunted')` faz as entidades aparecerem. Criaturas com `delay` contam a
     partir de `enemyTimerStart + enemyDelay`: para vê-las, `game.setState({ enemyTimerStart: performance.now() - ms })`
+  - caçadoras (`damage`/`lockTime`/`chaseMusic` no ponto de nascimento, ex.: Hospital): `isChased()` em
+    `src/game/systems/chase.ts` diz se a música de perseguição está tocando
+  - possessão: `player.getState().possess(segundos)`; bote da Guardiã: `pose.attack` sobe durante `GUARDIA.windup`
+  - Espectro (níveis 4 e 5): `espectro.state`/`pos`/`tp(x, z)`; jumpscare com `player.getState().scare('espectro')` (5 s encarando)
+  - galeria de uma criatura só: `/?galeria=espectro` (guardia, sombra, possessor, coisa, espectro)
   - renascimento: `player.getState().startRevive()` / `endRevive()`; avance com `tick` (a cena usa o tempo do jogo)
   - `game` / `player` / `items` / `hiding` são os stores Zustand (ex.: `items.getState().pickUp(uid)`)
 - Se o Vite servir um módulo vazio depois de várias edições seguidas (erro "does not provide an export"),

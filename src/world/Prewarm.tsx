@@ -4,6 +4,7 @@ import { GuardiaModel } from '../enemies/models/GuardiaModel'
 import { SombraModel } from '../enemies/models/SombraModel'
 import { PossessorModel } from '../enemies/models/PossessorModel'
 import { CoisaModel } from '../enemies/models/CoisaModel'
+import { EspectroModel } from '../enemies/models/EspectroModel'
 import { newPose } from '../enemies/models/pose'
 
 /**
@@ -31,6 +32,7 @@ export function Prewarm({ version }: { version: unknown }) {
       <SombraModel pose={pose} />
       <PossessorModel pose={pose} />
       <CoisaModel pose={pose} />
+      <EspectroModel pose={pose} />
     </group>
   )
 }

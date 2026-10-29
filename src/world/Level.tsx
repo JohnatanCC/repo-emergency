@@ -5,6 +5,8 @@ import { CuboidCollider, RigidBody } from '@react-three/rapier'
 import type { BuiltLevel } from './buildLevel'
 import { getTexture, type TextureKey } from './textures'
 import { WORLD_GROUPS } from '../game/physics'
+import { RETRO_FX } from '../game/config'
+import { affine } from './affine'
 
 /**
  * Pisos, tetos e paredes do greybox + colisores fixos. Recebem a sombra da lanterna.
@@ -19,31 +21,31 @@ const TILE: Partial<Record<TextureKey, number>> = { checker: 1.2, grass: 2.5 }
 const tileOf = (key: TextureKey) => TILE[key] ?? 1.6
 
 /** Caixa com o UV de cada face medido em repetições da textura. */
+/** Divisões por metro: a textura que "entorta" (PS1) fica sutil em pedaços pequenos. */
+const segs = (m: number) => Math.max(1, Math.ceil(m / RETRO_FX.affineCell))
+
 export function wallGeometry(size: [number, number, number], pos: [number, number, number], tile: number) {
-  const g = new THREE.BoxGeometry(...size)
-  const uv = g.attributes.uv
   const [sx, sy, sz] = size
-  // faces: +x, −x, +y, −y, +z, −z (4 vértices cada) → largura × altura da face
-  const faces: [number, number][] = [
-    [sz, sy],
-    [sz, sy],
-    [sx, sz],
-    [sx, sz],
-    [sx, sy],
-    [sx, sy],
+  const [nx, ny, nz] = [segs(sx), segs(sy), segs(sz)]
+  const g = new THREE.BoxGeometry(sx, sy, sz, nx, ny, nz)
+  const uv = g.attributes.uv
+  // faces: +x, −x, +y, −y, +z, −z → largura × altura da face e quantos vértices ela tem
+  const faces: [number, number, number][] = [
+    [sz, sy, (nz + 1) * (ny + 1)],
+    [sz, sy, (nz + 1) * (ny + 1)],
+    [sx, sz, (nx + 1) * (nz + 1)],
+    [sx, sz, (nx + 1) * (nz + 1)],
+    [sx, sy, (nx + 1) * (ny + 1)],
+    [sx, sy, (nx + 1) * (ny + 1)],
   ]
-  faces.forEach(([w, h], f) => {
-    for (let v = 0; v < 4; v++) {
-      const i = f * 4 + v
-      uv.setXY(i, (uv.getX(i) * w) / tile, (uv.getY(i) * h) / tile)
-    }
-  })
+  let i = 0
+  for (const [w, h, count] of faces) for (let v = 0; v < count; v++, i++) uv.setXY(i, (uv.getX(i) * w) / tile, (uv.getY(i) * h) / tile)
   g.translate(...pos)
   return g.toNonIndexed()
 }
 
 export function planeGeometry(size: [number, number], pos: [number, number, number], up: boolean, tile: number) {
-  const g = new THREE.PlaneGeometry(...size)
+  const g = new THREE.PlaneGeometry(size[0], size[1], segs(size[0]), segs(size[1]))
   const uv = g.attributes.uv
   for (let i = 0; i < uv.count; i++) uv.setXY(i, (uv.getX(i) * size[0]) / tile, (uv.getY(i) * size[1]) / tile)
   g.rotateX(up ? -Math.PI / 2 : Math.PI / 2)
@@ -70,14 +72,21 @@ export function Level({ built, wallHeight }: { built: BuiltLevel; wallHeight: nu
       push(`floor-${f.floor}`, f.floor, 0.9, false, planeGeometry(f.size, [f.pos[0], 0, f.pos[2]], true, tileOf(f.floor)))
       if (f.ceiling) push('ceiling', 'ceiling', 1, false, planeGeometry(f.size, [f.pos[0], wallHeight, f.pos[2]], false, tileOf('ceiling')))
     }
-    for (const w of built.walls) push(`wall-${w.material}`, w.material, 0.95, true, wallGeometry(w.size, w.pos, tileOf(w.material)))
+    // paredes invisíveis (barreira do lado de fora) só têm colisor
+    for (const w of built.walls.filter((w) => w.material !== 'none'))
+      push(`wall-${w.material}`, w.material, 0.95, true, wallGeometry(w.size, w.pos, tileOf(w.material)))
     const out: Batch[] = []
     for (const [key, e] of groups) {
       const geo = mergeGeometries(e.geos)
       e.geos.forEach((g) => g.dispose())
       if (!geo) continue
       const t = tileOf(e.tex)
-      out.push({ key, geo, cast: e.cast, mat: new THREE.MeshStandardMaterial({ map: getTexture(e.tex, t, t, t), roughness: e.roughness }) })
+      out.push({
+        key,
+        geo,
+        cast: e.cast,
+        mat: affine(new THREE.MeshStandardMaterial({ map: getTexture(e.tex, t, t, t), roughness: e.roughness })),
+      })
     }
     return out
   }, [built, wallHeight])

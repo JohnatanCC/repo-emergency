@@ -8,8 +8,12 @@ export const SOMBRA = {
   /** kg; quanto empurra portas e itens. */
   mass: 70,
 
-  /** Indo atrás do jogador dentro do território. */
+  /** Indo atrás do jogador dentro do território (média: anda em arrancadas, ver `burst`). */
   speedHunt: 3.4,
+  /** Caçando, a velocidade oscila entre `min` e `max` × speedHunt (para, dispara, para…). */
+  burst: { min: 0.55, max: 1.5, speed: 2.6 },
+  /** Perto de porta (m): se curva para passar. */
+  duckDoor: 1.6,
   /** Esperando na beira da escuridão (jogador numa sala clara). */
   speedLurk: 2.5,
   /** Vagando (jogador longe ou escondido). */

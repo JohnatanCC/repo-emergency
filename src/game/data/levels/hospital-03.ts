@@ -22,6 +22,8 @@ const surgery = room('surgery', 'Centro cirúrgico', 'room', 'dark', 'tile', 'ti
 const s3 = room('s3', 'Depósito', 'room', 'dark', 'tile', 'tile', [585, 280, 95, 90])
 const extract = room('extract', 'Extração', 'extraction', 'dark', 'metal', 'metal', [680, 235, 50, 50])
 
+const HUNTERS = { damage: 50, lockTime: 6, chaseMusic: true }
+
 export const hospital03: LevelData = {
   id: 'hospital-03',
   name: 'Hospital de Isolamento · Nível 3',
@@ -104,10 +106,11 @@ export const hospital03: LevelData = {
     { id: 'i-sur2', x: 545, y: 345, accepts: ['loot'] },
   ],
 
+  // as criaturas do hospital são caçadoras: dano 50, marcam o alvo e trazem música de perseguição
   enemySpawns: [
-    { id: 'e-guardia', enemy: 'guardia', x: 530, y: 345, phase: 'start' },
-    { id: 'e-sombra', enemy: 'sombra', x: 545, y: 215, phase: 'start' },
-    { id: 'eb-guardia', enemy: 'guardia', x: 240, y: 260, phase: 'blackout' },
-    { id: 'eb-sombra', enemy: 'sombra', x: 230, y: 230, phase: 'blackout' },
+    { id: 'e-guardia', enemy: 'guardia', x: 530, y: 345, phase: 'start', ...HUNTERS },
+    { id: 'e-sombra', enemy: 'sombra', x: 545, y: 215, phase: 'start', ...HUNTERS },
+    { id: 'eb-guardia', enemy: 'guardia', x: 240, y: 260, phase: 'blackout', ...HUNTERS },
+    { id: 'eb-sombra', enemy: 'sombra', x: 230, y: 230, phase: 'blackout', ...HUNTERS },
   ],
 }

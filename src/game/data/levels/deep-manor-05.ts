@@ -144,5 +144,8 @@ export const deepManor05: LevelData = {
     { id: 'e-sombra', enemy: 'sombra', x: 560, y: 545, phase: 'start' },
     { id: 'eb-guardia', enemy: 'guardia', x: 250, y: 360, phase: 'blackout' },
     { id: 'eb-sombra', enemy: 'sombra', x: 400, y: 275, phase: 'blackout' },
+    // o Espectro começa na capela privada, no fundo da casa
+    { id: 'e-espectro', enemy: 'espectro', x: 740, y: 485, phase: 'start', delay: 30 },
+    { id: 'eb-espectro', enemy: 'espectro', x: 405, y: 200, phase: 'blackout' },
   ],
 }

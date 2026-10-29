@@ -8,7 +8,7 @@ import type { LevelData } from '../game/data/types'
 import type { BuiltLevel } from '../world/buildLevel'
 import { isPaused, useGameStore } from '../game/stores/gameStore'
 import { PLAYER } from './config'
-import { usePlayerStore } from './playerStore'
+import { possession, usePlayerStore } from './playerStore'
 import { PLAYER_GROUPS } from '../game/physics'
 import { debugApi } from '../game/debug'
 import { useItemStore } from '../items/itemStore'
@@ -265,7 +265,9 @@ export function Player({ level, built }: { level: LevelData; built: BuiltLevel }
     tmp.fwd.normalize()
     tmp.right.crossVectors(tmp.fwd, UP)
     tmp.move.set(0, 0, 0).addScaledVector(tmp.fwd, f).addScaledVector(tmp.right, r)
-    const speed = (st.crouched ? PLAYER.crouchSpeed : running ? PLAYER.runSpeed : PLAYER.walkSpeed) * carry
+    // possuído: as pernas pesam
+    const possessed = possession()
+    const speed = (st.crouched ? PLAYER.crouchSpeed : running ? PLAYER.runSpeed : PLAYER.walkSpeed) * carry * (1 - possessed * 0.55)
     if (moving) tmp.move.normalize().multiplyScalar(speed)
     st.vel.lerp(tmp.move, 1 - Math.exp(-PLAYER.acceleration * dt))
 

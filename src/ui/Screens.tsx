@@ -7,12 +7,20 @@ import { usePlayerStore } from '../player/playerStore'
 import { PLAYER } from '../player/config'
 import { UI } from './config'
 
-/** Já passou da tela de início? (Voltar ao início, na pausa, mostra de novo) */
-export const useTitleStore = create<{ started: boolean; start: () => void; quit: () => void }>((set) => ({
-  started: false,
-  start: () => set({ started: true }),
-  quit: () => set({ started: false }),
-}))
+/**
+ * Já passou da tela de início? (Voltar ao início, na pausa, mostra de novo)
+ * entered: o mouse já travou depois do início. Antes disso, mouse solto não
+ * é pausa (o navegador ainda está travando, ou recusou): só pede um clique.
+ */
+export const useTitleStore = create<{ started: boolean; entered: boolean; start: () => void; enter: () => void; quit: () => void }>(
+  (set) => ({
+    started: false,
+    entered: false,
+    start: () => set({ started: true, entered: false }),
+    enter: () => set({ entered: true }),
+    quit: () => set({ started: false, entered: false }),
+  }),
+)
 
 function Slider({
   label,
@@ -119,10 +127,21 @@ export function DamageFeedback() {
     prev.current = health
   }, [health])
   const low = health > 0 && health <= PLAYER.maxHealth * UI.lowHealth
+  const possessedUntil = usePlayerStore((s) => s.possessedUntil)
+  const [, redraw] = useState(0)
+  // redesenha quando a possessão termina
+  useEffect(() => {
+    const left = possessedUntil - performance.now()
+    if (left <= 0) return
+    const id = setTimeout(() => redraw((n) => n + 1), left + 50)
+    return () => clearTimeout(id)
+  }, [possessedUntil])
+  const possessed = possessedUntil > performance.now()
   return (
     <>
       {flash > 0 && <div key={flash} className="damage-flash" />}
       {low && <div className="low-health" />}
+      {possessed && <div key={possessedUntil} className="possessed-fx" />}
     </>
   )
 }

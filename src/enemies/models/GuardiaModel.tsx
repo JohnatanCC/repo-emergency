@@ -1,87 +1,142 @@
 import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { lathe, psxBasic, psxStandard } from './psx'
+import { lathe, psxBasic, psxStandard, raggedLathe } from './psx'
 import { creatureTextures } from './textures'
 import type { Pose } from './pose'
 import { spring, stepSpring, turnLag } from './spring'
 import { ANIM } from './config'
+import { ClothHair, type HairSheet } from './ClothHair'
 
 /**
- * A Guardiã (pés em y = 0): vestido longo com babados, corpete, gola,
- * cabelo comprido sobre o rosto pálido, braços longos de dedos compridos.
- * Patrulha de cabeça caída; caçando, ergue a cabeça, treme e estende os braços.
+ * A Guardiã (pés em y = 0). Alta e curvada para a frente, vestido longo de
+ * barra esfarrapada, mangas bufantes, gola de renda. Braços longos demais
+ * (as mãos passam dos joelhos), dedos compridos de duas falanges. A cabeça
+ * fica sempre caída, escondida por uma cortina de cabelo; ela quase nunca
+ * olha direto — só quando dá o bote, aí a cabeça sobe e o rosto aparece.
+ *
+ * Animação: passo arrastado com balanço do quadril, saia e cabelo atrasados
+ * (molas), braços pendurados como pêndulos; caçando, curva mais e estica os
+ * braços; no bote (pose.attack), ergue os braços e desce num golpe.
  */
+
+/**
+ * Cabelo longo e liso em mantas de tecido (ClothHair): duas cortinas na frente
+ * com uma fresta (o rosto aparece no meio) e uma manta longa em volta das costas.
+ */
+const HAIR: HairSheet[] = [
+  { from: [-0.8, 0.7], to: [-0.04, 0.95], cols: 5, rows: 8, length: (c) => 0.66 - c * 0.03 },
+  { from: [0.06, 0.95], to: [0.8, 0.7], cols: 5, rows: 8, length: (c) => 0.55 + c * 0.03 },
+  { from: [0.85, 0.5], to: [5.43, 0.5], cols: 12, rows: 8, length: (c) => 0.72 + ((c * 37) % 5) * 0.02 },
+]
+
 export function GuardiaModel({ pose }: { pose: Pose }) {
-  const body = useRef<THREE.Group>(null)
+  const root = useRef<THREE.Group>(null)
+  const hips = useRef<THREE.Group>(null)
+  const spine = useRef<THREE.Group>(null)
   const head = useRef<THREE.Group>(null)
-  const armL = useRef<THREE.Group>(null)
-  const armR = useRef<THREE.Group>(null)
-  const skirt = useRef<THREE.Mesh>(null)
+  const skirt = useRef<THREE.Group>(null)
+  const skull = useRef<THREE.Group>(null)
+  const arms = useRef<{ upper: THREE.Group | null; fore: THREE.Group | null; fingers: (THREE.Group | null)[] }[]>([
+    { upper: null, fore: null, fingers: [] },
+    { upper: null, fore: null, fingers: [] },
+  ])
 
   const m = useMemo(() => {
     const t = creatureTextures()
     return {
       dress: psxStandard({ map: t.dress, color: '#ffffff', side: THREE.DoubleSide }),
-      bodice: psxStandard({ color: '#1c1218' }),
-      lace: psxStandard({ color: '#4a4044' }),
-      skin: psxStandard({ map: t.skin, color: '#ffffff' }),
-      face: psxBasic({ map: t.guardiaFace, transparent: true, alphaTest: 0.5, color: '#9a9488' }),
-      hair: psxStandard({ color: '#0b0809', side: THREE.DoubleSide }),
-      eyes: psxBasic({ color: '#3a2a20' }),
+      under: psxStandard({ color: '#0a0608', side: THREE.DoubleSide }),
+      bodice: psxStandard({ color: '#1a1016' }),
+      lace: psxStandard({ color: '#5a5054' }),
+      skin: psxStandard({ map: t.skin, color: '#e8e2d8' }),
+      face: psxBasic({ map: t.guardiaFace, transparent: true, alphaTest: 0.5, color: '#b0a898' }),
+      hair: psxStandard({ color: '#070506', side: THREE.DoubleSide }),
+      eyes: psxBasic({ color: '#3a1a14' }),
     }
   }, [])
 
   const geo = useMemo(
     () => ({
-      // saia: larga embaixo, babados, afunila na cintura
-      skirt: lathe(
+      // saia longa: larga e esfarrapada na barra, fechando na cintura
+      skirt: raggedLathe(
         [
-          [0.52, 0],
-          [0.5, 0.06],
-          [0.44, 0.1],
-          [0.46, 0.18],
-          [0.38, 0.42],
-          [0.3, 0.72],
-          [0.21, 1.0],
-          [0.15, 1.18],
+          [0.6, 0],
+          [0.56, 0.08],
+          [0.5, 0.3],
+          [0.4, 0.6],
+          [0.28, 0.9],
+          [0.17, 1.08],
+        ],
+        11,
+        0.22,
+        5,
+      ),
+      under: raggedLathe(
+        [
+          [0.5, 0.02],
+          [0.45, 0.25],
+          [0.32, 0.6],
         ],
         9,
+        0.4,
+        9,
       ),
+      // corpete (no espaço da coluna: começa na cintura, y = 0)
       bodice: lathe(
         [
-          [0.15, 1.16],
-          [0.18, 1.34],
-          [0.17, 1.52],
-          [0.13, 1.66],
-          [0.06, 1.74],
+          [0.15, -0.02],
+          [0.13, 0.12],
+          [0.17, 0.3],
+          [0.19, 0.42],
+          [0.14, 0.52],
+          [0.06, 0.58],
         ],
-        7,
+        8,
       ),
-      collar: new THREE.TorusGeometry(0.075, 0.03, 4, 8),
-      upper: new THREE.CylinderGeometry(0.032, 0.026, 0.36, 5),
-      lower: new THREE.CylinderGeometry(0.026, 0.02, 0.4, 5),
-      finger: new THREE.ConeGeometry(0.008, 0.15, 3),
-      head: new THREE.SphereGeometry(0.12, 7, 6),
-      face: new THREE.PlaneGeometry(0.2, 0.25),
-      hairBack: new THREE.PlaneGeometry(0.3, 0.8),
-      hairSide: new THREE.PlaneGeometry(0.07, 0.42),
-      eye: new THREE.OctahedronGeometry(0.012),
+      sleeve: new THREE.SphereGeometry(0.1, 6, 5),
+      collar: new THREE.ConeGeometry(0.16, 0.1, 10, 1, true),
+      upper: new THREE.CylinderGeometry(0.03, 0.025, 0.42, 5),
+      fore: new THREE.CylinderGeometry(0.025, 0.018, 0.46, 5),
+      hand: new THREE.BoxGeometry(0.06, 0.09, 0.03),
+      phalanx: new THREE.CylinderGeometry(0.007, 0.005, 0.11, 3),
+      head: new THREE.SphereGeometry(0.105, 8, 6),
+      face: new THREE.PlaneGeometry(0.18, 0.23),
+      eye: new THREE.OctahedronGeometry(0.011),
+      neck: new THREE.CylinderGeometry(0.035, 0.045, 0.14, 5),
     }),
+    [],
+  )
+
+  // o cabelo encosta no peito e nos ombros
+  const hairColliders = useMemo(
+    () => [
+      { center: [0, 0.32, 0.05] as [number, number, number], radius: 0.2, space: spine },
+      { center: [0.2, 0.46, 0] as [number, number, number], radius: 0.1, space: spine },
+      { center: [-0.2, 0.46, 0] as [number, number, number], radius: 0.1, space: spine },
+    ],
     [],
   )
 
   const sp = useMemo(
     () => ({
       walk: spring(),
+      phase: 0,
+      lean: spring(0.22),
       roll: spring(),
-      lean: spring(),
+      hipYaw: spring(),
       skirt: spring(),
-      headX: spring(0.42),
+      skirtX: spring(),
+      headX: spring(0.6),
       headZ: spring(),
-      armL: spring(0.05),
-      armR: spring(0.05),
+      armX: [spring(0.08), spring(0.08)],
+      armZ: [spring(), spring()],
+      elbow: [spring(-0.15), spring(-0.15)],
+      curl: [spring(0.4), spring(0.4)],
       turn: spring(),
+      twitch: 0,
+      nextTwitch: 2,
+      tic: 0,
     }),
     [],
   )
@@ -89,74 +144,163 @@ export function GuardiaModel({ pose }: { pose: Pose }) {
   useFrame(({ clock }, delta) => {
     const t = clock.elapsedTime
     const dt = Math.min(delta, 0.05)
-    const b = body.current
-    if (!b) return
+    const r = root.current
+    if (!r) return
     const chase = pose.mode === 'chase'
-    const walk = stepSpring(sp.walk, Math.min(pose.moving, 2), dt, ANIM.soft)
-    turnLag(sp.turn, b, dt, ANIM.turn)
-    // passo arrastado: balanço lateral (com mola), a saia atrasa e ondula
-    const sway = Math.sin(t * 2.4 * Math.max(walk, 0.3)) * 0.04 * (0.4 + walk)
-    const shake = pose.stunned ? Math.sin(t * 45) * 0.07 : 0
-    b.rotation.z = stepSpring(sp.roll, sway, dt, ANIM.soft) + shake
-    b.rotation.x = stepSpring(sp.lean, chase ? 0.12 : walk * 0.05, dt, ANIM.soft)
-    b.position.y = Math.abs(Math.sin(t * 2.4)) * 0.02 * walk
-    // a saia gira contra o giro do corpo (inércia do tecido)
-    if (skirt.current)
-      skirt.current.rotation.y = stepSpring(sp.skirt, Math.sin(t * 1.7) * 0.06 * (0.3 + walk) - sp.turn.v * 0.08, dt, ANIM.head)
+    const alert = pose.mode === 'alert'
+    const atk = pose.attack
+    const walk = stepSpring(sp.walk, Math.min(pose.moving, 2.2), dt, ANIM.soft)
+    // fase do passo: anda conforme a velocidade (arrastado devagar, corrido caçando)
+    sp.phase += dt * walk * (chase ? 3.4 : 2.2)
+    const ph = sp.phase
+    turnLag(sp.turn, r, dt, ANIM.turn)
 
+    // quadril: sobe e desce a cada passo e gira de leve
+    const hp = hips.current
+    if (hp) {
+      hp.position.y = Math.abs(Math.sin(ph)) * 0.025 * walk
+      hp.rotation.y = stepSpring(sp.hipYaw, Math.sin(ph) * 0.12 * walk, dt, ANIM.soft)
+    }
+    // saia atrasada em relação ao quadril, e balançando para trás andando
+    if (skirt.current) {
+      skirt.current.rotation.y = stepSpring(sp.skirt, -(hp?.rotation.y ?? 0) * 0.8 - sp.turn.v * 0.08, dt, ANIM.head)
+      skirt.current.rotation.x = stepSpring(sp.skirtX, -walk * 0.06 + Math.sin(ph * 2) * 0.02 * walk, dt, ANIM.head)
+    }
+
+    // coluna: curvada; caçando, mais; no bote, endireita para erguer os braços
+    const sn = spine.current
+    if (sn) {
+      const leanTarget = (chase ? 0.42 : alert ? 0.3 : 0.24) - atk * 0.35 + Math.sin(ph) * 0.03 * walk
+      sn.rotation.x = stepSpring(sp.lean, leanTarget, dt, ANIM.soft)
+      const shake = pose.stunned ? Math.sin(t * 45) * 0.08 : 0
+      sn.rotation.z = stepSpring(sp.roll, Math.sin(ph) * 0.05 * walk + (alert ? 0.12 : 0), dt, ANIM.soft) + shake
+    }
+
+    // cabeça: caída quase sempre; caçando, tiques bruscos; no bote ela olha direto
+    sp.tic = Math.max(0, sp.tic - dt)
+    if (chase && sp.tic === 0 && Math.random() < dt * 0.8) sp.tic = 0.25
     const h = head.current
     if (h) {
-      h.rotation.x = stepSpring(sp.headX, chase ? -0.05 : pose.mode === 'alert' ? 0.15 : 0.42, dt, ANIM.head)
-      // caçando: tiques bruscos que a mola faz balançar
-      const tic = chase ? (Math.sin(t * 23) > 0.85 ? 0.35 : Math.sin(t * 3) * 0.05) : Math.sin(t * 0.8) * 0.04
-      h.rotation.z = stepSpring(sp.headZ, tic, dt, ANIM.snappy)
+      const look = atk > 0.2 ? -0.15 : sp.tic > 0 ? 0.05 : chase ? 0.5 : alert ? 0.45 : 0.72
+      h.rotation.x = stepSpring(sp.headX, look, dt, sp.tic > 0 || atk > 0.2 ? ANIM.snappy : ANIM.head)
+      const roll = alert ? 0.45 : chase ? Math.sin(t * 1.7) * 0.12 : Math.sin(t * 0.6) * 0.06
+      h.rotation.z = stepSpring(sp.headZ, roll, dt, ANIM.head)
     }
-    // braços: caídos e balançando; caçando, esticados para a frente
-    const reach = chase ? -1.25 : pose.mode === 'alert' ? -0.25 : 0.05
-    for (const [arm, s, side] of [
-      [armL.current, sp.armL, -1],
-      [armR.current, sp.armR, 1],
-    ] as const) {
-      if (!arm) continue
-      const swing = Math.sin(t * 2.4 + (side > 0 ? Math.PI : 0)) * 0.18 * walk
-      arm.rotation.x = stepSpring(s, reach + swing, dt, ANIM.limb)
-      arm.rotation.z = side * (chase ? 0.05 : 0.12)
+
+    // dedos se mexem sozinhos de vez em quando
+    sp.nextTwitch -= dt
+    if (sp.nextTwitch <= 0) {
+      sp.twitch = 0.5
+      sp.nextTwitch = 1.5 + Math.random() * 3
     }
-    m.eyes.color.set(chase ? '#ff3020' : pose.mode === 'alert' ? '#a04030' : '#2a1a14')
+    sp.twitch = Math.max(0, sp.twitch - dt)
+
+    arms.current.forEach((arm, k) => {
+      const side = k === 0 ? -1 : 1
+      // pêndulo: balança com o passo, braço oposto à perna
+      const swing = Math.sin(ph + (side > 0 ? Math.PI : 0)) * 0.22 * walk
+      let ax = 0.1 + swing
+      let elbow = -0.15
+      let curl = 0.35 + (sp.twitch > 0 ? Math.sin(t * 30 + k) * 0.4 : 0)
+      if (chase) {
+        // estica os braços para a frente, dedos abertos
+        ax = -1.15 + Math.sin(t * 5 + side) * 0.08
+        elbow = -0.1
+        curl = 0.05
+      }
+      if (atk > 0) {
+        // bote: ergue (até 0,7) e desce rasgando (0,7 → 1)
+        const up = Math.min(1, atk / 0.7)
+        const down = Math.max(0, (atk - 0.7) / 0.3)
+        ax = -2.7 * up + 1.9 * down
+        elbow = -0.6 * up + 0.5 * down
+        curl = 0.7 - down * 0.6
+      }
+      const fast = atk > 0.7 ? ANIM.snappy : ANIM.limb
+      if (arm.upper) {
+        arm.upper.rotation.x = stepSpring(sp.armX[k], ax, dt, fast)
+        arm.upper.rotation.z = stepSpring(sp.armZ[k], side * (chase || atk > 0 ? 0.08 : 0.3), dt, ANIM.limb)
+      }
+      if (arm.fore) arm.fore.rotation.x = stepSpring(sp.elbow[k], elbow, dt, fast)
+      const c = stepSpring(sp.curl[k], curl, dt, ANIM.snappy)
+      arm.fingers.forEach((f, i) => {
+        if (!f) return
+        f.rotation.x = c * (1 + (i % 2) * 0.3)
+        const tip = f.children[1] as THREE.Object3D | undefined
+        if (tip) tip.rotation.x = c * 1.2
+      })
+    })
+
+    const eyeColor = atk > 0 || chase ? '#ff2a18' : alert ? '#a03020' : '#3a1a14'
+    m.eyes.color.set(eyeColor)
   })
 
-  const arm = (side: number, ref: React.RefObject<THREE.Group>) => (
-    <group ref={ref} position={[side * 0.19, 1.62, 0.01]}>
-      <mesh geometry={geo.upper} material={m.skin} position={[0, -0.18, 0]} castShadow />
-      <group position={[0, -0.36, 0]} rotation={[-0.12, 0, 0]}>
-        <mesh geometry={geo.lower} material={m.skin} position={[0, -0.2, 0]} castShadow />
-        {/* dedos compridos */}
-        {[-0.022, -0.007, 0.008, 0.022].map((x, i) => (
-          <mesh key={i} geometry={geo.finger} material={m.skin} position={[x, -0.47, 0.01]} rotation={[Math.PI, 0, x * 3]} />
-        ))}
+  const arm = (k: number) => {
+    const side = k === 0 ? -1 : 1
+    return (
+      <group
+        ref={(el) => {
+          arms.current[k].upper = el
+        }}
+        position={[side * 0.2, 0.47, 0.02]}
+      >
+        <mesh geometry={geo.sleeve} material={m.dress} scale={[1, 1.15, 1]} position={[0, -0.02, 0]} castShadow />
+        <mesh geometry={geo.upper} material={m.skin} position={[0, -0.21, 0]} castShadow />
+        <group
+          ref={(el) => {
+            arms.current[k].fore = el
+          }}
+          position={[0, -0.42, 0]}
+        >
+          <mesh geometry={geo.fore} material={m.skin} position={[0, -0.23, 0]} castShadow />
+          <mesh geometry={geo.hand} material={m.skin} position={[0, -0.5, 0.005]} />
+          {[-0.022, -0.008, 0.007, 0.021].map((x, i) => (
+            <group
+              key={i}
+              ref={(el) => {
+                arms.current[k].fingers[i] = el
+              }}
+              position={[x, -0.54, 0.008]}
+            >
+              <mesh geometry={geo.phalanx} material={m.skin} position={[0, -0.055, 0]} />
+              <group position={[0, -0.11, 0]}>
+                <mesh geometry={geo.phalanx} material={m.skin} position={[0, -0.05, 0]} scale={[0.85, 0.9, 0.85]} />
+              </group>
+            </group>
+          ))}
+        </group>
       </group>
-    </group>
-  )
+    )
+  }
 
   return (
-    <group ref={body}>
-      <mesh ref={skirt} geometry={geo.skirt} material={m.dress} castShadow receiveShadow />
-      <mesh geometry={geo.bodice} material={m.bodice} castShadow />
-      <mesh geometry={geo.collar} material={m.lace} position={[0, 1.74, 0]} rotation={[Math.PI / 2, 0, 0]} />
-      {arm(-1, armL)}
-      {arm(1, armR)}
-      <group ref={head} position={[0, 1.88, 0.02]}>
-        <mesh geometry={geo.head} material={m.skin} scale={[0.95, 1.18, 1]} castShadow />
-        <mesh geometry={geo.face} material={m.face} position={[0, -0.01, 0.112]} />
-        {[-1, 1].map((s) => (
-          <mesh key={s} geometry={geo.eye} material={m.eyes} position={[s * 0.034, 0.02, 0.118]} />
-        ))}
-        {/* cabelo: longo atrás e mechas caindo na frente do rosto */}
-        <mesh geometry={geo.hairBack} material={m.hair} position={[0, -0.24, -0.1]} rotation={[0.12, 0, 0]} />
-        <mesh geometry={geo.head} material={m.hair} position={[0, 0.04, -0.015]} scale={[1.02, 1.05, 1.02]} />
-        <mesh geometry={geo.hairSide} material={m.hair} position={[-0.075, -0.1, 0.1]} rotation={[0.1, 0.25, 0.05]} />
-        <mesh geometry={geo.hairSide} material={m.hair} position={[0.08, -0.12, 0.1]} rotation={[0.1, -0.25, -0.05]} />
+    <group ref={root}>
+      <group ref={hips}>
+        <group ref={skirt}>
+          <mesh geometry={geo.skirt} material={m.dress} castShadow receiveShadow />
+          <mesh geometry={geo.under} material={m.under} />
+        </group>
+        {/* da cintura para cima: curvado para a frente */}
+        <group ref={spine} position={[0, 1.06, 0]}>
+          <mesh geometry={geo.bodice} material={m.bodice} castShadow />
+          <mesh geometry={geo.collar} material={m.lace} position={[0, 0.55, 0]} rotation={[Math.PI, 0, 0]} />
+          {arm(0)}
+          {arm(1)}
+          <mesh geometry={geo.neck} material={m.skin} position={[0, 0.62, 0.02]} />
+          <group ref={head} position={[0, 0.68, 0.03]}>
+            <group ref={skull} position={[0, 0.09, 0]}>
+              <mesh geometry={geo.head} material={m.skin} scale={[0.92, 1.15, 0.98]} castShadow />
+              <mesh geometry={geo.face} material={m.face} position={[0, -0.01, 0.1]} />
+              {[-1, 1].map((s) => (
+                <mesh key={s} geometry={geo.eye} material={m.eyes} position={[s * 0.032, 0.015, 0.108]} />
+              ))}
+              {/* cabelo: casco, volume atrás e mechas caindo na frente do rosto */}
+              <mesh geometry={geo.head} material={m.hair} position={[0, 0.03, -0.012]} scale={[1.02, 1.08, 1.04]} />
+            </group>
+          </group>
+        </group>
       </group>
+      <ClothHair head={skull} radius={0.112} sheets={HAIR} colliders={hairColliders} />
     </group>
   )
 }

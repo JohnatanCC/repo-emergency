@@ -209,5 +209,38 @@ Cada uma conversa com uma mecânica do jogo, para que fugir de cada uma seja dif
 - Poeira do ambiente perto do jogador, que brilha dentro do facho
 - Sombra só nos níveis 3 e 5
 
+## ✅ 0.18.0 — Chegada (o lado de fora)
+- Lado de fora igual em todos os níveis (`data/levels/exterior.ts`): estrada, caminhão do C.R.O.S de ré, jardim morto, fachada
+- O jogo começa no baú do caminhão; equipamentos comprados ficam na prateleira dele
+- Jardim abandonado: árvores secas, arbustos, anjos de pedra, postes apagados, fonte seca, caminho de cascalho, varanda
+- Névoa densa do lado de fora e grade de ferro escondendo a barreira invisível; criaturas não saem da casa
+
+## ✅ 0.19.0 — Caçadores
+- Hospital (nível 3): criaturas com dano 50, que marcam o alvo (6 s seguindo sem ver, depois patrulham) e música de perseguição
+- HUD maior e numérico: vida, estamina, luz e vidas em cima à esquerda; meta, dinheiro e local em cima à direita
+- Bestiário no menu: caderno de campo com o modelo de cada criatura, TIER, aparência, comportamento e como evitar
+- Porta da frente dupla e maior; grade do jardim com colisão; saída do caminhão sem a barra atravessada
+- 0.19.1: música do menu e sons de clique da interface
+
+## ✅ 0.20.0 — Caderno de campo (criaturas refeitas)
+- Modelos e animações refeitos a partir das páginas do bestiário, com passo sincronizado, molas e rastros de fumaça
+- Guardiã: braços além dos joelhos, cabelo cobrindo o rosto; bote de longe com aviso (dá para desviar)
+- Sombra: ~2,6 m, caça de quatro e em arrancadas, se curva nas portas, fumaça preta
+- Possessor: tiras esfarrapadas, grito; o toque possui (lentidão, câmera puxada, lanterna falhando)
+- A COISA: pernas longas de joelho para trás, rastro roxo; fugindo, chama as outras criaturas
+
+## ✅ 0.21.0 — O Espectro (níveis 4 e 5)
+- Jovem pálida que flutua, cabelo emo sobre metade do rosto, sem olhos; a mandíbula solta e o peito abre numa boca de dentes
+- Vaga devagar atravessando paredes e cantarola; perto demais, percebe, grita e persegue em linha reta até matar (100)
+- Esconder-se não adianta; a única fuga é sair da casa
+- Jumpscare próprio: encara o jogador por 5 s em silêncio, depois abre a boca
+- 0.21.1: cabelo com física de tecido (malha e mola), boca costurada; pausa não abre mais ao iniciar
+- 0.21.2: rosto esculpido na cabeça, branco e cinza, gosma preta flutuando
+
+## ✅ 0.22.0 — Acabamento
+- Textura que entorta como no PlayStation nas paredes e pisos
+- Cabelo de pano na Guardiã, tiras de pano no Possessor, cabelo fosco
+- Braços da Sombra e dedos da Guardiã sem atravessar chão e saia
+
 ## ⬜ 1.0.0 — Polimento
 - Salvamento da campanha, balanceamento, sons definitivos

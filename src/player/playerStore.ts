@@ -3,7 +3,7 @@ import { PLAYER } from './config'
 import type { Hint } from '../game/systems/interactables'
 
 /** Quem pode matar o investigador (define o jumpscare). */
-export type Killer = 'guardia' | 'sombra' | 'possessor'
+export type Killer = 'guardia' | 'sombra' | 'possessor' | 'espectro'
 
 /**
  * Estado do investigador que o HUD mostra. Separado do gameStore porque a
@@ -37,6 +37,9 @@ interface PlayerState {
   startRevive: () => void
   endRevive: () => void
   damage: (amount: number, by?: Killer) => void
+  /** Possuído pelo Possessor até este instante (performance.now, ms). */
+  possessedUntil: number
+  possess: (seconds: number) => void
   scare: (by: Killer) => void
   clearScare: () => void
   setStamina: (stamina: number, exhausted: boolean) => void
@@ -63,6 +66,8 @@ export const usePlayerStore = create<PlayerState>((set) => ({
   toast: null,
   lastHit: null,
   lastHitAt: -1e9,
+  possessedUntil: 0,
+  possess: (seconds) => set({ possessedUntil: performance.now() + seconds * 1000 }),
   jumpscare: null,
   reviving: null,
   startRevive: () => set((s) => ({ reviving: (s.reviving ?? 0) + 1 })),
@@ -96,5 +101,12 @@ export const usePlayerStore = create<PlayerState>((set) => ({
       battery: 100,
       respawnId: s.respawnId + 1,
       lastHit: null,
+      possessedUntil: 0,
     })),
 }))
+
+/** Possuído agora? 0–1 (some aos poucos no último segundo). */
+export function possession() {
+  const left = (usePlayerStore.getState().possessedUntil - performance.now()) / 1000
+  return Math.max(0, Math.min(1, left))
+}

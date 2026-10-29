@@ -21,6 +21,7 @@ import { leaveWardrobe, wardrobes } from '../../world/HidingSpots'
 import type { NavGrid, P2 } from '../nav'
 import { applyStun, stunFields, stunStep } from '../stun'
 import { registerCreature } from '../../game/systems/creatures'
+import { setChasing } from '../../game/systems/chase'
 import { newWalkState, walkCheckStuck, walkResume, walkSteer, walkStop, walkTo } from '../walker'
 import { GUARDIA } from './config'
 import { GuardiaModel } from '../models/GuardiaModel'
@@ -69,6 +70,9 @@ export function Guardia({
   nav,
   spawn,
   hunting,
+  damage = GUARDIA.damage,
+  lockTime = 0,
+  chaseMusic = false,
 }: {
   level: LevelData
   built: BuiltLevel
@@ -76,7 +80,13 @@ export function Guardia({
   spawn: P2
   /** Começa já indo atrás do jogador (apagão). */
   hunting?: boolean
+  /** Dano por golpe (o hospital usa 50). */
+  damage?: number
+  /** Segundos que continua atrás do jogador depois de perdê-lo de vista (0 = vai investigar o último ponto). */
+  lockTime?: number
+  chaseMusic?: boolean
 }) {
+  const musicId = useRef(`guardia-${spawn.x}-${spawn.z}`).current
   const body = useRef<RapierRigidBody>(null)
   const collider = useRef<RapierCollider>(null)
   const controller = useRef<KinematicCharacterController>()
@@ -110,6 +120,8 @@ export function Guardia({
     trail: false,
     stepTimer: 0,
     cooldown: 0,
+    /** Bote em andamento: segundos até o golpe descer (0 = sem bote). */
+    windup: 0,
   }).current
 
   /** Onde ficar para checar cada esconderijo. */
@@ -184,6 +196,7 @@ export function Guardia({
       unregister()
       guardiaDebug.active = false
       guardiaDebug.state = 'off'
+      setChasing(musicId, false)
       setDanger('guardia', 0)
     }
   }, [])
@@ -268,10 +281,20 @@ export function Guardia({
     return clear
   }
 
+  /** Ainda marcando o alvo (dentro do tempo e o jogador não está escondido). */
+  const locked = () => lockTime > 0 && b.now - b.lastSeenAt < lockTime && !useHidingStore.getState().spot
+
+  /** Começa o bote: ergue os braços com um grito curto; o golpe desce depois de GUARDIA.windup. */
+  const beginStrike = () => {
+    if (b.windup > 0 || b.cooldown > 0) return
+    b.windup = GUARDIA.windup
+    audio.play('shriek', { pos: [b.pos.x, HEAD_Y, b.pos.z], volume: AUDIO.guardia * 0.6, rate: 1.5 })
+  }
+
   const strike = () => {
     const pos: [number, number, number] = [b.pos.x, 1.4, b.pos.z]
     audio.play('hit', { pos, volume: AUDIO.guardia })
-    usePlayerStore.getState().damage(GUARDIA.damage, 'guardia')
+    usePlayerStore.getState().damage(damage, 'guardia')
     b.cooldown = GUARDIA.recover
     setState('recover')
     b.timer = GUARDIA.recover
@@ -357,7 +380,14 @@ export function Guardia({
             b.repath = GUARDIA.chaseRepath
             go(player)
           }
-          if (dPlayer < GUARDIA.reach && b.cooldown <= 0) strike()
+          if (dPlayer < GUARDIA.reach) beginStrike()
+        } else if (locked()) {
+          // alvo marcado: sabe onde o jogador está mesmo sem ver
+          if ((b.repath -= dt) <= 0) {
+            b.repath = GUARDIA.chaseRepath
+            go(player)
+          }
+          if (dPlayer < GUARDIA.reach) beginStrike()
         } else if (b.now - b.lastSeenAt > 0.4) {
           // perdeu de vista: viu entrar num esconderijo perto? vai direto nele
           const hide = useHidingStore.getState()
@@ -366,7 +396,8 @@ export function Guardia({
           if (spot && at && hide.isMarked(spot.id) && b.lastSeen && dist(at, b.lastSeen) < GUARDIA.markedReach) {
             b.hideSpot = spot.id
             setState('checkHiding', at)
-          } else investigate(b.lastSeen ?? player)
+          } else if (lockTime > 0) setState('patrol')
+          else investigate(b.lastSeen ?? player)
         }
         break
       case 'checkHiding':
@@ -389,7 +420,7 @@ export function Guardia({
         break
       case 'recover':
         if ((b.timer -= dt) <= 0) {
-          if (b.seeing) setState('chase', player)
+          if (b.seeing || locked()) setState('chase', player)
           else search(b.lastSeen ?? b.pos)
         }
         break
@@ -403,7 +434,23 @@ export function Guardia({
         : b.state === 'investigate' || b.state === 'checkHiding'
           ? GUARDIA.speedInvestigate
           : GUARDIA.speedPatrol
-    const speed = b.state === 'idle' || b.state === 'recover' ? 0 : base + (b.state === 'patrol' ? 0 : relics * GUARDIA.speedPerRelic)
+    const speed =
+      (b.state === 'idle' || b.state === 'recover' ? 0 : base + (b.state === 'patrol' ? 0 : relics * GUARDIA.speedPerRelic)) *
+      (b.windup > 0 ? GUARDIA.windupSpeed : 1)
+
+    // bote: o golpe desce quando o tempo acaba; se o jogador saiu do alcance, erra
+    if (b.windup > 0) {
+      b.windup -= dt
+      pose.attack = 1 - Math.max(0, b.windup) / GUARDIA.windup
+      if (b.windup <= 0) {
+        b.windup = 0
+        if (dPlayer < GUARDIA.hitRange && useHidingStore.getState().spot?.type !== 'wardrobe') strike()
+        else {
+          b.cooldown = 0.9
+          audio.play('whoosh', { pos: [b.pos.x, 1.4, b.pos.z], volume: AUDIO.guardia * 0.4, rate: 2.2 })
+        }
+      }
+    } else pose.attack = Math.max(0, pose.attack - dt * 2.5)
 
     let { mx, mz } = walkSteer(b, speed, dt)
     // depois do golpe recua devagar, de frente para o jogador: janela para fugir
@@ -461,6 +508,7 @@ export function Guardia({
     guardiaDebug.seeing = b.seeing
     guardiaDebug.pos = { x: p.x, z: p.z }
     guardiaDebug.path = b.path
+    setChasing(musicId, chaseMusic && (b.state === 'chase' || (b.state === 'recover' && locked())))
   })
 
   // debug: rótulo e caminho

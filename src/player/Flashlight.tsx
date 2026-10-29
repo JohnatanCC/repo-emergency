@@ -4,7 +4,7 @@ import * as THREE from 'three'
 import type { BuiltLevel } from '../world/buildLevel'
 import { beam } from '../game/systems/beam'
 import { FLASHLIGHT } from './config'
-import { usePlayerStore } from './playerStore'
+import { possession, usePlayerStore } from './playerStore'
 import { playerFeet } from './playerPos'
 import { danger } from '../game/systems/danger'
 import { IMMERSION } from './config'
@@ -78,6 +78,8 @@ export function Flashlight({ built }: { built: BuiltLevel }) {
       k = 0.35 + 0.65 * (battery / FLASHLIGHT.lowAt)
       if (Math.sin(t * 13) * Math.sin(t * 3.7) > 0.6) k *= 0.25
     }
+    // possuído: a lanterna apaga e volta sem parar
+    if (on && possession() > 0 && Math.sin(t * 23) * Math.sin(t * 7.7) > 0.2) k *= 0.05
     // criatura perto: a lanterna falha (mais quanto maior o perigo)
     if (on && danger.level > IMMERSION.flickerFrom) {
       const d = (danger.level - IMMERSION.flickerFrom) / (1 - IMMERSION.flickerFrom)

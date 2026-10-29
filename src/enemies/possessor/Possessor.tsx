@@ -163,6 +163,8 @@ function Ghost({ nav, spawn, onDone }: { nav: NavGrid; spawn: P2; onDone: () => 
       b.cooldown = POSSESSOR.hitCooldown
       audio.play('hit', { pos: [p.x, 1.2, p.z], volume: AUDIO.possessor, rate: 1.3 })
       usePlayerStore.getState().damage(POSSESSOR.damage, 'possessor')
+      usePlayerStore.getState().possess(POSSESSOR.possessTime)
+      audio.play('murmur', { volume: AUDIO.possessor, rate: 0.7 })
     }
 
     walkResume(b, nav)

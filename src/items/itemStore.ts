@@ -5,6 +5,9 @@ import { CARRY, ITEMS, SUPPLIES, SUPPLY_SPAWNS, type ItemDef } from './catalog'
 import { useGameStore } from '../game/stores/gameStore'
 import { toolInfo } from '../game/shop'
 
+/** Prateleira do caminhão (exterior.ts): altura das tábuas (m), quantos por tábua e o espaço entre eles (u). */
+const RACK = { shelves: [0.52, 1.02, 1.52], perShelf: 4, spacing: 7 }
+
 type Vec3 = [number, number, number]
 
 /**
@@ -174,15 +177,23 @@ export const useItemStore = create<ItemState>((set, get) => {
           revealed: false,
         }
       }
-      // ferramentas compradas na loja: no chão do carro, enfileiradas
+      // ferramentas compradas na loja: na prateleira do caminhão (4 por tábua, de baixo para cima);
+      // sem prateleira, no chão do carro
       const car = level.rooms.find((r) => r.kind === 'car')
+      const rack = level.props.find((p) => p.type === 'rack')
       if (car) {
         const stamp = performance.now().toFixed(0)
         useGameStore
           .getState()
           .takeEquipment()
           .forEach((id, i) => {
-            const [x, , z] = built.toWorld(car.x + car.w * 0.35 + (i % 4) * 5, car.y + car.h * 0.3 + Math.floor(i / 4) * 6)
+            const [x, y, z] = rack
+              ? built.toWorld(
+                  rack.x + ((i % RACK.perShelf) - (RACK.perShelf - 1) / 2) * RACK.spacing,
+                  rack.y,
+                  RACK.shelves[Math.floor(i / RACK.perShelf) % RACK.shelves.length] + 0.12,
+                )
+              : built.toWorld(car.x + car.w * 0.35 + (i % 4) * 5, car.y + car.h * 0.3 + Math.floor(i / 4) * 6, 0.4)
             const def = toolInfo(id).def
             const uid = `tool-${id}-${i}-${stamp}`
             items[uid] = {
@@ -190,7 +201,7 @@ export const useItemStore = create<ItemState>((set, get) => {
               def,
               value: 0,
               place: 'world',
-              spawn: { pos: [x, 0.4, z], yaw: Math.random() * Math.PI, vel: [0, 0, 0] },
+              spawn: { pos: [x, y, z], yaw: rack ? 0 : Math.random() * Math.PI, vel: [0, 0, 0] },
               version: 0,
               graceUntil: performance.now() + CARRY.spawnGrace,
               origin: [x, 0, z],

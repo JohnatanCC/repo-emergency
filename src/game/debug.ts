@@ -7,6 +7,7 @@ import { guardiaDebug } from '../enemies/guardia/Guardia'
 import { sombraDebug } from '../enemies/sombra/Sombra'
 import { possessorDebug } from '../enemies/possessor/Possessor'
 import { coisaDebug } from '../enemies/coisa/Coisa'
+import { espectroDebug } from '../enemies/espectro/Espectro'
 
 /**
  * Comandos de teste em `window.__relicario` (só em dev). Servem para testar
@@ -38,6 +39,8 @@ export const debugApi = {
   possessor: possessorDebug,
   /** As COISAS em cena (id, estado, posição). */
   coisa: coisaDebug,
+  /** O Espectro (state, pos, tp(x, z)). */
+  espectro: espectroDebug,
   /** Simula o mouse travado. */
   play: () => usePlayerStore.getState().setLocked(true),
   tick,
