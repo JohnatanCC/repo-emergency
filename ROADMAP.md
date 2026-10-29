@@ -126,11 +126,16 @@ Cada uma conversa com uma mecânica do jogo, para que fugir de cada uma seja dif
 - **Pilhas**: 2 por partida em pontos de saque; `E` recarrega 50% na hora, sem ocupar o inventário
 - Movimento e destravamento das entidades num módulo comum (`src/enemies/walker.ts`); batimento usa o maior perigo entre elas
 
-### ⬜ 0.9.0 — O Possessor
-- Entra em **um objeto de saque** aleatório por partida; o objeto parece normal
-- Carregar o objeto possuído: sussurros (fazem ruído) e a vida cai devagar
-- Largar o objeto liberta o Possessor, que persegue por um tempo
-- Extrair o objeto possuído: o C.R.O.S desconta do pagamento. **Roubar tem risco**
+### ✅ 0.9.0 — O Possessor
+- Mora em **um objeto de saque** sorteado por partida; o objeto parece normal (não tem ponto de nascimento)
+- Carregando: **murmúrio** a cada 7 s (o primeiro aos 4 s) que faz barulho de 9 m (atrai a Guardiã) e a vida cai 1,2/s,
+  sem matar sozinho (para em 15)
+- **Pistas** depois do primeiro murmúrio: o nome tremula no inventário e o objeto treme nas mãos
+- **Largar** o objeto (`Q` ou ao morrer) liberta a figura: translúcida, flutua, persegue por 15 s pela casa toda a 2,6 m/s
+  (andando você se afasta devagar; correndo, foge); contato tira 25 e ela para 1 s; no armário não alcança.
+  Depois **volta para o mesmo objeto**
+- **Extrair** o objeto com o Possessor dentro: **multa de $300** no pagamento (linha na tela de resultado).
+  Se ele estiver solto na hora da extração, o objeto vai "vazio", sem multa. **Roubar tem risco**
 
 ## ⬜ 0.10.0 — Morte e A COISA
 - Morrer custa **uma vida** e o investigador renasce no carro (base pronta na 0.1.0)

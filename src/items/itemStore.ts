@@ -30,6 +30,28 @@ export interface ItemInstance {
   origin: Vec3
   /** Já foi pego alguma vez. */
   taken: boolean
+  /** Objeto do Possessor (um saque por partida; continua amaldiçoado). */
+  possessed: boolean
+  /** O Possessor está fora do objeto agora (foi largado). */
+  freed: boolean
+  /** Já sussurrou uma vez: o jogador tem pistas de qual é. */
+  revealed: boolean
+}
+
+/** O Possessor está dentro deste item agora. */
+export function hasPossessor(item: ItemInstance) {
+  return item.possessed && !item.freed
+}
+
+type FreedListener = (item: ItemInstance, at: Vec3) => void
+const freedListeners = new Set<FreedListener>()
+
+/** Avisa quando o objeto possuído é largado: o Possessor sai dele. */
+export function onPossessorFreed(listener: FreedListener) {
+  freedListeners.add(listener)
+  return () => {
+    freedListeners.delete(listener)
+  }
 }
 
 type TakenListener = (item: ItemInstance) => void
@@ -66,6 +88,10 @@ interface ItemState {
   extract: (uids: string[]) => void
   /** Suprimento pego: some do mapa (o efeito é aplicado por quem chamou). */
   consume: (uid: string) => ItemDef | null
+  /** O Possessor voltou para dentro do objeto. */
+  repossess: (uid: string) => void
+  /** Primeiro sussurro: o objeto passa a dar pistas. */
+  reveal: (uid: string) => void
 }
 
 function shuffle<T>(list: T[]): T[] {
@@ -137,8 +163,14 @@ export const useItemStore = create<ItemState>((set, get) => {
           graceUntil: performance.now() + CARRY.spawnGrace,
           origin: [x, 0, z],
           taken: false,
+          possessed: false,
+          freed: false,
+          revealed: false,
         }
       }
+      // o Possessor entra num saque qualquer
+      const cursed = shuffle(Object.values(items).filter((it) => it.def.tag === 'loot'))[0]
+      if (cursed) cursed.possessed = true
       set({ items, slots: Array(CARRY.slots).fill(null), selected: 0, hands: null })
     },
 
@@ -166,15 +198,27 @@ export const useItemStore = create<ItemState>((set, get) => {
       return true
     },
 
-    drop: (uid, pos, yaw, vel = [0, 0, 0]) =>
-      set((s) => {
-        const it = s.items[uid]
-        if (!it || !isCarried(it)) return s
-        return {
-          ...release(s, uid),
-          items: { ...s.items, [uid]: { ...it, place: 'world', spawn: { pos, yaw, vel }, version: it.version + 1, graceUntil: 0 } },
-        }
-      }),
+    drop: (uid, pos, yaw, vel = [0, 0, 0]) => {
+      const before = get().items[uid]
+      if (!before || !isCarried(before)) return
+      // largar o objeto possuído liberta o Possessor
+      const frees = hasPossessor(before)
+      set((s) => ({
+        ...release(s, uid),
+        items: {
+          ...s.items,
+          [uid]: {
+            ...before,
+            place: 'world',
+            spawn: { pos, yaw, vel },
+            version: before.version + 1,
+            graceUntil: 0,
+            freed: before.freed || frees,
+          },
+        },
+      }))
+      if (frees) freedListeners.forEach((l) => l(get().items[uid], pos))
+    },
 
     dropCurrent: (pos, yaw) => {
       const s = get()
@@ -218,5 +262,10 @@ export const useItemStore = create<ItemState>((set, get) => {
       set((s) => ({ items: { ...s.items, [uid]: { ...it, place: 'used' } } }))
       return it.def
     },
+
+    repossess: (uid) => set((s) => (s.items[uid] ? { items: { ...s.items, [uid]: { ...s.items[uid], freed: false } } } : s)),
+
+    reveal: (uid) =>
+      set((s) => (s.items[uid] && !s.items[uid].revealed ? { items: { ...s.items, [uid]: { ...s.items[uid], revealed: true } } } : s)),
   }
 })

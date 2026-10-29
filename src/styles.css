@@ -153,6 +153,35 @@ canvas.retro {
 .hud-inventory .relic {
   color: #b99aff;
 }
+/* objeto possuído (depois do primeiro murmúrio): tremula de vez em quando */
+.hud-inventory .possessed {
+  animation: possessed 3.1s steps(1) infinite;
+}
+@keyframes possessed {
+  0%,
+  70% {
+    opacity: 1;
+    transform: none;
+  }
+  72% {
+    opacity: 0.3;
+    transform: translateX(-1px);
+  }
+  74% {
+    opacity: 1;
+    transform: translateX(1px);
+  }
+  76% {
+    opacity: 0.5;
+    transform: none;
+  }
+  78% {
+    opacity: 1;
+  }
+}
+.hud-results .fine {
+  color: #c0503a;
+}
 .hud-inventory .empty {
   color: #5a4a30;
 }

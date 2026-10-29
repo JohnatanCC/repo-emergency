@@ -5,6 +5,7 @@ import { useItemStore } from '../items/itemStore'
 import { useHidingStore } from '../player/hidingStore'
 import { guardiaDebug } from '../enemies/guardia/Guardia'
 import { sombraDebug } from '../enemies/sombra/Sombra'
+import { possessorDebug } from '../enemies/possessor/Possessor'
 
 /**
  * Comandos de teste em `window.__relicario` (só em dev). Servem para testar
@@ -32,6 +33,8 @@ export const debugApi = {
   guardia: guardiaDebug,
   /** Estado da Sombra (state, lit, pos, path). */
   sombra: sombraDebug,
+  /** Possessor: carregando o objeto? quantas figuras soltas, estado e posição. */
+  possessor: possessorDebug,
   /** Simula o mouse travado. */
   play: () => usePlayerStore.getState().setLocked(true),
   tick,

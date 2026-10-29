@@ -7,7 +7,7 @@ import { useGameStore } from '../game/stores/gameStore'
 import { usePlayerStore } from '../player/playerStore'
 import { useHidingStore } from '../player/hidingStore'
 import { ItemMesh } from './Items'
-import { halfHeight, isBroken, useItemStore, type ItemInstance } from './itemStore'
+import { halfHeight, hasPossessor, isBroken, useItemStore, type ItemInstance } from './itemStore'
 import type { ItemSize } from '../game/data/types'
 
 /** Onde o item aparece na frente da câmera (direita, baixo, frente). A lanterna fica na mão direita. */
@@ -27,18 +27,28 @@ export function HeldItem() {
   const camera = useThree((s) => s.camera)
   const hands = useItemStore((s) => (s.hands ? s.items[s.hands] : null))
   const group = useRef<THREE.Group>(null)
+  const inner = useRef<THREE.Group>(null)
 
-  useFrame((_, dt) => {
+  useFrame(({ clock }, dt) => {
     const g = group.current
     if (!g) return
     g.position.copy(camera.position)
     g.quaternion.slerp(camera.quaternion, 1 - Math.exp(-14 * dt))
+    // objeto possuído (depois do primeiro murmúrio): treme de vez em quando
+    const it = inner.current
+    const h = useItemStore.getState()
+    const held = h.hands ? h.items[h.hands] : null
+    if (it && held) {
+      const shaking = hasPossessor(held) && held.revealed && Math.sin(clock.elapsedTime * 1.3) > 0.55
+      it.position.set(...HOLD_OFFSET[held.def.size])
+      if (shaking) it.position.add(new THREE.Vector3((Math.random() - 0.5) * 0.015, (Math.random() - 0.5) * 0.015, 0))
+    }
   })
 
   if (!hands) return null
   return (
     <group ref={group}>
-      <group position={HOLD_OFFSET[hands.def.size]} rotation={[0.15, 0.3, 0]}>
+      <group ref={inner} position={HOLD_OFFSET[hands.def.size]} rotation={[0.15, 0.3, 0]}>
         <ItemMesh def={hands.def} broken={isBroken(hands)} />
       </group>
     </group>

@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.9.0 — O Possessor · 2026-10-29
+
+### Adicionado
+- O Possessor (`src/enemies/possessor/`): mora num saque sorteado por partida. Carregando: murmúrios que fazem barulho e drenam vida (sem matar sozinho). Depois do primeiro murmúrio o item tremula no inventário e treme nas mãos. Largado: a figura translúcida sai, persegue por 15 s (2,6 m/s, 25 de dano com pausa de 1 s) e volta para o objeto.
+- Multa de $300 do C.R.O.S por objeto possuído extraído com o Possessor dentro; linha na tela de resultado.
+- Som novo: murmúrio curto (variações do sussurro).
+- Debug: `window.__relicario.possessor` (carregando?, figuras soltas, estado, posição).
+
+### Alterado
+- Os pontos de nascimento do Possessor saíram dos dados do mapa (ele nasce do objeto).
+
+### Corrigido
+- A vida não passa mais do máximo.
+
 ## 0.8.0 — A Sombra · 2026-10-29
 
 ### Adicionado

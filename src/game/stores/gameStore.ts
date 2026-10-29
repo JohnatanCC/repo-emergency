@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { LIVES } from '../../player/config'
+import { POSSESSOR } from '../../enemies/possessor/config'
 
 /**
  * Fases de um nível:
@@ -33,6 +34,8 @@ export interface ExtractorContents {
   relicValue: number
   loot: number
   lootValue: number
+  /** Objetos com o Possessor dentro (o C.R.O.S multa). */
+  possessed: number
 }
 
 /**
@@ -42,7 +45,7 @@ export interface ExtractorContents {
  */
 export type ExtractorStatus = 'idle' | 'charging' | 'done'
 
-const EMPTY: ExtractorContents = { relics: 0, relicValue: 0, loot: 0, lootValue: 0 }
+const EMPTY: ExtractorContents = { relics: 0, relicValue: 0, loot: 0, lootValue: 0, possessed: 0 }
 
 interface GameState {
   levelIndex: number
@@ -93,7 +96,12 @@ export function isPaused(phase: GamePhase) {
 
 /** Pagamento: o C.R.O.S paga as relíquias, o saque é vendido por fora. */
 export function payout(r: ExtractorContents) {
-  return r.relicValue + r.lootValue
+  return r.relicValue + r.lootValue - penalty(r)
+}
+
+/** Multa do C.R.O.S por objetos possuídos entregues. */
+export function penalty(r: ExtractorContents) {
+  return r.possessed * POSSESSOR.penalty
 }
 
 /** Estado de uma partida nova (contrato novo ou recomeço). */

@@ -42,7 +42,7 @@ export const usePlayerStore = create<PlayerState>((set) => ({
   hint: null,
   flashlight: true,
   battery: 100,
-  damage: (amount) => set((s) => ({ health: Math.max(0, s.health - amount) })),
+  damage: (amount) => set((s) => ({ health: Math.max(0, Math.min(PLAYER.maxHealth, s.health - amount)) })),
   setStamina: (stamina, exhausted) => set({ stamina, exhausted }),
   setCrouching: (crouching) => set({ crouching }),
   setLocked: (locked) => set({ locked }),

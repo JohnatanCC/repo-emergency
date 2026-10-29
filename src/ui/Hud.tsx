@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { VERSION, VERSION_NAME } from '../game/version'
-import { isPaused, payout, useGameStore, type DebugFlags } from '../game/stores/gameStore'
+import { isPaused, payout, penalty, useGameStore, type DebugFlags } from '../game/stores/gameStore'
 import { EXTRACTION } from '../game/config'
 import { audio, SOUND_IDS } from '../game/audio/engine'
 import type { SoundId } from '../game/audio/sounds'
@@ -8,7 +8,7 @@ import type { LevelData } from '../game/data/types'
 import { usePlayerStore } from '../player/playerStore'
 import { useHidingStore } from '../player/hidingStore'
 import { FLASHLIGHT, PLAYER } from '../player/config'
-import { isBroken, isCarried, useItemStore, type ItemInstance } from '../items/itemStore'
+import { hasPossessor, isBroken, isCarried, useItemStore, type ItemInstance } from '../items/itemStore'
 
 const TOGGLES: { key: string; flag: keyof DebugFlags; label: string }[] = [
   { key: 'g', flag: 'gizmos', label: 'Marcadores' },
@@ -83,6 +83,12 @@ function Results() {
         <span>Saque vendido ({result.loot})</span>
         <span>${result.lootValue}</span>
       </div>
+      {result.possessed > 0 && (
+        <div className="row fine">
+          <span>Multa: objeto possuído ({result.possessed})</span>
+          <span>-${penalty(result)}</span>
+        </div>
+      )}
       <div className="row total">
         <span>Total</span>
         <span>${total}</span>
@@ -115,7 +121,8 @@ function SlotItem({ item }: { item: ItemInstance | undefined }) {
   if (!item) return <span className="empty">vazio</span>
   return (
     <>
-      <span className={item.def.tag === 'relic' ? 'relic' : undefined}>
+      {/* depois do primeiro murmúrio, o objeto possuído tremula */}
+      <span className={`${item.def.tag === 'relic' ? 'relic' : ''}${hasPossessor(item) && item.revealed ? ' possessed' : ''}`}>
         {item.def.name}
         {isBroken(item) && ' (quebrado)'}
       </span>

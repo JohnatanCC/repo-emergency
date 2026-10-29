@@ -393,32 +393,39 @@ export const shuffle: Synth = (sr) =>
     return normalize(mix([x, 1], [thump(sr, 0.15, 90, 60, 30), 0.3, Math.floor(sr * 0.25)]), 0.6)
   })
 
-/** Guardiã: sussurro sem palavras (loop). Sílabas de ruído em duas formantes. */
-export const whisper: Synth = (sr) =>
-  variants(1, (r) => {
-    const dur = 7
-    const n = Math.floor(sr * dur)
-    const out = new Float32Array(n)
-    let t = 0.2
-    while (t < dur - 0.6) {
-      const len = 0.12 + r() * 0.22
-      const s0 = Math.floor(t * sr)
-      const m = Math.floor(len * sr)
-      const a = noise(m, r)
-      const b = Float32Array.from(a)
-      bandpass(a, sr, 500 + r() * 400, 5)
-      bandpass(b, sr, 1500 + r() * 900, 6)
-      const hiss = noise(m, r)
-      bandpass(hiss, sr, 5000, 1.5)
-      for (let i = 0; i < m; i++) {
-        const env = Math.sin((Math.PI * i) / m) ** 1.5
-        out[s0 + i] += (a[i] * 0.9 + b[i] * 0.7 + hiss[i] * 0.25) * env
+/** Sussurro sem palavras: sílabas de ruído em duas formantes. */
+const whispers =
+  (dur: number, count: number): Synth =>
+  (sr) =>
+    variants(count, (r) => {
+      const n = Math.floor(sr * dur)
+      const out = new Float32Array(n)
+      let t = 0.2
+      while (t < dur - 0.6) {
+        const len = 0.12 + r() * 0.22
+        const s0 = Math.floor(t * sr)
+        const m = Math.floor(len * sr)
+        const a = noise(m, r)
+        const b = Float32Array.from(a)
+        bandpass(a, sr, 500 + r() * 400, 5)
+        bandpass(b, sr, 1500 + r() * 900, 6)
+        const hiss = noise(m, r)
+        bandpass(hiss, sr, 5000, 1.5)
+        for (let i = 0; i < m; i++) {
+          const env = Math.sin((Math.PI * i) / m) ** 1.5
+          out[s0 + i] += (a[i] * 0.9 + b[i] * 0.7 + hiss[i] * 0.25) * env
+        }
+        // pausas entre "palavras"
+        t += len + (r() < 0.25 ? 0.5 + r() * 0.8 : 0.03 + r() * 0.08)
       }
-      // pausas entre "palavras"
-      t += len + (r() < 0.25 ? 0.5 + r() * 0.8 : 0.03 + r() * 0.08)
-    }
-    return normalize(out, 0.5)
-  })
+      return normalize(out, 0.5)
+    })
+
+/** Guardiã: sussurro contínuo (loop). */
+export const whisper = whispers(7, 1)
+
+/** Possessor: murmúrio curto vindo do objeto. */
+export const murmur = whispers(1.8, 3)
 
 /** Guardiã: grito ao ver o jogador. */
 export const shriek: Synth = (sr) =>

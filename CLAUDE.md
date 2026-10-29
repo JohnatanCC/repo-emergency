@@ -28,6 +28,8 @@ Conceito, mecânicas e ordem das versões: `ROADMAP.md`. Histórico: `CHANGELOG.
   - `guardia` estado da Guardiã (`state`, `seeing`, `sight` = motivo de ver/não ver, `pos`, `path`, `unsticks`);
     `guardia.tp(x, z)` teleporta e `guardia.goTo(x, z)` manda investigar um ponto (reproduzir casos)
   - `sombra` estado da Sombra (`state`, `lit` = no feixe, `pos`, `path`, `unsticks`, `tp(x, z)`)
+  - `possessor` (`carrying`, `freed` = figuras soltas, `ghostState`, `ghostPos`); o item possuído tem `possessed: true`
+    no store de itens (`items.getState().pickUp/drop` liberta a figura)
   - Para testar a IA, rode testes longos (minutos) **sem** barulhos artificiais: barulhos dão destinos novos e
     escondem travamentos. A ferramenta corta scripts com mais de 45 s: rode em segundo plano e leia depois.
   - forçar a fase: `game.getState().setPhase('hunted')` faz as entidades aparecerem

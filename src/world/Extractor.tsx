@@ -7,7 +7,7 @@ import { WALL_THICKNESS } from './buildLevel'
 import { EXTRACTION } from '../game/config'
 import { useGameStore, type ExtractorContents } from '../game/stores/gameStore'
 import { emitNoise } from '../game/systems/noise'
-import { useItemStore, isBroken } from '../items/itemStore'
+import { useItemStore, isBroken, hasPossessor } from '../items/itemStore'
 import { itemBodies } from '../items/bodies'
 import { audio, type LoopHandle } from '../game/audio/engine'
 import { AUDIO } from '../game/audio/sounds'
@@ -20,7 +20,7 @@ import { AUDIO } from '../game/audio/sounds'
  */
 
 const same = (a: ExtractorContents, b: ExtractorContents) =>
-  a.relics === b.relics && a.relicValue === b.relicValue && a.loot === b.loot && a.lootValue === b.lootValue
+  a.relics === b.relics && a.relicValue === b.relicValue && a.loot === b.loot && a.lootValue === b.lootValue && a.possessed === b.possessed
 
 export function Extractor({ level, built }: { level: LevelData; built: BuiltLevel }) {
   const light = useRef<THREE.PointLight>(null)
@@ -81,7 +81,7 @@ export function Extractor({ level, built }: { level: LevelData; built: BuiltLeve
 
     if (ex.status !== 'done' && game.phase !== 'gameover') {
       // o que está dentro da sala agora
-      const inside: ExtractorContents = { relics: 0, relicValue: 0, loot: 0, lootValue: 0 }
+      const inside: ExtractorContents = { relics: 0, relicValue: 0, loot: 0, lootValue: 0, possessed: 0 }
       const uids: string[] = []
       for (const it of Object.values(items.items)) {
         if (it.place !== 'world') continue
@@ -95,6 +95,8 @@ export function Extractor({ level, built }: { level: LevelData; built: BuiltLeve
         } else {
           inside.loot++
           inside.lootValue += it.value
+          // com o Possessor dentro agora (solto, o objeto está "vazio")
+          if (hasPossessor(it)) inside.possessed++
         }
       }
       if (!same(inside, ex.inside)) game.setExtractorInside(inside)

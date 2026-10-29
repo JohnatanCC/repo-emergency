@@ -31,6 +31,7 @@ export type SoundId =
   | 'shriek'
   | 'hit'
   | 'hiss'
+  | 'murmur'
 
 export const AUDIO_DIR = `${import.meta.env.BASE_URL}audio/`
 
@@ -65,4 +66,6 @@ export const AUDIO = {
   guardia: 0.9,
   /** Sombra (respiração ao se mover). */
   sombra: 0.8,
+  /** Possessor (murmúrio do objeto e a figura liberta). */
+  possessor: 0.85,
 }
