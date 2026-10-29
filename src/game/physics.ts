@@ -21,5 +21,7 @@ export const ENEMY_GROUPS = interactionGroups(GROUP.ENEMY)
 export const DOOR_GROUPS = interactionGroups(GROUP.DOOR, [GROUP.PLAYER, GROUP.ITEM, GROUP.ENEMY])
 /** Linha de visão das entidades: paredes, móveis e portas bloqueiam; itens e corpos não. */
 export const SIGHT_GROUPS = interactionGroups(GROUP.ITEM, [GROUP.WORLD, GROUP.DOOR])
+/** Raio das ferramentas (crucifixo, bastão): acha criaturas; paredes e portas bloqueiam. */
+export const TOOL_GROUPS = interactionGroups(GROUP.PLAYER, [GROUP.WORLD, GROUP.DOOR, GROUP.ENEMY])
 /** Raio da mira: bate em tudo menos no próprio jogador. */
 export const AIM_GROUPS = interactionGroups(GROUP.PLAYER, [GROUP.WORLD, GROUP.DOOR, GROUP.ITEM])

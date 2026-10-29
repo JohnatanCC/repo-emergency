@@ -148,8 +148,16 @@ Cada uma conversa com uma mecânica do jogo, para que fugir de cada uma seja dif
   - Uma COISA por morte; continua no apagão; contrato novo ou recomeço limpa as que sobraram
 - A cabeça não vale dinheiro e o extrator a ignora; as entidades tratam quem a carrega como sempre
 
-## ⬜ 0.11.0 — Loja do C.R.O.S
-- Comprar equipamento entre níveis: lanterna melhor, **mochila +1 espaço**, detector de relíquias, sal (afasta uma entidade por alguns segundos), kit médico…
+## ✅ 0.11.0 — Loja do C.R.O.S
+- Entre contratos: pagamento → **loja** (`Enter`) → próximo contrato (`Enter`). Compra com clique ou `1`–`6`
+- **Crucifixo** ($400): criatura na mira (até 4 m) fica presa e atordoada por 20 s
+- **Kit médico** pequeno/médio/grande ($100/$180/$300): cura 25/50/100 (com a vida cheia não gasta)
+- **Granada de luz** ($350): arremessada; o clarão atordoa **todas** as criaturas a até 6 m por 12 s (o estrondo faz barulho)
+- **Bastão** ($250): golpe (até 2,2 m) que empurra a criatura e atordoa por 1,5 s; não gasta
+- Ferramentas aparecem **no chão do carro** e ocupam **espaço do inventário** (escolha: ferramenta × saque);
+  clique esquerdo usa a do espaço escolhido. Com você ou no carro no fim do contrato, voltam ao estoque; largadas na casa se perdem
+- Valem para todas as criaturas: Guardiã, Sombra, a figura do Possessor e A COISA (presa, dá para alcançar)
+- 💡 Ideias para depois: mochila +1 espaço, lanterna melhor, detector de relíquias
 
 ## ⬜ 0.12.0 — Novos locais assombrados (níveis 2–5)
 - Um mapa fixo por nível, cada vez maior e mais escuro

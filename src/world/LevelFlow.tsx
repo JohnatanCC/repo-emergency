@@ -7,6 +7,7 @@ import { playerFeet } from '../player/playerPos'
 import { isCarried, useItemStore } from '../items/itemStore'
 import { itemBodies } from '../items/bodies'
 import { audio } from '../game/audio/engine'
+import type { ToolId } from '../game/shop'
 
 /**
  * Transições de fase que dependem do tempo ou de onde o jogador está:
@@ -30,7 +31,17 @@ export function LevelFlow({ level, built }: { level: LevelData; built: BuiltLeve
     }
     if (!car) return
     const inCar = (x: number, z: number) => x > car.x0 && x < car.x1 && z > car.z0 && z < car.z1
-    if (g.phase === 'blackout' && inCar(playerFeet.x, playerFeet.z)) g.reachCar()
+    if (g.phase === 'blackout' && inCar(playerFeet.x, playerFeet.z)) {
+      // ferramentas com o jogador ou no carro voltam para o estoque; largadas na casa se perdem
+      const back = Object.values(useItemStore.getState().items).filter((it) => {
+        if (it.def.tag !== 'tool') return false
+        const p = it.place === 'world' ? itemBodies.get(it.uid)?.translation() : undefined
+        return isCarried(it) || (p && inCar(p.x, p.z))
+      })
+      g.returnEquipment(back.map((it) => it.def.id as ToolId))
+      back.forEach((it) => useItemStore.getState().discard(it.uid))
+      g.reachCar()
+    }
 
     // cabeças entregues no carro
     const items = useItemStore.getState()

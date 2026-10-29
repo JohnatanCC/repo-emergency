@@ -15,6 +15,8 @@ import { usePlayerStore } from '../../player/playerStore'
 import { useHidingStore } from '../../player/hidingStore'
 import { FLASHLIGHT } from '../../player/config'
 import type { NavGrid, P2 } from '../nav'
+import { applyStun, stunFields, stunStep } from '../stun'
+import { registerCreature } from '../../game/systems/creatures'
 import { newWalkState, walkCheckStuck, walkResume, walkSteer, walkStop, walkTo } from '../walker'
 import { SOMBRA } from './config'
 
@@ -60,6 +62,7 @@ export function Sombra({ nav, spawn }: { nav: NavGrid; spawn: P2 }) {
 
   const b = useRef({
     ...newWalkState(spawn),
+    ...stunFields(),
     state: 'wander' as State,
     timer: 0,
     repath: 0,
@@ -95,6 +98,13 @@ export function Sombra({ nav, spawn }: { nav: NavGrid; spawn: P2 }) {
   useEffect(() => {
     sound.current = audio.loop('hiss', { pos: [spawn.x, 1.5, spawn.z], volume: 0, ref: 2 })
     sombraDebug.active = true
+    const unregister = registerCreature({
+      id: `sombra-${spawn.x}-${spawn.z}`,
+      name: 'Sombra',
+      colliderHandle: () => collider.current?.handle,
+      pos: () => b.pos,
+      stun: (seconds, knock) => applyStun(b, seconds, knock),
+    })
     sombraDebug.tp = (x, z) => {
       body.current?.setTranslation({ x, y: HALF + R + 0.05, z }, true)
       b.pos = { x, z }
@@ -103,6 +113,7 @@ export function Sombra({ nav, spawn }: { nav: NavGrid; spawn: P2 }) {
     }
     return () => {
       sound.current?.stop()
+      unregister()
       sombraDebug.active = false
       sombraDebug.state = 'off'
       beam.onShadow = false
@@ -159,6 +170,7 @@ export function Sombra({ nav, spawn }: { nav: NavGrid; spawn: P2 }) {
     const p = body_.translation()
     b.pos.x = p.x
     b.pos.z = p.z
+    sombraDebug.pos = { x: p.x, z: p.z }
     if (!active) {
       beam.onShadow = false
       setDanger('sombra', 0)
@@ -184,6 +196,12 @@ export function Sombra({ nav, spawn }: { nav: NavGrid; spawn: P2 }) {
     const player: P2 = { x: playerFeet.x, z: playerFeet.z }
     const dPlayer = dist(b.pos, player)
     const hidden = !!useHidingStore.getState().spot
+
+    // atordoada (ferramentas): presa, não machuca
+    if (stunStep(b, body_, col, ctrl, dt)) {
+      sound.current?.setVolume(0)
+      return
+    }
 
     // encostou: dano alto e some (iluminada ou não)
     if (!hidden && dPlayer < SOMBRA.touch) {
@@ -272,7 +290,7 @@ export function Sombra({ nav, spawn }: { nav: NavGrid; spawn: P2 }) {
     if (!f) return
     const t = clock.elapsedTime
     f.position.x = b.lit ? Math.sin(t * 60) * 0.008 : 0
-    f.rotation.z = b.lit ? 0 : Math.sin(t * 1.7) * 0.04
+    f.rotation.z = b.stun > 0 ? Math.sin(t * 45) * 0.08 : b.lit ? 0 : Math.sin(t * 1.7) * 0.04
     eyes.color.set(b.lit ? '#ffffff' : '#8f8a80')
     if (label.current) label.current.textContent = `Sombra · ${b.state}${b.lit ? ' · NA LUZ' : ''}`
   })

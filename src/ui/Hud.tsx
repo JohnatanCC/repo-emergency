@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { VERSION, VERSION_NAME } from '../game/version'
 import { isPaused, payout, penalty, useGameStore, type DebugFlags } from '../game/stores/gameStore'
 import { EXTRACTION } from '../game/config'
+import { TOOLS } from '../game/shop'
 import { audio, SOUND_IDS } from '../game/audio/engine'
 import type { SoundId } from '../game/audio/sounds'
 import type { LevelData } from '../game/data/types'
@@ -66,6 +67,35 @@ function Banner() {
   return null
 }
 
+/** Loja do C.R.O.S entre contratos. As ferramentas aparecem no carro no próximo contrato. */
+function Shop() {
+  const money = useGameStore((s) => s.money)
+  const equipment = useGameStore((s) => s.equipment)
+  const buy = (id: (typeof TOOLS)[number]['id']) => {
+    if (useGameStore.getState().buy(id)) audio.play('click', { volume: 0.5 })
+  }
+  return (
+    <div className="hud-shop">
+      <h2>LOJA DO C.R.O.S</h2>
+      <div className="money">saldo ${money}</div>
+      {TOOLS.map((t, i) => (
+        <button key={t.id} className="tool" disabled={money < t.price} onClick={() => buy(t.id)}>
+          <kbd>{i + 1}</kbd>
+          <span className="name">
+            {t.name}
+            <small>{t.description}</small>
+          </span>
+          <span className="owned">{equipment[t.id] ? `×${equipment[t.id]}` : ''}</span>
+          <span className="price">${t.price}</span>
+        </button>
+      ))}
+      <small className="foot">
+        As ferramentas ficam no chão do carro e ocupam espaço no inventário. <kbd>Enter</kbd> começar contrato
+      </small>
+    </div>
+  )
+}
+
 /** Tela de pagamento ao voltar ao carro. */
 function Results() {
   const result = useGameStore((s) => s.result)
@@ -100,13 +130,26 @@ function Results() {
         </span>
       </div>
       <small>
-        <kbd>Enter</kbd> próximo contrato
+        <kbd>Enter</kbd> loja do C.R.O.S
       </small>
     </div>
   )
 }
 
 /** Dica da mira, logo abaixo dela. */
+/** Aviso rápido (ferramentas): some sozinho. */
+function Toast() {
+  const toast = usePlayerStore((s) => s.toast)
+  const [, tick] = useState(0)
+  useEffect(() => {
+    if (!toast) return
+    const id = setTimeout(() => tick((t) => t + 1), 1800)
+    return () => clearTimeout(id)
+  }, [toast])
+  if (!toast || performance.now() - toast.at > 1700) return null
+  return <div className="hud-toast">{toast.text}</div>
+}
+
 function AimHint() {
   const hint = usePlayerStore((s) => s.hint)
   if (!hint) return null
@@ -126,7 +169,7 @@ function SlotItem({ item }: { item: ItemInstance | undefined }) {
         {item.def.name}
         {isBroken(item) && ' (quebrado)'}
       </span>
-      <small>${item.value}</small>
+      <small>{item.def.tag === 'tool' ? 'clique' : `${item.value}`}</small>
     </>
   )
 }
@@ -250,9 +293,17 @@ export function Hud({ level }: { level: LevelData }) {
         useGameStore.getState().restart()
         usePlayerStore.getState().respawn()
       }
-      if (k === 'enter' && useGameStore.getState().phase === 'results') {
-        useGameStore.getState().nextContract()
+      const game = useGameStore.getState()
+      if (k === 'enter' && game.phase === 'results') {
+        // pagamento → loja (solta o mouse para clicar nos itens)
+        game.toShop()
+        if (document.pointerLockElement) document.exitPointerLock()
+      } else if (k === 'enter' && game.phase === 'shop') {
+        game.nextContract()
         usePlayerStore.getState().respawn()
+      } else if (game.phase === 'shop') {
+        const n = Number(e.key)
+        if (n >= 1 && n <= TOOLS.length && game.buy(TOOLS[n - 1].id)) audio.play('click', { volume: 0.5 })
       }
     }
     window.addEventListener('keydown', onKey)
@@ -276,12 +327,13 @@ export function Hud({ level }: { level: LevelData }) {
           <EnemyTimer delay={level.enemyDelay} />
         </div>
 
-        {!panel && (
+        {/* nas telas de pagamento e loja o painel de debug sai da frente */}
+        {!panel && !isPaused(phase) && (
           <div className="hud-sub">
             <kbd>H</kbd> mostrar painel
           </div>
         )}
-        {panel && (
+        {panel && !isPaused(phase) && (
           <div className="hud-panel">
             <h3>{cameraMode === 'player' ? 'Investigador' : 'Modo editor'}</h3>
             {cameraMode === 'player' ? (
@@ -322,6 +374,9 @@ export function Hud({ level }: { level: LevelData }) {
                   <span>
                     <kbd>Q</kbd> largar
                   </span>
+                </div>
+                <div className="row">
+                  <span>clique esquerdo: usar a ferramenta do espaço escolhido</span>
                 </div>
               </>
             ) : (
@@ -390,9 +445,11 @@ export function Hud({ level }: { level: LevelData }) {
 
       {playing && locked && <div className="hud-crosshair" />}
       {playing && locked && <AimHint />}
+      {playing && <Toast />}
       {playing && !locked && <div className="hud-center">clique para jogar</div>}
       <Banner />
       {phase === 'results' && <Results />}
+      {phase === 'shop' && <Shop />}
       {phase === 'gameover' && (
         <div className="hud-center gameover">
           FIM DE JOGO

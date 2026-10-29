@@ -18,6 +18,7 @@ import { Extractor } from './Extractor'
 import { LevelFlow } from './LevelFlow'
 import { NoiseRings } from './NoiseRings'
 import { HidingSpots } from './HidingSpots'
+import { Tools } from '../player/Tools'
 import { Enemies } from '../enemies/Enemies'
 import { AudioDirector } from '../game/audio/AudioDirector'
 
@@ -44,6 +45,7 @@ export function World({ level }: { level: LevelData }) {
       <Player level={level} built={built} />
       <Interaction />
       <ItemControls />
+      <Tools />
       {cameraMode === 'player' && <HeldItem />}
       {cameraMode === 'player' && <Flashlight built={built} />}
       <Enemies level={level} built={built} />

@@ -26,6 +26,8 @@ canvas.retro {
   position: absolute;
   inset: 0;
   pointer-events: none;
+  /* acima dos rótulos de debug do mapa (drei Html usa z-index altíssimo) */
+  z-index: 16777272;
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -206,6 +208,76 @@ canvas.retro {
   color: #a8433a;
 }
 
+/* Loja */
+.hud-shop {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(560px, calc(100vw - 32px));
+  padding: 16px 20px;
+  background: rgba(10, 8, 6, 0.92);
+  border: 1px solid #5a4a30;
+  font-size: 19px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: auto;
+}
+.hud-shop h2 {
+  font-weight: normal;
+  font-size: 30px;
+  letter-spacing: 2px;
+  color: #e8d7a8;
+}
+.hud-shop .money {
+  color: #9fd17a;
+  margin-bottom: 6px;
+}
+.hud-shop .tool {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  font-family: inherit;
+  font-size: 19px;
+  color: #d9c9a3;
+  background: #15100b;
+  border: 1px solid #3a3020;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+.hud-shop .tool:hover:not(:disabled) {
+  border-color: #c9b98f;
+}
+.hud-shop .tool:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.hud-shop .name {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.hud-shop .name small {
+  font-size: 15px;
+  color: #8a7a5a;
+}
+.hud-shop .owned {
+  color: #c9b98f;
+  min-width: 28px;
+}
+.hud-shop .price {
+  color: #9fd17a;
+  min-width: 52px;
+  text-align: right;
+}
+.hud-shop .foot {
+  margin-top: 6px;
+  color: #8a7a5a;
+  font-size: 16px;
+}
+
 /* Tela de pagamento */
 .hud-results {
   position: absolute;
@@ -264,6 +336,15 @@ canvas.retro {
 }
 .hud-hint.blocked {
   color: #a08a6a;
+}
+.hud-toast {
+  position: absolute;
+  left: 50%;
+  top: calc(50% + 44px);
+  transform: translateX(-50%);
+  font-size: 20px;
+  color: #e8c070;
+  white-space: nowrap;
 }
 .hud-center {
   position: absolute;

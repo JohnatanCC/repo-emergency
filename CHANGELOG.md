@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.11.0 — Loja do C.R.O.S · 2026-10-29
+
+### Adicionado
+- Loja entre contratos (`src/game/shop.ts`, tela no HUD): crucifixo, kits médicos pequeno/médio/grande, granada de luz e bastão.
+- Ferramentas compradas aparecem no chão do carro e ocupam espaço no inventário; clique esquerdo usa (`src/player/Tools.tsx`). As que voltam com o jogador ou ficam no carro retornam ao estoque.
+- Registro de criaturas e atordoamento comum (`src/game/systems/creatures.ts`, `src/enemies/stun.ts`): presas não andam, não atacam; o bastão também empurra.
+- Aviso rápido na tela para ações sem efeito ("nenhuma criatura na mira", "vida cheia").
+- Debug: `window.__relicario.useTool()`.
+
+### Alterado
+- Fluxo: pagamento → loja → contrato (o pagamento entra no saldo ao abrir a loja).
+- O HUD fica acima dos rótulos de debug do mapa; o painel de debug some nas telas de pagamento e loja.
+- Posição das entidades no debug é atualizada todo passo (inclusive atordoadas).
+
 ## 0.10.0 — A COISA · 2026-10-29
 
 ### Adicionado

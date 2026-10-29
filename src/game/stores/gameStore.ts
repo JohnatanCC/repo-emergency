@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { LIVES } from '../../player/config'
 import { POSSESSOR } from '../../enemies/possessor/config'
+import { toolInfo, type ToolId } from '../shop'
 
 /**
  * Fases de um nível:
@@ -55,6 +56,8 @@ interface GameState {
   deathSpots: [number, number, number][]
   /** Saldo acumulado entre contratos. */
   money: number
+  /** Ferramentas compradas que ainda não foram para o carro (estoque entre contratos). */
+  equipment: Partial<Record<ToolId, number>>
   /** Muda a cada partida nova: itens são sorteados de novo e as portas fecham. */
   matchId: number
   /** performance.now() de quando a 1ª porta abriu (timer das entidades); null = ainda fechada. */
@@ -81,7 +84,16 @@ interface GameState {
   /** Cabeça entregue no carro: devolve uma vida. */
   regainLife: () => void
   /** Recebe o pagamento e começa um contrato novo. */
+  /** Recebe o pagamento e vai para a loja. */
+  toShop: () => void
+  /** Compra uma ferramenta (se tiver saldo). */
+  buy: (id: ToolId) => boolean
+  /** Começa um contrato novo (saindo da loja). */
   nextContract: () => void
+  /** Leva o estoque para o carro (início do contrato). */
+  takeEquipment: () => ToolId[]
+  /** Ferramentas que voltaram com o jogador no fim do contrato. */
+  returnEquipment: (ids: ToolId[]) => void
   /** Recomeça o nível depois do fim de jogo. */
   restart: () => void
   toggleCameraMode: () => void
@@ -93,7 +105,7 @@ interface GameState {
 
 /** Fases em que o investigador não se mexe (telas por cima do jogo). */
 export function isPaused(phase: GamePhase) {
-  return phase === 'gameover' || phase === 'results'
+  return phase === 'gameover' || phase === 'results' || phase === 'shop'
 }
 
 /** Pagamento: o C.R.O.S paga as relíquias, o saque é vendido por fora. */
@@ -117,12 +129,13 @@ const freshMatch = (matchId: number) => ({
   matchId: matchId + 1,
 })
 
-export const useGameStore = create<GameState>((set) => ({
+export const useGameStore = create<GameState>((set, get) => ({
   levelIndex: 0,
   phase: 'car',
   lives: LIVES,
   deathSpots: [],
   money: 0,
+  equipment: {},
   matchId: 0,
   enemyTimerStart: null,
   extractor: { status: 'idle', chargeStart: null, inside: EMPTY },
@@ -148,7 +161,26 @@ export const useGameStore = create<GameState>((set) => ({
     })),
   reachCar: () => set((s) => (s.phase === 'blackout' ? { phase: 'results' } : s)),
   regainLife: () => set((s) => ({ lives: Math.min(LIVES, s.lives + 1) })),
-  nextContract: () => set((s) => ({ ...freshMatch(s.matchId), money: s.money + (s.result ? payout(s.result) : 0) })),
+  toShop: () => set((s) => (s.phase === 'results' ? { phase: 'shop', money: s.money + (s.result ? payout(s.result) : 0) } : s)),
+  buy: (id) => {
+    const s = get()
+    const price = toolInfo(id).price
+    if (s.money < price) return false
+    set({ money: s.money - price, equipment: { ...s.equipment, [id]: (s.equipment[id] ?? 0) + 1 } })
+    return true
+  },
+  nextContract: () => set((s) => freshMatch(s.matchId)),
+  takeEquipment: () => {
+    const ids = Object.entries(get().equipment).flatMap(([id, n]) => Array(n ?? 0).fill(id as ToolId))
+    set({ equipment: {} })
+    return ids
+  },
+  returnEquipment: (ids) =>
+    set((s) => {
+      const equipment = { ...s.equipment }
+      for (const id of ids) equipment[id] = (equipment[id] ?? 0) + 1
+      return { equipment }
+    }),
   restart: () => set((s) => freshMatch(s.matchId)),
   toggleCameraMode: () => set((s) => ({ cameraMode: s.cameraMode === 'player' ? 'editor' : 'player' })),
   toggleDebug: (key) => set((s) => ({ debug: { ...s.debug, [key]: !s.debug[key] } })),

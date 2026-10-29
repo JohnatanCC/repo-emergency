@@ -14,6 +14,8 @@ import { usePlayerStore } from '../../player/playerStore'
 import { useHidingStore } from '../../player/hidingStore'
 import { hasPossessor, isCarried, onPossessorFreed, useItemStore } from '../../items/itemStore'
 import type { NavGrid, P2 } from '../nav'
+import { applyStun, stunFields, stunStep } from '../stun'
+import { registerCreature } from '../../game/systems/creatures'
 import { newWalkState, walkCheckStuck, walkResume, walkSteer, walkTo } from '../walker'
 import { POSSESSOR } from './config'
 
@@ -79,6 +81,7 @@ function Ghost({ nav, spawn, onDone }: { nav: NavGrid; spawn: P2; onDone: () => 
   const { world } = useRapier()
   const b = useRef({
     ...newWalkState(spawn),
+    ...stunFields(),
     life: POSSESSOR.chaseTime,
     repath: 0,
     cooldown: 0.8,
@@ -106,7 +109,15 @@ function Ghost({ nav, spawn, onDone }: { nav: NavGrid; spawn: P2; onDone: () => 
     audio.play('shriek', { pos: [spawn.x, 1.2, spawn.z], volume: AUDIO.possessor, rate: 1.45 })
     sound.current = audio.loop('whisper', { pos: [spawn.x, 1.2, spawn.z], volume: AUDIO.possessor * 0.8, rate: 1.5, ref: 2 })
     possessorDebug.freed++
+    const unregister = registerCreature({
+      id: `possessor-${performance.now()}`,
+      name: 'Possessor',
+      colliderHandle: () => collider.current?.handle,
+      pos: () => b.pos,
+      stun: (seconds, knock) => applyStun(b, seconds, knock),
+    })
     return () => {
+      unregister()
       sound.current?.stop()
       possessorDebug.freed--
       possessorDebug.ghostState = 'off'
@@ -123,6 +134,7 @@ function Ghost({ nav, spawn, onDone }: { nav: NavGrid; spawn: P2; onDone: () => 
     const p = body_.translation()
     b.pos.x = p.x
     b.pos.z = p.z
+    possessorDebug.ghostPos = { x: p.x, z: p.z }
     if (isPaused(useGameStore.getState().phase)) return
 
     // acabou o tempo: some e volta para o objeto
@@ -135,6 +147,9 @@ function Ghost({ nav, spawn, onDone }: { nav: NavGrid; spawn: P2; onDone: () => 
       setDanger('possessor', 0)
       return
     }
+
+    // atordoada (ferramentas): presa; o tempo dela continua correndo
+    if (stunStep(b, body_, col, ctrl, dt)) return
 
     const player: P2 = { x: playerFeet.x, z: playerFeet.z }
     const dPlayer = dist(b.pos, player)
@@ -183,6 +198,8 @@ function Ghost({ nav, spawn, onDone }: { nav: NavGrid; spawn: P2; onDone: () => 
     mat.opacity = (0.25 + 0.25 * Math.abs(Math.sin(t * 9) * Math.sin(t * 2.3))) * fade
     f.position.set((Math.random() - 0.5) * 0.04, POSSESSOR.hover + Math.sin(t * 2) * 0.06, (Math.random() - 0.5) * 0.04)
     f.scale.setScalar(0.6 + 0.4 * fade)
+    if (b.stun > 0) f.rotation.z = Math.sin(t * 45) * 0.1
+    else f.rotation.z = 0
   })
 
   const footY = -(HALF + R)

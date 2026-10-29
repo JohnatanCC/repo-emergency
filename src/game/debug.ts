@@ -53,6 +53,8 @@ export const debugApi = {
     window.dispatchEvent(new KeyboardEvent('keyup', { code, key }))
   },
   pos: (): [number, number, number] => [0, 0, 0],
+  /** Usa a ferramenta do espaço escolhido (o mesmo que o clique esquerdo). */
+  useTool: () => {},
   /** O que a mira acertou no último frame (distância e se é interagível). */
   aim: (): { dist: number; interactable: boolean } | null => null,
   look: (_yawDeg: number, _pitchDeg = 0) => {},

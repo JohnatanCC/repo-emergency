@@ -19,6 +19,8 @@ import { onHide, useHidingStore } from '../../player/hidingStore'
 import { isCarried, onFirstTaken, useItemStore } from '../../items/itemStore'
 import { leaveWardrobe, wardrobes } from '../../world/HidingSpots'
 import type { NavGrid, P2 } from '../nav'
+import { applyStun, stunFields, stunStep } from '../stun'
+import { registerCreature } from '../../game/systems/creatures'
 import { newWalkState, walkCheckStuck, walkResume, walkSteer, walkStop, walkTo } from '../walker'
 import { GUARDIA } from './config'
 
@@ -87,6 +89,7 @@ export function Guardia({
   const b = useRef({
     // caminho, destino e destravamento (walker.ts)
     ...newWalkState(spawn),
+    ...stunFields(),
     state: 'patrol' as State,
     timer: 0,
     now: 0,
@@ -158,6 +161,13 @@ export function Guardia({
     const s = sounds.current
     s.whisper = audio.loop('whisper', { pos: [spawn.x, HEAD_Y, spawn.z], volume: AUDIO.guardia * 0.55, ref: 2.5 })
     guardiaDebug.active = true
+    const unregister = registerCreature({
+      id: `guardia-${spawn.x}-${spawn.z}`,
+      name: 'Guardiã',
+      colliderHandle: () => collider.current?.handle,
+      pos: () => b.pos,
+      stun: (seconds, knock) => applyStun(b, seconds, knock),
+    })
     guardiaDebug.tp = (x, z) => {
       body.current?.setTranslation({ x, y: HALF + R + 0.05, z }, true)
       b.pos = { x, z }
@@ -169,6 +179,7 @@ export function Guardia({
     if (hunting) investigate({ ...playerFeet })
     return () => {
       s.whisper?.stop()
+      unregister()
       guardiaDebug.active = false
       guardiaDebug.state = 'off'
       setDanger('guardia', 0)
@@ -275,12 +286,19 @@ export function Guardia({
     const p = body_.translation()
     b.pos.x = p.x
     b.pos.z = p.z
+    guardiaDebug.pos = { x: p.x, z: p.z }
     if (!active) {
       setDanger('guardia', 0)
       return
     }
     b.now += dt
     b.cooldown -= dt
+
+    // atordoada (ferramentas): presa no lugar
+    if (stunStep(b, body_, col, ctrl, dt)) {
+      setDanger('guardia', 0.2)
+      return
+    }
 
     // ---- sentidos
     if ((b.sightTimer -= dt) <= 0) {
@@ -445,7 +463,7 @@ export function Guardia({
     const f = figure.current
     if (f) {
       f.position.y = Math.sin(t * 1.3) * 0.02
-      f.rotation.z = Math.sin(t * 0.7) * 0.03
+      f.rotation.z = b.stun > 0 ? Math.sin(t * 45) * 0.08 : Math.sin(t * 0.7) * 0.03
     }
     eyes.color.set(b.state === 'chase' ? '#ff3020' : b.state === 'investigate' ? '#a05030' : '#3a2a20')
     if (label.current) label.current.textContent = `Guardiã · ${b.state}${b.seeing ? ' · VENDO' : ''}`

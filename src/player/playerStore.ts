@@ -21,6 +21,8 @@ interface PlayerState {
   flashlight: boolean
   /** Bateria da lanterna (0–100). */
   battery: number
+  /** Aviso rápido na tela (ex.: "nenhuma criatura na mira"). */
+  toast: { text: string; at: number } | null
   damage: (amount: number) => void
   setStamina: (stamina: number, exhausted: boolean) => void
   setCrouching: (crouching: boolean) => void
@@ -28,6 +30,7 @@ interface PlayerState {
   setHint: (hint: Hint | null) => void
   toggleFlashlight: () => void
   setBattery: (battery: number) => void
+  showToast: (text: string) => void
   addBattery: (amount: number) => void
   respawn: () => void
 }
@@ -42,6 +45,7 @@ export const usePlayerStore = create<PlayerState>((set) => ({
   hint: null,
   flashlight: true,
   battery: 100,
+  toast: null,
   damage: (amount) => set((s) => ({ health: Math.max(0, Math.min(PLAYER.maxHealth, s.health - amount)) })),
   setStamina: (stamina, exhausted) => set({ stamina, exhausted }),
   setCrouching: (crouching) => set({ crouching }),
@@ -49,6 +53,7 @@ export const usePlayerStore = create<PlayerState>((set) => ({
   setHint: (hint) => set({ hint }),
   toggleFlashlight: () => set((s) => ({ flashlight: !s.flashlight })),
   setBattery: (battery) => set({ battery }),
+  showToast: (text) => set({ toast: { text, at: performance.now() } }),
   addBattery: (amount) => set((s) => ({ battery: Math.min(100, s.battery + amount) })),
   respawn: () =>
     set((s) => ({

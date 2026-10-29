@@ -8,7 +8,7 @@ Dá para roubar objetos da casa para vender, mas o inventário só tem 3 espaço
 Tudo vai para o **extrator mágico** (sala roxa): largue os itens lá dentro e, quando a meta de relíquias for cumprida, ele leva tudo de uma vez.
 Aí as luzes apagam e é voltar vivo para o carro para receber o pagamento.
 
-Versão atual: **0.10.0 — A COISA** · próximas etapas em [`ROADMAP.md`](./ROADMAP.md)
+Versão atual: **0.11.0 — Loja do C.R.O.S** · próximas etapas em [`ROADMAP.md`](./ROADMAP.md)
 
 ## Rodando
 
@@ -33,6 +33,8 @@ Clique na tela para travar o mouse (`Esc` solta).
 | `E` (mirando um armário) · `E` de novo | esconder no armário · sair |
 | `E` (mirando um item) | pegar: pequeno vai para o inventário, médio/grande para as mãos |
 | `1` `2` `3` · `Q` | escolher espaço do inventário · largar (mãos primeiro) |
+| clique esquerdo | usar a ferramenta do espaço escolhido (crucifixo, kit, granada, bastão) |
+| `Enter` (pagamento / loja) | ir para a loja · começar o próximo contrato |
 
 ### Debug
 

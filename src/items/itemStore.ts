@@ -2,6 +2,8 @@ import { create } from 'zustand'
 import type { LevelData } from '../game/data/types'
 import type { BuiltLevel } from '../world/buildLevel'
 import { CARRY, ITEMS, SUPPLIES, SUPPLY_SPAWNS, type ItemDef } from './catalog'
+import { useGameStore } from '../game/stores/gameStore'
+import { toolInfo } from '../game/shop'
 
 type Vec3 = [number, number, number]
 
@@ -171,6 +173,33 @@ export const useItemStore = create<ItemState>((set, get) => {
           freed: false,
           revealed: false,
         }
+      }
+      // ferramentas compradas na loja: no chão do carro, enfileiradas
+      const car = level.rooms.find((r) => r.kind === 'car')
+      if (car) {
+        const stamp = performance.now().toFixed(0)
+        useGameStore
+          .getState()
+          .takeEquipment()
+          .forEach((id, i) => {
+            const [x, , z] = built.toWorld(car.x + car.w * 0.35 + (i % 4) * 5, car.y + car.h * 0.3 + Math.floor(i / 4) * 6)
+            const def = toolInfo(id).def
+            const uid = `tool-${id}-${i}-${stamp}`
+            items[uid] = {
+              uid,
+              def,
+              value: 0,
+              place: 'world',
+              spawn: { pos: [x, 0.4, z], yaw: Math.random() * Math.PI, vel: [0, 0, 0] },
+              version: 0,
+              graceUntil: performance.now() + CARRY.spawnGrace,
+              origin: [x, 0, z],
+              taken: false,
+              possessed: false,
+              freed: false,
+              revealed: false,
+            }
+          })
       }
       // o Possessor entra num saque qualquer
       const cursed = shuffle(Object.values(items).filter((it) => it.def.tag === 'loot'))[0]

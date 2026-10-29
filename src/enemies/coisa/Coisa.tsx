@@ -12,6 +12,8 @@ import { playerFeet } from '../../player/playerPos'
 import { useItemStore } from '../../items/itemStore'
 import { HEAD } from '../../items/catalog'
 import type { NavGrid, P2 } from '../nav'
+import { applyStun, stunFields, stunStep } from '../stun'
+import { registerCreature } from '../../game/systems/creatures'
 import { newWalkState, walkCheckStuck, walkResume, walkSteer, walkStop, walkTo } from '../walker'
 import { COISA } from './config'
 
@@ -39,6 +41,7 @@ function Coisa({ id, nav, spawn, onCaught }: { id: string; nav: NavGrid; spawn: 
   const gizmos = useGameStore((s) => s.debug.gizmos)
   const b = useRef({
     ...newWalkState(spawn),
+    ...stunFields(),
     state: 'idle' as 'wander' | 'idle' | 'flee',
     timer: 1,
     repath: 0,
@@ -67,7 +70,15 @@ function Coisa({ id, nav, spawn, onCaught }: { id: string; nav: NavGrid; spawn: 
 
   useEffect(() => {
     coisaDebug.list.push({ id, state: 'wander', x: spawn.x, z: spawn.z })
+    const unregister = registerCreature({
+      id: `coisa-${id}`,
+      name: 'A COISA',
+      colliderHandle: () => collider.current?.handle,
+      pos: () => b.pos,
+      stun: (seconds, knock) => applyStun(b, seconds, knock),
+    })
     return () => {
+      unregister()
       coisaDebug.list = coisaDebug.list.filter((c) => c.id !== id)
     }
   }, [id])
@@ -114,6 +125,8 @@ function Coisa({ id, nav, spawn, onCaught }: { id: string; nav: NavGrid; spawn: 
       onCaught({ x: p.x, z: p.z })
       return
     }
+    // atordoada (ferramentas): presa — dá para alcançá-la
+    if (stunStep(b, body_, col, ctrl, dt)) return
 
     walkResume(b, nav)
     if (dPlayer < COISA.fleeRadius) {
@@ -183,6 +196,7 @@ function Coisa({ id, nav, spawn, onCaught }: { id: string; nav: NavGrid; spawn: 
     smoke.opacity = 0.8 + 0.12 * Math.sin(t * 7)
     f.rotation.x = 0.35 + Math.sin(t * 3) * 0.05
     f.position.y = Math.abs(Math.sin(t * (b.state === 'flee' ? 14 : 4))) * 0.04
+    f.rotation.z = b.stun > 0 ? Math.sin(t * 45) * 0.1 : 0
     if (label.current) label.current.textContent = `A COISA · ${b.state}`
   })
 

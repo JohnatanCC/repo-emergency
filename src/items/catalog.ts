@@ -15,7 +15,7 @@ export interface ItemDef {
   id: string
   name: string
   /** relic / loot vêm do sorteio; supply = suprimento que é usado ao pegar (não vai para o inventário). */
-  tag: ItemTag | 'supply' | 'head'
+  tag: ItemTag | 'supply' | 'head' | 'tool'
   size: ItemSize
   /** Valor inteiro, em dinheiro. */
   value: number
