@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { Physics } from '@react-three/rapier'
 import type { LevelData } from '../game/data/types'
 import { useGameStore } from '../game/stores/gameStore'
+import { usePlayerStore } from '../player/playerStore'
 import { Player } from '../player/Player'
 import { Interaction } from '../player/Interaction'
 import { Flashlight } from '../player/Flashlight'
@@ -28,10 +29,12 @@ export function World({ level }: { level: LevelData }) {
   const gizmos = useGameStore((s) => s.debug.gizmos)
   const cameraMode = useGameStore((s) => s.cameraMode)
   const matchId = useGameStore((s) => s.matchId)
+  // mouse solto no meio da partida = pausa (o menu de pausa fica no HUD)
+  const paused = usePlayerStore((s) => !s.locked) && cameraMode === 'player'
 
   return (
     // "vary": um passo de física por frame, para a câmera do player não tremer em telas de 120/144 Hz
-    <Physics gravity={[0, -9.81, 0]} timeStep="vary">
+    <Physics gravity={[0, -9.81, 0]} timeStep="vary" paused={paused}>
       <Level built={built} wallHeight={level.wallHeight} />
       <Props level={level} built={built} />
       {/* partida nova: portas voltam fechadas */}

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { CapsuleCollider, RigidBody, useBeforePhysicsStep, useRapier, type RapierCollider, type RapierRigidBody } from '@react-three/rapier'
 import type { KinematicCharacterController } from '@dimforge/rapier3d-compat'
@@ -18,6 +18,8 @@ import { applyStun, stunFields, stunStep } from '../stun'
 import { registerCreature } from '../../game/systems/creatures'
 import { newWalkState, walkCheckStuck, walkResume, walkSteer, walkTo } from '../walker'
 import { POSSESSOR } from './config'
+import { PossessorModel } from '../models/PossessorModel'
+import { newPose } from '../models/pose'
 
 /**
  * O Possessor mora num objeto de saque (sorteado em itemStore.roll).
@@ -77,7 +79,7 @@ function Ghost({ nav, spawn, onDone }: { nav: NavGrid; spawn: P2; onDone: () => 
   const body = useRef<RapierRigidBody>(null)
   const collider = useRef<RapierCollider>(null)
   const controller = useRef<KinematicCharacterController>()
-  const figure = useRef<THREE.Group>(null)
+  const pose = useRef(newPose()).current
   const { world } = useRapier()
   const b = useRef({
     ...newWalkState(spawn),
@@ -139,6 +141,7 @@ function Ghost({ nav, spawn, onDone }: { nav: NavGrid; spawn: P2; onDone: () => 
 
     // acabou o tempo: some e volta para o objeto
     if (b.fading > 0) {
+      pose.fade = Math.max(0, b.fading / 0.8)
       if ((b.fading -= dt) <= 0) onDone()
       return
     }
@@ -149,6 +152,7 @@ function Ghost({ nav, spawn, onDone }: { nav: NavGrid; spawn: P2; onDone: () => 
     }
 
     // atordoada (ferramentas): presa; o tempo dela continua correndo
+    pose.stunned = b.stun > 0
     if (stunStep(b, body_, col, ctrl, dt)) return
 
     const player: P2 = { x: playerFeet.x, z: playerFeet.z }
@@ -186,51 +190,12 @@ function Ghost({ nav, spawn, onDone }: { nav: NavGrid; spawn: P2; onDone: () => 
     possessorDebug.ghostPos = { x: p.x, z: p.z }
   })
 
-  const mat = useMemo(() => new THREE.MeshBasicMaterial({ color: '#cfe6da', transparent: true, opacity: 0.4, depthWrite: false }), [])
-  const holes = useMemo(() => new THREE.MeshBasicMaterial({ color: '#000000' }), [])
-
-  // tremula, treme e some no fim
-  useFrame(({ clock }) => {
-    const f = figure.current
-    if (!f) return
-    const t = clock.elapsedTime
-    const fade = b.fading > 0 ? b.fading / 0.8 : 1
-    mat.opacity = (0.25 + 0.25 * Math.abs(Math.sin(t * 9) * Math.sin(t * 2.3))) * fade
-    f.position.set((Math.random() - 0.5) * 0.04, POSSESSOR.hover + Math.sin(t * 2) * 0.06, (Math.random() - 0.5) * 0.04)
-    f.scale.setScalar(0.6 + 0.4 * fade)
-    if (b.stun > 0) f.rotation.z = Math.sin(t * 45) * 0.1
-    else f.rotation.z = 0
-  })
-
   const footY = -(HALF + R)
   return (
     <RigidBody ref={body} type="kinematicPosition" colliders={false} position={[spawn.x, HALF + R + 0.05, spawn.z]}>
       <CapsuleCollider ref={collider} args={[HALF, R]} collisionGroups={ENEMY_GROUPS} />
-      <group ref={figure}>
-        {/* corpo translúcido que afina até sumir embaixo (flutua) */}
-        <mesh position={[0, footY + 0.85, 0]} material={mat}>
-          <coneGeometry args={[0.32, 1.3, 10, 1, true]} />
-        </mesh>
-        <group position={[0, footY + 1.55, 0]}>
-          <mesh material={mat} scale={[0.9, 1.2, 0.9]}>
-            <sphereGeometry args={[0.15, 12, 10]} />
-          </mesh>
-          {/* olhos e boca: buracos escuros */}
-          {[-1, 1].map((side) => (
-            <mesh key={side} position={[side * 0.05, 0.04, 0.125]} material={holes}>
-              <sphereGeometry args={[0.025, 6, 4]} />
-            </mesh>
-          ))}
-          <mesh position={[0, -0.07, 0.12]} scale={[1, 1.8, 0.6]} material={holes}>
-            <sphereGeometry args={[0.025, 6, 4]} />
-          </mesh>
-        </group>
-        {/* braços compridos estendidos para a frente */}
-        {[-1, 1].map((side) => (
-          <mesh key={side} position={[side * 0.22, footY + 1.25, 0.3]} rotation={[1.2, 0, 0]} material={mat}>
-            <cylinderGeometry args={[0.03, 0.015, 0.75, 5]} />
-          </mesh>
-        ))}
+      <group position={[0, footY + POSSESSOR.hover, 0]}>
+        <PossessorModel pose={pose} />
       </group>
     </RigidBody>
   )

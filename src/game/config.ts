@@ -23,3 +23,12 @@ export const LIGHTING = {
   /** Multiplicador das lâmpadas (1 = valores originais de RoomLights). */
   lampScale: 0.62,
 }
+
+/** Filtro retrô (RetroEffects). */
+export const RETRO_FX = {
+  /** Deslocamento do vermelho/azul, como fita VHS gasta. */
+  chroma: 0.0012,
+  /** Linhas de varredura: densidade e força. */
+  scanDensity: 1.4,
+  scanOpacity: 0.18,
+}

@@ -65,12 +65,14 @@ class AudioEngine {
   private buffers = new Map<SoundId, AudioBuffer[]>()
   private loading = new Set<SoundId>()
   muted = false
+  /** Volume do jogador (configurações), 0–1. */
+  private volume = 1
 
   private context() {
     if (!this.ctx) {
       this.ctx = new AudioContext()
       this.master = this.ctx.createGain()
-      this.master.gain.value = AUDIO.master
+      this.master.gain.value = this.level()
       this.master.connect(this.ctx.destination)
       const resume = () => void this.ctx?.resume()
       window.addEventListener('pointerdown', resume)
@@ -201,11 +203,21 @@ class AudioEngine {
     }
   }
 
+  private level() {
+    return this.muted ? 0 : AUDIO.master * this.volume
+  }
+
   toggleMute() {
     this.muted = !this.muted
     const { ctx, master } = this.context()
-    master.gain.setTargetAtTime(this.muted ? 0 : AUDIO.master, ctx.currentTime, 0.05)
+    master.gain.setTargetAtTime(this.level(), ctx.currentTime, 0.05)
     return this.muted
+  }
+
+  setVolume(v: number) {
+    this.volume = v
+    // ainda sem contexto: vale quando ele for criado
+    if (this.ctx && this.master) this.master.gain.setTargetAtTime(this.level(), this.ctx.currentTime, 0.05)
   }
 
   /** O navegador já liberou o áudio? */

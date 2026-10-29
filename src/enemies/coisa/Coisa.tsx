@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Html } from '@react-three/drei'
 import { CapsuleCollider, RigidBody, useBeforePhysicsStep, useRapier, type RapierCollider, type RapierRigidBody } from '@react-three/rapier'
@@ -16,6 +16,8 @@ import { applyStun, stunFields, stunStep } from '../stun'
 import { registerCreature } from '../../game/systems/creatures'
 import { newWalkState, walkCheckStuck, walkResume, walkSteer, walkStop, walkTo } from '../walker'
 import { COISA } from './config'
+import { CoisaModel } from '../models/CoisaModel'
+import { newPose } from '../models/pose'
 
 /**
  * A COISA. Surge onde o investigador morreu, segurando a cabeça dele. É
@@ -35,7 +37,7 @@ function Coisa({ id, nav, spawn, onCaught }: { id: string; nav: NavGrid; spawn: 
   const body = useRef<RapierRigidBody>(null)
   const collider = useRef<RapierCollider>(null)
   const controller = useRef<KinematicCharacterController>()
-  const figure = useRef<THREE.Group>(null)
+  const pose = useRef(newPose()).current
   const label = useRef<HTMLDivElement>(null)
   const { world } = useRapier()
   const gizmos = useGameStore((s) => s.debug.gizmos)
@@ -126,7 +128,11 @@ function Coisa({ id, nav, spawn, onCaught }: { id: string; nav: NavGrid; spawn: 
       return
     }
     // atordoada (ferramentas): presa — dá para alcançá-la
-    if (stunStep(b, body_, col, ctrl, dt)) return
+    pose.stunned = b.stun > 0
+    if (stunStep(b, body_, col, ctrl, dt)) {
+      pose.moving = 0
+      return
+    }
 
     walkResume(b, nav)
     if (dPlayer < COISA.fleeRadius) {
@@ -161,6 +167,7 @@ function Coisa({ id, nav, spawn, onCaught }: { id: string; nav: NavGrid; spawn: 
           ? COISA.speedWander
           : 0
     const { mx, mz } = walkSteer(b, speed, dt)
+    pose.moving = mx || mz ? speed / COISA.speedWander : 0
 
     const look = b.state === 'flee' ? Math.atan2(mx, mz) || b.yaw : Math.atan2(player.x - b.pos.x, player.z - b.pos.z)
     b.yaw += Math.atan2(Math.sin(look - b.yaw), Math.cos(look - b.yaw)) * Math.min(1, 8 * dt)
@@ -183,20 +190,8 @@ function Coisa({ id, nav, spawn, onCaught }: { id: string; nav: NavGrid; spawn: 
     if (entry) Object.assign(entry, { state: b.state, x: p.x, z: p.z })
   })
 
-  // espírito negro: não reflete luz (nem a lanterna), levemente translúcido como fumaça
-  const smoke = useMemo(() => new THREE.MeshBasicMaterial({ color: '#000000', transparent: true, opacity: 0.9 }), [])
-  const skin = useMemo(() => new THREE.MeshStandardMaterial({ color: HEAD.color, roughness: 0.9 }), [])
-  const hair = useMemo(() => new THREE.MeshStandardMaterial({ color: '#2a1c12', roughness: 1 }), [])
-
-  // corpo enfumaçado oscilando
-  useFrame(({ clock }) => {
-    const f = figure.current
-    if (!f) return
-    const t = clock.elapsedTime
-    smoke.opacity = 0.8 + 0.12 * Math.sin(t * 7)
-    f.rotation.x = 0.35 + Math.sin(t * 3) * 0.05
-    f.position.y = Math.abs(Math.sin(t * (b.state === 'flee' ? 14 : 4))) * 0.04
-    f.rotation.z = b.stun > 0 ? Math.sin(t * 45) * 0.1 : 0
+  // debug: rótulo
+  useFrame(() => {
     if (label.current) label.current.textContent = `A COISA · ${b.state}`
   })
 
@@ -204,34 +199,8 @@ function Coisa({ id, nav, spawn, onCaught }: { id: string; nav: NavGrid; spawn: 
   return (
     <RigidBody ref={body} type="kinematicPosition" colliders={false} position={[spawn.x, HALF + R + 0.05, spawn.z]}>
       <CapsuleCollider ref={collider} args={[HALF, R]} collisionGroups={ENEMY_GROUPS} />
-      {/* curvada para a frente, segurando a cabeça junto ao peito */}
-      <group ref={figure}>
-        <group position={[0, footY, 0]}>
-          <mesh position={[0, 0.5, 0]} material={smoke} castShadow>
-            <coneGeometry args={[0.32, 1, 9, 1, true]} />
-          </mesh>
-          <mesh position={[0, 0.95, 0.06]} material={smoke} castShadow>
-            <sphereGeometry args={[0.22, 10, 8]} />
-          </mesh>
-          <mesh position={[0, 1.18, 0.14]} material={smoke}>
-            <sphereGeometry args={[0.12, 8, 6]} />
-          </mesh>
-          {/* braços em volta da cabeça */}
-          {[-1, 1].map((side) => (
-            <mesh key={side} position={[side * 0.16, 0.85, 0.22]} rotation={[1.3, 0, side * -0.5]} material={smoke}>
-              <cylinderGeometry args={[0.035, 0.025, 0.4, 5]} />
-            </mesh>
-          ))}
-          {/* a cabeça do investigador */}
-          <group position={[0, 0.82, 0.3]} rotation={[0.3, 0.4, 0.2]}>
-            <mesh material={skin} castShadow>
-              <sphereGeometry args={[HEAD.dims[0], 12, 10]} />
-            </mesh>
-            <mesh position={[0, 0.03, -0.02]} scale={[1.08, 1.05, 1.08]} material={hair}>
-              <sphereGeometry args={[HEAD.dims[0], 12, 10, 0, Math.PI * 2, 0, Math.PI * 0.55]} />
-            </mesh>
-          </group>
-        </group>
+      <group position={[0, footY, 0]}>
+        <CoisaModel pose={pose} />
       </group>
       {gizmos && (
         <Html position={[0, HALF + R + 0.3, 0]} center distanceFactor={14} style={{ pointerEvents: 'none' }}>

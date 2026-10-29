@@ -20,6 +20,7 @@ import { FLOOR_NOISE } from './config'
 import { emitNoise } from '../game/systems/noise'
 import { audio } from '../game/audio/engine'
 import { AUDIO } from '../game/audio/sounds'
+import { useSettingsStore } from '../game/stores/settingsStore'
 
 /**
  * Investigador em primeira pessoa: cápsula cinemática movida pelo controlador
@@ -71,6 +72,7 @@ export function Player({ level, built }: { level: LevelData; built: BuiltLevel }
   const { world, rapier } = useRapier()
   const camera = useThree((s) => s.camera)
   const keys = useKeys()
+  const sensitivity = useSettingsStore((s) => s.sensitivity)
   const cameraMode = useGameStore((s) => s.cameraMode)
   const respawnId = usePlayerStore((s) => s.respawnId)
 
@@ -366,7 +368,12 @@ export function Player({ level, built }: { level: LevelData; built: BuiltLevel }
         <CapsuleCollider ref={collider} args={[STAND_HALF, R]} collisionGroups={PLAYER_GROUPS} />
       </RigidBody>
       {cameraMode === 'player' && (
-        <PointerLockControls selector="canvas" onLock={() => setLocked(true)} onUnlock={() => setLocked(false)} />
+        <PointerLockControls
+          selector="canvas"
+          pointerSpeed={sensitivity}
+          onLock={() => setLocked(true)}
+          onUnlock={() => setLocked(false)}
+        />
       )}
     </>
   )

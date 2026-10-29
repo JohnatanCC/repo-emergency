@@ -40,6 +40,9 @@ Conceito, mecânicas e ordem das versões: `ROADMAP.md`. Histórico: `CHANGELOG.
     `allCreatures()` em `src/game/systems/creatures.ts` dá `pos()` e `stun()` de cada criatura
   - Para testar a IA, rode testes longos (minutos) **sem** barulhos artificiais: barulhos dão destinos novos e
     escondem travamentos. A ferramenta corta scripts com mais de 45 s: rode em segundo plano e leia depois.
+  - `play()` também passa da tela de título. Marcadores (`G`) e painel (`H`) começam desligados.
+  - modelos das criaturas: `/?galeria`. A captura de tela do painel pode vir preta ou atrasada no WebGL;
+    copie o quadro para um `<img>` (`canvas.toDataURL()`, a galeria usa `preserveDrawingBuffer`) e capture a imagem.
   - forçar a fase: `game.getState().setPhase('hunted')` faz as entidades aparecerem
   - `game` / `player` / `items` / `hiding` são os stores Zustand (ex.: `items.getState().pickUp(uid)`)
 - Se o Vite servir um módulo vazio depois de várias edições seguidas (erro "does not provide an export"),

@@ -147,7 +147,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   extractor: { status: 'idle', chargeStart: null, inside: EMPTY },
   result: null,
   cameraMode: 'player',
-  debug: { gizmos: true, fullbright: false, retro: true, fog: true },
+  debug: { gizmos: false, fullbright: false, retro: true, fog: true },
   setPhase: (phase) => set({ phase }),
   startEnemyTimer: () =>
     set((s) => (s.enemyTimerStart !== null ? s : { enemyTimerStart: performance.now(), phase: s.phase === 'car' ? 'exploring' : s.phase })),

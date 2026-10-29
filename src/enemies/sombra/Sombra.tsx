@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { Html } from '@react-three/drei'
 import { CapsuleCollider, RigidBody, useBeforePhysicsStep, useRapier, type RapierCollider, type RapierRigidBody } from '@react-three/rapier'
@@ -19,6 +19,8 @@ import { applyStun, stunFields, stunStep } from '../stun'
 import { registerCreature } from '../../game/systems/creatures'
 import { newWalkState, walkCheckStuck, walkResume, walkSteer, walkStop, walkTo } from '../walker'
 import { SOMBRA } from './config'
+import { SombraModel } from '../models/SombraModel'
+import { newPose } from '../models/pose'
 
 /**
  * A Sombra. Vive nas salas escuras (no apagão, a casa inteira) e só se move
@@ -55,6 +57,7 @@ export function Sombra({ nav, spawn }: { nav: NavGrid; spawn: P2 }) {
   const collider = useRef<RapierCollider>(null)
   const controller = useRef<KinematicCharacterController>()
   const figure = useRef<THREE.Group>(null)
+  const pose = useRef(newPose()).current
   const label = useRef<HTMLDivElement>(null)
   const { world, rapier } = useRapier()
   const camera = useThree((s) => s.camera)
@@ -197,8 +200,11 @@ export function Sombra({ nav, spawn }: { nav: NavGrid; spawn: P2 }) {
     const dPlayer = dist(b.pos, player)
     const hidden = !!useHidingStore.getState().spot
 
+    pose.lit = b.lit
+    pose.stunned = b.stun > 0
     // atordoada (ferramentas): presa, não machuca
     if (stunStep(b, body_, col, ctrl, dt)) {
+      pose.moving = 0
       sound.current?.setVolume(0)
       return
     }
@@ -243,6 +249,7 @@ export function Sombra({ nav, spawn }: { nav: NavGrid; spawn: P2 }) {
     const speed = b.lit ? 0 : base
     const { mx, mz } = walkSteer(b, speed, dt)
     b.moving = mx !== 0 || mz !== 0
+    pose.moving = b.moving ? speed / SOMBRA.speedWander : 0
 
     const look =
       b.state === 'hunt' || b.state === 'lurk' || b.lit
@@ -281,17 +288,8 @@ export function Sombra({ nav, spawn }: { nav: NavGrid; spawn: P2 }) {
     sombraDebug.path = b.path
   })
 
-  const black = useMemo(() => new THREE.MeshBasicMaterial({ color: '#000000' }), [])
-  const eyes = useMemo(() => new THREE.MeshBasicMaterial({ color: '#8f8a80' }), [])
-
-  // iluminada: olhos acendem e o corpo treme parado
-  useFrame(({ clock }) => {
-    const f = figure.current
-    if (!f) return
-    const t = clock.elapsedTime
-    f.position.x = b.lit ? Math.sin(t * 60) * 0.008 : 0
-    f.rotation.z = b.stun > 0 ? Math.sin(t * 45) * 0.08 : b.lit ? 0 : Math.sin(t * 1.7) * 0.04
-    eyes.color.set(b.lit ? '#ffffff' : '#8f8a80')
+  // debug: rótulo
+  useFrame(() => {
     if (label.current) label.current.textContent = `Sombra · ${b.state}${b.lit ? ' · NA LUZ' : ''}`
   })
 
@@ -299,29 +297,8 @@ export function Sombra({ nav, spawn }: { nav: NavGrid; spawn: P2 }) {
   return (
     <RigidBody ref={body} type="kinematicPosition" colliders={false} position={[spawn.x, HALF + R + 0.05, spawn.z]}>
       <CapsuleCollider ref={collider} args={[HALF, R]} collisionGroups={ENEMY_GROUPS} />
-      <group ref={figure}>
-        {/* corpo: preto puro (não reflete luz nem no feixe), magro e alongado */}
-        <mesh position={[0, footY + 0.75, 0]} material={black}>
-          <cylinderGeometry args={[0.16, 0.07, 1.5, 8]} />
-        </mesh>
-        <mesh position={[0, footY + 1.5, 0]} material={black}>
-          <cylinderGeometry args={[0.2, 0.15, 0.45, 8]} />
-        </mesh>
-        {[-1, 1].map((side) => (
-          <mesh key={side} position={[side * 0.25, footY + 1.15, 0.05]} rotation={[0.15, 0, side * 0.12]} material={black}>
-            <cylinderGeometry args={[0.035, 0.015, 1.05, 5]} />
-          </mesh>
-        ))}
-        <group position={[0, footY + 1.82, 0.02]}>
-          <mesh material={black} scale={[1, 1.25, 1]}>
-            <sphereGeometry args={[0.12, 10, 8]} />
-          </mesh>
-          {[-1, 1].map((side) => (
-            <mesh key={side} position={[side * 0.04, 0.02, 0.105]} material={eyes}>
-              <sphereGeometry args={[0.013, 6, 4]} />
-            </mesh>
-          ))}
-        </group>
+      <group ref={figure} position={[0, footY, 0]}>
+        <SombraModel pose={pose} />
       </group>
       {gizmos && (
         <Html position={[0, HALF + R + 0.3, 0]} center distanceFactor={14} style={{ pointerEvents: 'none' }}>

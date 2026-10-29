@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.13.0 — Terror retrô · 2026-10-29
+
+### Adicionado
+- Modelos novos das quatro criaturas (`src/enemies/models/`), no estilo PS1: vértices presos a uma grade de tela (`psx.ts`), sombreamento facetado e texturas 16×20 pintadas por código (`textures.ts`). Cada criatura passa uma `pose` (andando, alerta, caçando, na luz, atordoada, sumindo) que o modelo anima.
+- Tela de título e menu de pausa com volume e sensibilidade do mouse, salvos no navegador (`src/game/stores/settingsStore.ts`, `src/ui/Screens.tsx`).
+- Moldura de câmera VHS: REC piscando, contador da fita (só anda com o jogo rodando) e a data do contrato.
+- Retorno de dano: clarão vermelho e borda pulsando abaixo de 30% de vida.
+- Pós-processamento: linhas de varredura e deslocamento de cor de fita (`RETRO_FX` em `src/game/config.ts`).
+- Dev: `?galeria` mostra os quatro modelos lado a lado, com botões de pose.
+
+### Alterado
+- Soltar o mouse pausa o jogo de verdade (física parada; o cronômetro das entidades desconta a pausa).
+- HUD do canto mostra só o local e o objetivo; versão, fase e cronômetro ficam no painel de teste (`H`, desligado por padrão).
+- Marcadores de debug (`G`) começam desligados.
+
 ## 0.12.0 — Novos locais assombrados · 2026-10-29
 
 ### Adicionado

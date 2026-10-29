@@ -168,5 +168,15 @@ Cada uma conversa com uma mecânica do jogo, para que fugir de cada uma seja dif
 - `link()` em `src/game/data/levels/plan.ts`: porta no meio da parede comum entre salas vizinhas (erro se não forem vizinhas)
 - Todos os mapas validados pela grade de navegação (carro → todas as salas, itens, criaturas e armários)
 
+## ✅ 0.13.0 — Terror retrô (criaturas e interface)
+- Criaturas com modelos de PS1 (`src/enemies/models/`): vértices que tremem, faces facetadas, texturas pequenas pintadas por código
+  - Guardiã: vestido com babados, rosto rachado, cabelo sobre o rosto; cabeça caída na patrulha, ergue e estende os braços caçando
+  - Sombra: silhueta pontuda com garras e fumaça; inclina avançando, congela tremendo no feixe
+  - Possessor: fantasma de cauda esfarrapada e rosto que grita
+  - A COISA: corpo de fumaça curvado, perninhas que correm, a cabeça do investigador no colo
+- Tela de título, pausa de verdade (Esc congela o jogo), volume e sensibilidade salvos no navegador
+- Moldura de câmera VHS (REC, contador da fita, data), linhas de varredura e cor de fita gasta
+- Clarão vermelho ao tomar dano e borda pulsando com a vida baixa; HUD mostra só local e objetivo
+
 ## ⬜ 1.0.0 — Polimento
-- Modelos e texturas definitivos, menu, configurações, salvamento, balanceamento
+- Salvamento da campanha, balanceamento, sons definitivos

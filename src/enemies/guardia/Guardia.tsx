@@ -23,6 +23,8 @@ import { applyStun, stunFields, stunStep } from '../stun'
 import { registerCreature } from '../../game/systems/creatures'
 import { newWalkState, walkCheckStuck, walkResume, walkSteer, walkStop, walkTo } from '../walker'
 import { GUARDIA } from './config'
+import { GuardiaModel } from '../models/GuardiaModel'
+import { newPose } from '../models/pose'
 
 /**
  * A Guardiã. Patrulha a casa, vai atrás de barulhos, persegue quando vê o
@@ -78,7 +80,7 @@ export function Guardia({
   const body = useRef<RapierRigidBody>(null)
   const collider = useRef<RapierCollider>(null)
   const controller = useRef<KinematicCharacterController>()
-  const figure = useRef<THREE.Group>(null)
+  const pose = useRef(newPose()).current
   const label = useRef<HTMLDivElement>(null)
   const pathLine = useRef<THREE.Line>(null)
   const { world, rapier } = useRapier()
@@ -295,7 +297,9 @@ export function Guardia({
     b.cooldown -= dt
 
     // atordoada (ferramentas): presa no lugar
+    pose.stunned = b.stun > 0
     if (stunStep(b, body_, col, ctrl, dt)) {
+      pose.moving = 0
       setDanger('guardia', 0.2)
       return
     }
@@ -428,6 +432,8 @@ export function Guardia({
     const moved = Math.hypot(p.x - b.lastPos.x, p.z - b.lastPos.z)
     b.lastPos.x = p.x
     b.lastPos.z = p.z
+    pose.moving = dt > 0 ? moved / dt / GUARDIA.speedPatrol : 0
+    pose.mode = b.state === 'chase' || b.state === 'recover' ? 'chase' : b.state === 'patrol' || b.state === 'idle' ? 'calm' : 'alert'
 
     // travou: destrava em etapas (walker.ts); se esgotou, na perseguição recalcula, fora dela outro destino
     if (walkCheckStuck(b, nav, GUARDIA, speed > 0 && b.state !== 'recover', dt, () => guardiaDebug.unsticks++) === 'giveup') {
@@ -457,15 +463,8 @@ export function Guardia({
     guardiaDebug.path = b.path
   })
 
-  // aparência: balanço, olhos acendem na perseguição, debug
-  useFrame(({ clock }) => {
-    const t = clock.elapsedTime
-    const f = figure.current
-    if (f) {
-      f.position.y = Math.sin(t * 1.3) * 0.02
-      f.rotation.z = b.stun > 0 ? Math.sin(t * 45) * 0.08 : Math.sin(t * 0.7) * 0.03
-    }
-    eyes.color.set(b.state === 'chase' ? '#ff3020' : b.state === 'investigate' ? '#a05030' : '#3a2a20')
+  // debug: rótulo e caminho
+  useFrame(() => {
     if (label.current) label.current.textContent = `Guardiã · ${b.state}${b.seeing ? ' · VENDO' : ''}`
     const line = pathLine.current
     if (line) {
@@ -475,9 +474,6 @@ export function Guardia({
     }
   })
 
-  const dress = useMemo(() => new THREE.MeshStandardMaterial({ color: '#070509', roughness: 1, side: THREE.DoubleSide }), [])
-  const skin = useMemo(() => new THREE.MeshStandardMaterial({ color: '#8f887d', roughness: 0.95 }), [])
-  const eyes = useMemo(() => new THREE.MeshBasicMaterial({ color: '#3a2a20' }), [])
   const lineObj = useMemo(() => new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: '#d23a3a' })), [])
 
   // pés em y = 0; o corpo físico tem o centro na metade da altura
@@ -486,35 +482,8 @@ export function Guardia({
     <>
       <RigidBody ref={body} type="kinematicPosition" colliders={false} position={[spawn.x, HALF + R + 0.05, spawn.z]}>
         <CapsuleCollider ref={collider} args={[HALF, R]} collisionGroups={ENEMY_GROUPS} />
-        <group ref={figure}>
-          {/* vestido longo */}
-          <mesh position={[0, footY + 0.8, 0]} material={dress} castShadow>
-            <coneGeometry args={[0.45, 1.6, 12, 1, true]} />
-          </mesh>
-          {/* tronco estreito */}
-          <mesh position={[0, footY + 1.62, 0]} material={dress} castShadow>
-            <cylinderGeometry args={[0.15, 0.2, 0.5, 10]} />
-          </mesh>
-          {/* braços compridos caídos */}
-          {[-1, 1].map((side) => (
-            <mesh key={side} position={[side * 0.24, footY + 1.4, 0.02]} rotation={[0.05, 0, side * 0.06]} material={skin} castShadow>
-              <cylinderGeometry args={[0.03, 0.025, 0.85, 6]} />
-            </mesh>
-          ))}
-          {/* cabeça um pouco caída para a frente, com véu escuro */}
-          <group position={[0, footY + HEAD_Y + 0.05, 0.03]} rotation={[0.35, 0, 0]}>
-            <mesh material={skin} castShadow>
-              <sphereGeometry args={[0.13, 12, 10]} />
-            </mesh>
-            <mesh position={[0, 0.03, -0.03]} scale={[1.12, 1.15, 1.1]} material={dress}>
-              <sphereGeometry args={[0.13, 12, 10, 0, Math.PI * 2, 0, Math.PI * 0.6]} />
-            </mesh>
-            {[-1, 1].map((side) => (
-              <mesh key={side} position={[side * 0.045, 0.01, 0.115]} material={eyes}>
-                <sphereGeometry args={[0.018, 6, 4]} />
-              </mesh>
-            ))}
-          </group>
+        <group position={[0, footY, 0]}>
+          <GuardiaModel pose={pose} />
         </group>
         {gizmos && (
           <Html position={[0, HALF + R + 0.4, 0]} center distanceFactor={14} style={{ pointerEvents: 'none' }}>

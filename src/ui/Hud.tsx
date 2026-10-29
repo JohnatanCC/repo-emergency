@@ -10,6 +10,7 @@ import type { LevelData } from '../game/data/types'
 import { usePlayerStore } from '../player/playerStore'
 import { useHidingStore } from '../player/hidingStore'
 import { FLASHLIGHT, PLAYER } from '../player/config'
+import { DamageFeedback, PauseMenu, TitleScreen, useTitleStore, VhsOverlay } from './Screens'
 import { hasPossessor, isBroken, isCarried, useItemStore, type ItemInstance } from '../items/itemStore'
 
 const TOGGLES: { key: string; flag: keyof DebugFlags; label: string }[] = [
@@ -46,6 +47,25 @@ function ExtractorCount({ quota }: { quota: number }) {
       {' '}
       · extrator {relics}/{quota}
     </>
+  )
+}
+
+/** O que fazer agora, no canto: local e meta do contrato. */
+function Objective({ level }: { level: LevelData }) {
+  const relics = useGameStore((s) => s.extractor.inside.relics)
+  const status = useGameStore((s) => s.extractor.status)
+  const phase = useGameStore((s) => s.phase)
+  const goal =
+    status === 'done' || phase === 'blackout'
+      ? 'volte ao carro'
+      : status === 'charging'
+        ? 'aguarde a extração'
+        : `relíquias no extrator ${relics}/${level.relicQuota}`
+  return (
+    <div className="hud-objective">
+      <div className="place">{level.name}</div>
+      <div className="goal">▸ {goal}</div>
+    </div>
   )
 }
 
@@ -271,7 +291,13 @@ export function Hud({ level }: { level: LevelData }) {
   const locked = usePlayerStore((s) => s.locked)
   const [sound, setSound] = useState<SoundId>('creak')
   const [muted, setMuted] = useState(false)
-  const [panel, setPanel] = useState(true)
+  const [panel, setPanel] = useState(false)
+  const started = useTitleStore((s) => s.started)
+  const startTitle = useTitleStore((s) => s.start)
+  // mouse travado por outro caminho (ex.: teste) também passa do título
+  useEffect(() => {
+    if (locked && !started) startTitle()
+  }, [locked, started, startTitle])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -320,24 +346,16 @@ export function Hud({ level }: { level: LevelData }) {
   return (
     <div className="hud">
       <div className="hud-top">
-        <div className="hud-title">
-          RELICÁRIO
-          <small>
-            v{VERSION} · {VERSION_NAME}
-          </small>
-        </div>
-        <div className="hud-sub">
-          {level.name} · fase: {phase} · meta: {level.relicQuota} relíquias
-          <ExtractorCount quota={level.relicQuota} />
-          <EnemyTimer delay={level.enemyDelay} />
-        </div>
-
-        {/* nas telas de pagamento e loja o painel de debug sai da frente */}
-        {!panel && !isPaused(phase) && (
+        {started && !isPaused(phase) && <Objective level={level} />}
+        {panel && !isPaused(phase) && (
           <div className="hud-sub">
-            <kbd>H</kbd> mostrar painel
+            v{VERSION} · {VERSION_NAME} · fase: {phase}
+            <ExtractorCount quota={level.relicQuota} />
+            <EnemyTimer delay={level.enemyDelay} />
           </div>
         )}
+
+        {/* nas telas de pagamento e loja o painel de debug sai da frente */}
         {panel && !isPaused(phase) && (
           <div className="hud-panel">
             <h3>{cameraMode === 'player' ? 'Investigador' : 'Modo editor'}</h3>
@@ -451,7 +469,7 @@ export function Hud({ level }: { level: LevelData }) {
       {playing && locked && <div className="hud-crosshair" />}
       {playing && locked && <AimHint />}
       {playing && <Toast />}
-      {playing && !locked && <div className="hud-center">clique para jogar</div>}
+      {playing && started && !locked && <PauseMenu />}
       <Banner />
       {phase === 'results' && <Results />}
       {phase === 'shop' && <Shop />}
@@ -466,8 +484,11 @@ export function Hud({ level }: { level: LevelData }) {
 
       {cameraMode === 'player' && <WardrobeView />}
       {cameraMode === 'player' && <HideStatus />}
-      {cameraMode === 'player' && <Vitals />}
-      {cameraMode === 'player' && <Inventory />}
+      {cameraMode === 'player' && started && <Vitals />}
+      {cameraMode === 'player' && started && <Inventory />}
+      {cameraMode === 'player' && started && debug.retro && <VhsOverlay level={level} />}
+      {cameraMode === 'player' && <DamageFeedback />}
+      {cameraMode === 'player' && !started && <TitleScreen />}
     </div>
   )
 }

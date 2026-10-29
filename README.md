@@ -42,14 +42,16 @@ Clique na tela para travar o mouse (`Esc` solta).
 |---|---|
 | `F1` | alterna investigador / câmera de editor (arrastar, scroll, botão direito) |
 | `V` | (editor) visitar a próxima sala na altura dos olhos |
-| `G` | marcadores (spawns, esconderijos, portas, mortes) |
+| `G` | marcadores (spawns, esconderijos, portas, mortes) — desligados ao abrir |
 | `L` | luz total |
 | `B` | prévia do apagão pós-extração |
 | `R` | filtro retrô |
 | `N` | neblina |
 | `K` | tomar 25 de dano |
 | `M` | som ligado / mudo |
-| `H` | esconder painel |
+| `H` | mostrar / esconder o painel de teste |
+
+`Esc` solta o mouse e pausa (volume e sensibilidade no menu de pausa). Em dev, `/?galeria` mostra os modelos das criaturas.
 
 ## Estrutura
 
